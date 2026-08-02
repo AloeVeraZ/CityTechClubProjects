@@ -22,16 +22,6 @@ The designs reuse readily available school and off-the-shelf components, keeping
 | **Mechanical design** | Custom 3D-printed chassis plus off-the-shelf hardware |
 | **Project status** | Finished; firmware includes the development history |
 
-## Demonstrations
-
-<table>
-  <tr>
-    <td align="center"><a href="https://www.youtube.com/watch?v=-mdpzGmiDxs"><img src="https://i.ytimg.com/vi_webp/-mdpzGmiDxs/hqdefault.webp" width="280" alt="Self-balancing robot version 1 demonstration"><br><strong>Version 1</strong></a></td>
-    <td align="center"><a href="https://www.youtube.com/watch?v=whE-oMi1N7U"><img src="https://i.ytimg.com/vi_webp/whE-oMi1N7U/hqdefault.webp" width="280" alt="Self-balancing robot version 2 demonstration"><br><strong>Version 2</strong></a></td>
-    <td align="center"><a href="https://www.youtube.com/watch?v=JzyDli07yCE"><img src="https://i.ytimg.com/vi_webp/JzyDli07yCE/hqdefault.webp" width="280" alt="Self-balancing robot version 3 demonstration"><br><strong>Version 3</strong></a></td>
-  </tr>
-</table>
-
 ## How it works
 
 ```mermaid

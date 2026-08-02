@@ -28,16 +28,6 @@ A compact four-leg walking robot developed through three mechanical and electron
 | **Structure** | Iterative 3D-printed frame |
 | **Features explored** | Wireless control, live video, status feedback, gait synchronization |
 
-## Demonstrations
-
-<table>
-  <tr>
-    <td align="center"><a href="https://www.youtube.com/watch?v=WJB2is0cYr0"><img src="https://i.ytimg.com/vi_webp/WJB2is0cYr0/hqdefault.webp" width="280" alt="Walking robot version 1 demonstration"><br><strong>Version 1</strong></a></td>
-    <td align="center"><a href="https://www.youtube.com/watch?v=dIKoLMmPl84"><img src="https://i.ytimg.com/vi_webp/dIKoLMmPl84/hqdefault.webp" width="280" alt="Walking robot version 2 demonstration"><br><strong>Version 2</strong></a></td>
-    <td align="center"><a href="https://www.youtube.com/watch?v=3YAVgb8yF3U"><img src="https://i.ytimg.com/vi_webp/3YAVgb8yF3U/hqdefault.webp" width="280" alt="Walking robot version 3 demonstration"><br><strong>Version 3</strong></a></td>
-  </tr>
-</table>
-
 ## Design evolution
 
 ### Version 1 — Arduino Nano prototype
@@ -110,4 +100,3 @@ Before fabrication:
 ## License
 
 Original project materials are available under [CC BY 4.0](../LICENSE.md). You may copy, modify, redistribute, and use them commercially as long as you credit Angelo Demetroulakos, link to the license, and identify your changes.
-
