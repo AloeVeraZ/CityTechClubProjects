@@ -1,0 +1,10 @@
+*.f3d binary
+*.f3z binary
+*.step binary
+*.stp binary
+
+*.ino text eol=lf
+*.md text eol=lf
+*.svg text eol=lf
+*.cff text eol=lf
+

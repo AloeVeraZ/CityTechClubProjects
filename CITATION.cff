@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use or adapt this project, please credit it using the information below."
+title: "Self-Balancing Robot"
+type: software
+authors:
+  - family-names: Demetroulakos
+    given-names: Angelo
+repository-code: "https://github.com/AloeVeraZ/CityTechClubProjects"
+url: "https://angelojamesny.com/selfbalancing"
+license: CC-BY-4.0
+date-released: 2026-08-01
+
