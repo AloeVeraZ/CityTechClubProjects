@@ -1,3 +1,14 @@
+# City Tech Club Robotics Projects
+
+Open CAD, firmware, and build notes from robotics projects developed for City Tech club activities.
+
+| Project | Focus | Materials |
+|---|---|---|
+| **Self-Balancing Robot** | IMU feedback, PID control, Arduino, and Raspberry Pi Pico | Firmware, Fusion CAD, and STEP exports below |
+| **[Crab Crawler / Walking Robot](crab-crawler/README.md)** | Four-leg servo walking, ESP32-CAM, wireless control, and mechanical iteration | Fusion CAD and STEP exports |
+
+---
+
 <p align="center">
   <a href="https://angelojamesny.com/selfbalancing"><img alt="Project status: complete" src="https://img.shields.io/badge/status-complete-16c784?style=flat-square"></a>
   <img alt="Control: PID" src="https://img.shields.io/badge/control-PID-7c5cff?style=flat-square">
@@ -5,7 +16,7 @@
   <a href="LICENSE.md"><img alt="License: CC BY 4.0" src="https://img.shields.io/badge/license-CC%20BY%204.0-f1c40f?style=flat-square"></a>
 </p>
 
-# Self-Balancing Robot
+## Self-Balancing Robot
 
 A two-wheel robotics platform that uses real-time inertial feedback and PID control to stay upright. The project was developed as both a working robot and a hands-on way to teach control theory: changing the proportional, integral, and derivative values makes responsiveness, overshoot, oscillation, and recovery visible in real time.
 
