@@ -100,7 +100,7 @@ Before manufacturing or ordering parts:
 ## Project links
 
 - [Detailed self-balancing robot page](https://angelojamesny.com/selfbalancing)
-- [City Tech club projects overview](https://angelojamesny.com/club-projects)
+- [City Tech AI & Automation Club projects overview](https://angelojamesny.com/club-projects)
 - [Repository home](../README.md)
 - [Angelo's GitHub profile](https://github.com/TheTheAloe)
 

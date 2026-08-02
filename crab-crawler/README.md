@@ -94,7 +94,7 @@ Before fabrication:
 ## Links
 
 - [Detailed walking robot page](https://angelojamesny.com/crabcrawler)
-- [City Tech club projects overview](https://angelojamesny.com/club-projects)
+- [City Tech AI & Automation Club projects overview](https://angelojamesny.com/club-projects)
 - [Repository home](../README.md)
 
 ## License

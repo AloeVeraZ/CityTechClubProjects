@@ -1,6 +1,6 @@
 <div align="center">
 
-# City Tech Club Robotics Projects
+# City Tech AI & Automation Club
 
 **Open CAD, firmware, build notes, and development history from two hands-on robotics platforms.**
 
@@ -87,11 +87,10 @@ Each project folder explains what its files represent, how the design evolved, a
 |---|---|---|
 | Self-Balancing Robot | [Read the full project story](https://angelojamesny.com/selfbalancing) | [CAD, firmware, and documentation](self-balancing-robot/README.md) |
 | Crab Crawler / Walking Robot | [Read the full project story](https://angelojamesny.com/crabcrawler) | [CAD and documentation](crab-crawler/README.md) |
-| City Tech Club | [View the club overview](https://angelojamesny.com/club-projects) | — |
+| City Tech AI & Automation Club | [View the club overview](https://angelojamesny.com/club-projects) | — |
 
 ## License
 
 Except where otherwise noted, original materials are licensed under the [Creative Commons Attribution 4.0 International License](LICENSE.md). You may share, modify, and use them commercially provided you credit **Angelo Demetroulakos**, link to the license, and identify your changes.
 
 Third-party and off-the-shelf component models remain subject to their respective owners' rights.
-
