@@ -1,8 +1,4 @@
 <p align="center">
-  <img src="assets/project-banner.svg" alt="Self-Balancing Robot" width="100%">
-</p>
-
-<p align="center">
   <a href="https://angelojamesny.com/selfbalancing"><img alt="Project status: complete" src="https://img.shields.io/badge/status-complete-16c784?style=flat-square"></a>
   <img alt="Control: PID" src="https://img.shields.io/badge/control-PID-7c5cff?style=flat-square">
   <img alt="Sensor: MPU6050" src="https://img.shields.io/badge/sensor-MPU6050-00a8e8?style=flat-square">
@@ -126,4 +122,3 @@ Suggested attribution:
 > Self-Balancing Robot by Angelo Demetroulakos, licensed under CC BY 4.0. Source: https://github.com/AloeVeraZ/CityTechClubProjects
 
 Third-party and off-the-shelf component models remain subject to their original owners' rights and are not relicensed beyond the permissions Angelo has authority to grant.
-
