@@ -2,7 +2,7 @@
 
 # City Tech AI & Automation Club
 
-**Open CAD, firmware, build notes, and development history from two hands-on robotics platforms.**
+**Open CAD, firmware, build notes, and development history from two hands on robotics platforms.**
 
 [![License: CC BY 4.0](https://img.shields.io/badge/license-CC%20BY%204.0-f1c40f?style=flat-square)](LICENSE.md)
 ![Projects](https://img.shields.io/badge/projects-2-6f42c1?style=flat-square)
@@ -29,7 +29,7 @@
         <img src="https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=720,h=480,fit=crop/A85rnnzK6qs5qxKB/img_20260515_125209039-aa3XkdHF9OBnSOx5.jpg" width="100%" alt="Crab crawler walking robot">
       </a>
       <h3>Crab Crawler / Walking Robot</h3>
-      <p>A four-leg servo walker developed from an Arduino prototype into a reinforced ESP32-CAM platform with wireless control.</p>
+      <p>A four leg servo walker developed from an Arduino prototype into a reinforced ESP32-CAM platform with wireless control.</p>
       <p><strong>Includes:</strong> 4 CAD files, compact and final designs, Fusion archives, STEP exports, and revision history.</p>
       <p><a href="crab-crawler/README.md"><strong>Explore the project →</strong></a></p>
     </td>
@@ -55,7 +55,7 @@ Each project was refined through three physical revisions. Click any preview to 
 <table>
   <tr>
     <td width="33%" align="center"><a href="https://www.youtube.com/watch?v=WJB2is0cYr0"><img src="https://i.ytimg.com/vi_webp/WJB2is0cYr0/hqdefault.webp" width="100%" alt="Walking robot version 1 video"><br><strong>Version 1 · Arduino prototype</strong></a></td>
-    <td width="33%" align="center"><a href="https://www.youtube.com/watch?v=dIKoLMmPl84"><img src="https://i.ytimg.com/vi_webp/dIKoLMmPl84/hqdefault.webp" width="100%" alt="Walking robot version 2 video"><br><strong>Version 2 · Compact ESP32-CAM</strong></a></td>
+    <td width="33%" align="center"><a href="https://www.youtube.com/watch?v=dIKoLMmPl84"><img src="https://i.ytimg.com/vi_webp/dIKoLMmPl84/hqdefault.webp" width="100%" alt="Walking robot version 2 video"><br><strong>Version 2 · Compact ESP32 CAM</strong></a></td>
     <td width="33%" align="center"><a href="https://www.youtube.com/watch?v=3YAVgb8yF3U"><img src="https://i.ytimg.com/vi_webp/3YAVgb8yF3U/hqdefault.webp" width="100%" alt="Walking robot version 3 video"><br><strong>Version 3 · Reinforced frame</strong></a></td>
   </tr>
 </table>
@@ -85,7 +85,7 @@ Each project folder explains what its files represent, how the design evolved, a
 
 | Project | Portfolio page | Repository files |
 |---|---|---|
-| Self-Balancing Robot | [Read the full project story](https://angelojamesny.com/selfbalancing) | [CAD, firmware, and documentation](self-balancing-robot/README.md) |
+| Self Balancing Robot | [Read the full project story](https://angelojamesny.com/selfbalancing) | [CAD, firmware, and documentation](self-balancing-robot/README.md) |
 | Crab Crawler / Walking Robot | [Read the full project story](https://angelojamesny.com/crabcrawler) | [CAD and documentation](crab-crawler/README.md) |
 | City Tech AI & Automation Club | [View the club overview](https://angelojamesny.com/club-projects) | — |
 
@@ -93,4 +93,4 @@ Each project folder explains what its files represent, how the design evolved, a
 
 Except where otherwise noted, original materials are licensed under the [Creative Commons Attribution 4.0 International License](LICENSE.md). You may share, modify, and use them commercially provided you credit **Angelo Demetroulakos**, link to the license, and identify your changes.
 
-Third-party and off-the-shelf component models remain subject to their respective owners' rights.
+Third party and off the shelf component models remain subject to their respective owners' rights.
