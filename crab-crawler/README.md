@@ -1,102 +1,80 @@
-# Crab Crawler / Walking Robot
+# Crab Crawler Walking Robot
 
 <p>
   <a href="https://angelojamesny.com/crabcrawler"><img alt="Project page" src="https://img.shields.io/badge/project-walking%20robot-6f42c1?style=flat-square"></a>
-  <img alt="Controller: ESP32-CAM" src="https://img.shields.io/badge/controller-ESP32--CAM-00979d?style=flat-square">
-  <img alt="Motion: servo gait" src="https://img.shields.io/badge/motion-servo%20gait-f39c12?style=flat-square">
+  <img alt="Controller: ESP32 CAM" src="https://img.shields.io/badge/controller-ESP32%20CAM-00979d?style=flat-square">
+  <img alt="Motion: servo walking" src="https://img.shields.io/badge/motion-servo%20walking-f39c12?style=flat-square">
   <a href="../LICENSE.md"><img alt="License: CC BY 4.0" src="https://img.shields.io/badge/license-CC%20BY%204.0-f1c40f?style=flat-square"></a>
 </p>
 
-A compact four-leg walking robot developed through three mechanical and electronics revisions. The platform was created to teach ESP32 programming, sensor integration, servo breakout-board control, gait design, wireless control, and practical 3D-printed robotics.
+This project is a small four leg robot that walks using servos. We made three versions to improve the frame, wiring, and controls.
 
 ## Project goals
 
-- Build a low-cost walking robot using a small number of standard hobby servos.
-- Use 3D-printed structures that can be revised quickly after physical testing.
-- Simplify servo wiring through a dedicated driver board.
-- Add ESP32-CAM wireless control and live video feedback.
-- Create a platform that can be used to teach embedded programming and robotics.
+* Make a walking robot with regular hobby servos.
+* Use 3D printed parts that are easy to change.
+* Keep the wiring simple with a servo driver board.
+* Try wireless control and live video with an ESP32 CAM.
+* Use the project to practice robotics and programming.
 
-## At a glance
+## Main parts
 
-| | |
+| Part | What we used |
 |---|---|
-| **Locomotion** | Four-leg, servo-driven walking gait |
-| **Early controller** | Arduino Nano |
-| **Later controller** | ESP32-CAM |
-| **Servo control** | Dedicated servo driver/breakout board |
-| **Structure** | Iterative 3D-printed frame |
-| **Features explored** | Wireless control, live video, status feedback, gait synchronization |
+| Movement | Four legs moved by servos |
+| First controller | Arduino Nano |
+| Later controller | ESP32 CAM |
+| Servo control | Servo driver board |
+| Frame | Custom 3D printed parts |
+| Extra features | Wireless control and live video |
 
-## Design evolution
+## Versions
 
-### Version 1 — Arduino Nano prototype
+### Version 1: Arduino prototype
 
-The first version used an Arduino Nano, a basic servo driver, a four-leg layout, and standard hobby servos. A physical toggle switch enabled and disabled the servos to make testing and debugging safer.
+The first version used an Arduino Nano, a servo driver, and a large printed body. It helped us test the walking motion. The body was too big, and some servos broke under the weight.
 
-This build validated basic gait patterns and servo synchronization, but its oversized printed body and inefficient mechanical layout made it bulky. Poor torque distribution and structural stress also caused servos to strip under load. Those failures established the main requirements for a smaller, better-supported redesign.
+### Version 2: Small ESP32 CAM version
 
-### Version 2 — compact ESP32-CAM build
+The second version used an ESP32 CAM and a smaller frame. It added wireless control and live video. The frame was too thin and broke during testing, and the wiring was crowded.
 
-The second version moved to an ESP32-CAM and servo driver in a much slimmer frame. Wireless control and live video made the robot more capable while retaining the four-leg servo gait.
+### Version 3: Stronger final version
 
-The aggressive size reduction introduced new problems: the frame was too weak and snapped under load, while crowded internal wiring reduced reliability. This version was valuable for testing compact packaging and wireless features, even though the mechanical design needed further reinforcement.
+The third version kept the ESP32 CAM and made the frame thicker. It was stronger, walked more consistently, and had cleaner wiring.
 
-### Version 3 — reinforced final iteration
+## How it works
 
-The third version retained the ESP32-CAM, servo driver, and four-leg gait while replacing the fragile structure with a thicker, reinforced printed frame. The stronger design improved load handling and motion consistency. Cleaner wiring also reduced connection problems and made the platform more reliable for continued testing.
-
-## System layout
-
-```mermaid
-flowchart LR
-    CONTROL["Wireless control"] --> ESP["ESP32-CAM"]
-    CAMERA["Live camera feedback"] --- ESP
-    ESP --> DRIVER["Servo driver"]
-    DRIVER --> SERVOS["Leg servos"]
-    SERVOS --> GAIT["Coordinated gait"]
-    POWER["Battery / power system"] --> ESP
-    POWER --> DRIVER
-```
+The ESP32 CAM sends commands to the servo driver. The driver moves each leg servo in a pattern so the robot can walk. A battery powers the controller and servos.
 
 ## CAD files
 
-| Folder | Fusion archive | STEP export | Description |
+| Folder | Fusion file | STEP file | Description |
 |---|---|---|---|
-| [`cad/final/`](cad/final/) | `final.f3z` | `final.step` | Final/reinforced walking robot design |
-| [`cad/small/`](cad/small/) | `small.f3z` | `small.step` | Smaller compact design iteration |
+| [`cad/final/`](cad/final/) | `final.f3z` | `final.step` | Stronger final design |
+| [`cad/small/`](cad/small/) | `small.f3z` | `small.step` | Smaller early design |
 
-See the [CAD notes](cad/README.md) for format and fabrication guidance.
+Read the [CAD notes](cad/README.md) before printing any parts.
 
 ## Results
 
-- Produced stable walking motion with a compact servo-based design.
-- Reduced the hardware count and overall project cost.
-- Demonstrated wireless control and live visual feedback through the ESP32-CAM.
-- Improved structural durability and wiring reliability through repeated physical revisions.
-- Created a scalable educational platform for embedded programming, servo control, and gait development.
+* The final robot could walk using a simple servo pattern.
+* The ESP32 CAM added wireless control and live video.
+* The stronger frame worked better than the thin frame.
+* The project gave us practice with CAD, wiring, servos, and programming.
 
-## Build considerations
+## Before building
 
-The project history shows that smaller is not automatically stronger. Servo torque, linkage geometry, layer orientation, wall thickness, wire routing, and repeated impact loads all affect whether a printed walking frame survives.
-
-Before fabrication:
-
-1. Inspect the STEP geometry in your preferred CAD tool.
-2. Confirm servo and board dimensions against the exact hardware you own.
-3. Review print orientation and reinforce high-stress joints.
-4. Check linkages for binding before powering the servos.
-5. Test gait timing with the robot supported above the work surface.
+Check the size of your servos, controller, battery, and screws before printing. Make sure the legs move freely before turning the servos on. Printed parts may need small changes for your printer and hardware.
 
 > [!CAUTION]
-> Servos can move unexpectedly and may draw high current when stalled. Keep fingers clear of the linkages, use an appropriately rated power supply, and disconnect power before changing mechanical parts or wiring.
+> Servos can move without warning. Keep your fingers away from the legs and unplug the power before changing parts or wires.
 
 ## Links
 
-- [Detailed walking robot page](https://angelojamesny.com/crabcrawler)
-- [City Tech AI & Automation Club projects overview](https://angelojamesny.com/club-projects)
-- [Repository home](../README.md)
+* [Walking robot project page](https://angelojamesny.com/crabcrawler)
+* [Club projects page](https://angelojamesny.com/club-projects)
+* [Repository home](../README.md)
 
 ## License
 
-Original project materials are available under [CC BY 4.0](../LICENSE.md). You may copy, modify, redistribute, and use them commercially as long as you credit Angelo Demetroulakos, link to the license, and identify your changes.
+The original project work is available under [CC BY 4.0](../LICENSE.md). You can share or change it as long as you credit Angelo Demetroulakos, link to the license, and say what you changed.

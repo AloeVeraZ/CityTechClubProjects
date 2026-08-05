@@ -1,23 +1,21 @@
 # Walking robot CAD
 
-Two design sets are included:
+This folder has two versions of the walking robot design.
 
-| Design | Native archive | Neutral export |
+| Design | Fusion file | STEP file |
 |---|---|---|
-| Final reinforced design | `final/final.f3z` | `final/final.step` |
-| Small compact design | `small/small.f3z` | `small/small.step` |
+| Stronger final design | `final/final.f3z` | `final/final.step` |
+| Smaller early design | `small/small.f3z` | `small/small.step` |
 
-## Formats
+## File types
 
-- `.f3z` is an Autodesk Fusion distributed-design archive and may include linked components.
-- `.step` is a neutral solid-model format for opening the design in other CAD software. It does not preserve the original Fusion timeline or parametric feature history.
+The `.f3z` files open in Autodesk Fusion and may include linked parts. The `.step` files can open in many other CAD programs, but they do not keep the full Fusion editing history.
 
-## Before printing or manufacturing
+## Before printing
 
-- Confirm all servo, controller, fastener, and battery dimensions against your actual hardware.
-- Inspect high-load joints and consider print orientation, additional walls, or local reinforcement.
-- Check servo horns and linkages for free movement throughout the full gait range.
-- Expect to adjust tolerances for your printer, material, and hardware variation.
+* Check the size of your servos, controller, battery, and screws.
+* Look at the thicker joints and choose a good print direction.
+* Make sure the servo arms and legs can move freely.
+* Change the spacing if your printer or parts are a different size.
 
-The smaller design documents an earlier compact iteration. The final design uses a thicker, reinforced structure to address the frame failures observed during development.
-
+The small design was an early version. The final design uses a thicker frame because the smaller frame broke during testing.

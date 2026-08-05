@@ -1,29 +1,19 @@
 # CAD files
 
-The CAD is supplied in both editable Autodesk Fusion formats and broadly compatible STEP exports.
+This folder has the robot models in Autodesk Fusion and STEP formats.
 
-| Folder | Native file | Exchange file | Purpose |
+| Folder | Fusion file | STEP file | What it shows |
 |---|---|---|---|
-| `pico-v1/` | `pico-cad-v1.f3z` | `pico-cad-v1.step` | Raspberry Pi Pico controller layout |
-| `arduino-uno-v2/` | `arduino-uno-cad-v2.f3z` | `arduino-uno-cad-v2.step` | Arduino Uno controller layout |
-| `final-assembly/` | `final-cad.f3d` | `final-cad.step` | Composite final design reference |
+| `pico-v1/` | `pico-cad-v1.f3z` | `pico-cad-v1.step` | Raspberry Pi Pico version |
+| `arduino-uno-v2/` | `arduino-uno-cad-v2.f3z` | `arduino-uno-cad-v2.step` | Arduino Uno version |
+| `final-assembly/` | `final-cad.f3d` | `final-cad.step` | Final design reference |
 
-## Format notes
+## File types
 
-- `.f3d` is a single Autodesk Fusion design archive.
-- `.f3z` is an Autodesk Fusion distributed-design archive and may contain linked components.
-- `.step` is the best starting point for other CAD applications, but it does not preserve the full Fusion feature history.
+The `.f3d` and `.f3z` files open in Autodesk Fusion. The `.step` files can open in many other CAD programs, but they do not keep the full Fusion editing history.
 
-## Final assembly limitations
+## Final model note
 
-The final assembly is **not an exact as-built model**. The physical robot used several purchased components that were represented with convenient placeholder geometry during layout work.
+The final model is not an exact copy of the real robot. Some wheels, batteries, holders, and other store bought parts are simple placeholders.
 
-Known or likely approximations include:
-
-- wheels used as visual or envelope placeholders;
-- a simplified battery placeholder;
-- a placeholder 3D-printed holder surrounding one Arduino board;
-- other off-the-shelf parts whose exact vendor geometry was unavailable.
-
-Do not manufacture directly from assumed clearances in the assembly. Measure your actual wheels, battery, controller boards, motors, hubs, and fasteners, then update mating printed parts before fabrication.
-
+Measure your own parts before printing anything. Check the motors, wheels, battery, boards, holes, and screws, then change the printed parts if needed.
