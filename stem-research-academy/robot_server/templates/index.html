@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>STEM Research Academy Robot Lab</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+<body>
+  <main class="dashboard">
+    <section class="panel primary-panel">
+      <img class="video" src="{{ url_for('camera_feed') }}" alt="Mecanum robot camera feed">
+      <div class="shade"></div>
+      <header class="panel-header">
+        <div>
+          <p class="eyebrow">Robot 01 · Mecanum</p>
+          <h1>Chassis control</h1>
+        </div>
+        <span class="status" id="pi-status"><i></i> Connecting</span>
+      </header>
+
+      <div class="drive-card">
+        <div class="speed-row">
+          <label for="speed">Drive speed</label>
+          <output id="speed-value">75%</output>
+        </div>
+        <input id="speed" type="range" min="20" max="100" value="75" step="5">
+        <div class="key-grid" aria-label="Keyboard controls">
+          <span class="key small" data-key="q">Q<small>turn</small></span>
+          <span class="key" data-key="w">W<small>forward</small></span>
+          <span class="key small" data-key="e">E<small>turn</small></span>
+          <span class="key" data-key="a">A<small>left</small></span>
+          <span class="key" data-key="s">S<small>back</small></span>
+          <span class="key" data-key="d">D<small>right</small></span>
+        </div>
+        <p class="hint">Hold keys to drive · release to stop · Space is emergency stop</p>
+        <button class="stop-button" id="stop" type="button">Stop all motors</button>
+      </div>
+
+      <footer class="telemetry">
+        <span id="direction">Standing by</span>
+        <span id="host">10.42.0.1:8080</span>
+      </footer>
+    </section>
+
+    <aside class="secondary-stack">
+      <section class="panel esp-panel">
+        {% if esp32_one_stream %}
+          <img class="video" src="{{ esp32_one_stream }}" alt="ESP32 robot one camera feed">
+        {% endif %}
+        <div class="grid-backdrop"></div>
+        <header class="panel-header compact">
+          <div>
+            <p class="eyebrow">Robot 02 · Differential</p>
+            <h2>ESP32 Scout A</h2>
+          </div>
+          <span class="status waiting"><i></i> Placeholder</span>
+        </header>
+        {% if not esp32_one_stream %}
+          <div class="placeholder">
+            <span class="camera-icon">◉</span>
+            <strong>Camera feed reserved</strong>
+            <p>Two-motor drive and video controls will appear here.</p>
+          </div>
+        {% endif %}
+        <footer class="telemetry"><span>Future ESP32 endpoint</span><span>10.42.0.x</span></footer>
+      </section>
+
+      <section class="panel esp-panel accent-two">
+        {% if esp32_two_stream %}
+          <img class="video" src="{{ esp32_two_stream }}" alt="ESP32 robot two camera feed">
+        {% endif %}
+        <div class="grid-backdrop"></div>
+        <header class="panel-header compact">
+          <div>
+            <p class="eyebrow">Robot 03 · Differential</p>
+            <h2>ESP32 Scout B</h2>
+          </div>
+          <span class="status waiting"><i></i> Placeholder</span>
+        </header>
+        {% if not esp32_two_stream %}
+          <div class="placeholder">
+            <span class="camera-icon">◉</span>
+            <strong>Camera feed reserved</strong>
+            <p>Two-motor drive and video controls will appear here.</p>
+          </div>
+        {% endif %}
+        <footer class="telemetry"><span>Future ESP32 endpoint</span><span>10.42.0.x</span></footer>
+      </section>
+    </aside>
+  </main>
+  <div class="toast" id="toast" role="status">Controls disconnected — motors stopped</div>
+  <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html>

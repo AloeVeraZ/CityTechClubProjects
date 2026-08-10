@@ -5,7 +5,7 @@
 **This page shows two robotics projects made by students at City Tech.**
 
 [![License: CC BY 4.0](https://img.shields.io/badge/license-CC%20BY%204.0-f1c40f?style=flat-square)](LICENSE.md)
-![Projects](https://img.shields.io/badge/projects-2-6f42c1?style=flat-square)
+![Projects](https://img.shields.io/badge/projects-3-6f42c1?style=flat-square)
 ![CAD Files](https://img.shields.io/badge/CAD%20files-10-00979d?style=flat-square)
 ![Firmware Sketches](https://img.shields.io/badge/firmware%20sketches-6-16c784?style=flat-square)
 
@@ -36,6 +36,17 @@
   </tr>
 </table>
 
+<table>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <h3>STEM Research Academy Robot Lab</h3>
+      <p>A Raspberry Pi hotspot and browser control station for one mecanum robot and two future ESP32 camera robots.</p>
+      <p><strong>Included:</strong> Mecanum motor control, C270 camera streaming, dashboard, hotspot setup, tests, and a rerunnable Pi installer.</p>
+      <p><a href="stem-research-academy/README.md"><strong>View the project</strong></a></p>
+    </td>
+  </tr>
+</table>
+
 ## Project videos
 
 Both robots went through a few versions. The videos below show what changed along the way.
@@ -62,7 +73,7 @@ Both robots went through a few versions. The videos below show what changed alon
 
 ## What is included
 
-The self balancing robot folder has the code and CAD files for that project. The crab crawler folder has the CAD files for the walking robot. Each folder also has a README with more information.
+The self balancing robot folder has code and CAD files, the crab crawler folder has CAD files, and the STEM Research Academy folder has the multi-robot control station. Each folder also has a README with more information.
 
 ## What we learned
 
@@ -74,6 +85,7 @@ These projects helped us learn about sensors, motors, CAD, 3D printing, wiring, 
 |---|---|---|
 | Self Balancing Robot | [Read the project page](https://angelojamesny.com/selfbalancing) | [View the files](self-balancing-robot/README.md) |
 | Crab Crawler Walking Robot | [Read the project page](https://angelojamesny.com/crabcrawler) | [View the files](crab-crawler/README.md) |
+| STEM Research Academy Robot Lab | Documentation in this repository | [View the files](stem-research-academy/README.md) |
 | City Tech AI & Automation Club | [View the club page](https://angelojamesny.com/club-projects) | Not available |
 
 ## License
