@@ -8,6 +8,7 @@
   const toast = document.querySelector('#toast');
   let lastVector = '';
   let driveTimer = null;
+  const scoutTimers = {};
 
   const controls = new Set(['w', 'a', 's', 'd', 'q', 'e']);
   const labels = {
@@ -60,6 +61,8 @@
     direction.textContent = 'Emergency stop';
     lastVector = '';
     try { await fetch('/api/stop', {method: 'POST', keepalive: true}); } catch (_) {}
+    stopScout('a');
+    stopScout('b');
     if (show) showToast();
   }
 
@@ -93,7 +96,11 @@
 
   window.addEventListener('blur', () => stopAll());
   document.addEventListener('visibilitychange', () => { if (document.hidden) stopAll(); });
-  window.addEventListener('pagehide', () => navigator.sendBeacon('/api/stop'));
+  window.addEventListener('pagehide', () => {
+    navigator.sendBeacon('/api/stop');
+    navigator.sendBeacon('/api/scouts/a/stop');
+    navigator.sendBeacon('/api/scouts/b/stop');
+  });
   document.querySelector('#stop').addEventListener('click', () => stopAll(true));
   speed.addEventListener('input', () => { speedValue.value = `${speed.value}%`; sendDrive(true); });
 
@@ -110,7 +117,90 @@
     }
   }
 
+  const scoutMotion = {
+    left: {x: -100, y: 0}, forward: {x: 0, y: 100},
+    stop: {x: 0, y: 0}, back: {x: 0, y: -100}, right: {x: 100, y: 0}
+  };
+
+  async function sendScout(id, motion) {
+    const controls = document.querySelector(`[data-scout="${id}"]`);
+    const vector = scoutMotion[motion] || scoutMotion.stop;
+    const speedLimit = Number(controls.querySelector('input').value);
+    const response = await fetch(`/api/scouts/${id}/drive`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({...vector, speed: speedLimit}), cache: 'no-store'
+    });
+    if (!response.ok) throw new Error('scout unavailable');
+  }
+
+  function clearScoutTimer(id) {
+    window.clearInterval(scoutTimers[id]);
+    scoutTimers[id] = null;
+    document.querySelectorAll(`[data-scout="${id}"] [data-motion]`).forEach(button => button.classList.remove('active'));
+  }
+
+  function startScout(id, motion, button) {
+    clearScoutTimer(id);
+    button.classList.add('active');
+    const send = () => sendScout(id, motion).catch(() => clearScoutTimer(id));
+    send();
+    scoutTimers[id] = window.setInterval(send, 150);
+  }
+
+  function stopScout(id) {
+    clearScoutTimer(id);
+    fetch(`/api/scouts/${id}/stop`, {method: 'POST', keepalive: true}).catch(() => {});
+  }
+
+  document.querySelectorAll('.scout-controls').forEach(controls => {
+    const id = controls.dataset.scout;
+    const slider = controls.querySelector('input');
+    const output = controls.querySelector('output');
+    slider.addEventListener('input', () => { output.value = `${slider.value}%`; });
+    controls.querySelectorAll('[data-motion]').forEach(button => {
+      const motion = button.dataset.motion;
+      if (motion === 'stop') {
+        button.addEventListener('click', () => stopScout(id));
+        return;
+      }
+      button.addEventListener('pointerdown', event => {
+        event.preventDefault();
+        button.setPointerCapture?.(event.pointerId);
+        startScout(id, motion, button);
+      });
+      ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type => button.addEventListener(type, () => stopScout(id)));
+    });
+  });
+
+  document.querySelectorAll('[data-scout-panel]').forEach(panel => {
+    const video = panel.querySelector('.scout-video');
+    video.addEventListener('load', () => panel.classList.add('camera-live'));
+    video.addEventListener('error', () => panel.classList.remove('camera-live'));
+  });
+
+  async function refreshScout(id) {
+    const statusElement = document.querySelector(`#scout-${id}-status`);
+    const motionElement = document.querySelector(`#scout-${id}-motion`);
+    try {
+      const response = await fetch(`/api/scouts/${id}/status`, {cache: 'no-store'});
+      const data = await response.json();
+      statusElement.classList.toggle('waiting', !data.online);
+      statusElement.classList.toggle('offline', !data.online);
+      statusElement.innerHTML = `<i></i> ${data.online ? 'Online' : 'Waiting'}`;
+      motionElement.textContent = data.online
+        ? `${data.motion ? 'CSI disturbance' : 'CSI idle'} · ${Math.round(data.motion_level || 0)}%`
+        : 'Scout not connected';
+    } catch (_) {
+      statusElement.classList.add('offline');
+      statusElement.innerHTML = '<i></i> Waiting';
+      motionElement.textContent = 'Scout not connected';
+    }
+  }
+
   driveTimer = window.setInterval(() => { if (pressed.size) sendDrive(true); }, 120);
   window.setInterval(refreshStatus, 3000);
+  window.setInterval(() => { refreshScout('a'); refreshScout('b'); }, 1500);
   refreshStatus();
+  refreshScout('a');
+  refreshScout('b');
 })();

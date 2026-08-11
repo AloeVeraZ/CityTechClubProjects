@@ -142,12 +142,23 @@ input[type="range"] { width: 100%; margin: 9px 0 15px; accent-color: var(--lime)
 .esp-panel .eyebrow { color: var(--cyan); }
 .accent-two .eyebrow { color: var(--orange); }
 .compact { padding: 22px 24px; }
-.placeholder { position: absolute; inset: 72px 24px 43px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: var(--muted); }
-.placeholder .camera-icon { display: grid; place-items: center; width: 50px; height: 50px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: 50%; color: var(--cyan); font-size: 23px; }
-.accent-two .camera-icon { color: var(--orange); }
-.placeholder strong { color: var(--ink); font-size: 15px; }
-.placeholder p { max-width: 290px; margin: 6px 0 0; font-size: 12px; line-height: 1.45; }
 .esp-panel .telemetry { left: 24px; right: 24px; bottom: 17px; }
+.scout-video { opacity: .72; }
+.scout-offline { position: absolute; z-index: 1; inset: 68px 20px 92px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--muted); text-align: center; }
+.scout-offline .camera-icon { display: grid; place-items: center; width: 38px; height: 38px; margin-bottom: 6px; border: 1px solid var(--line); border-radius: 50%; color: var(--cyan); }
+.accent-two .scout-offline .camera-icon { color: var(--orange); }
+.camera-live .scout-offline { display: none; }
+.scout-controls { position: absolute; z-index: 4; left: 18px; right: 18px; bottom: 38px; display: grid; grid-template-columns: minmax(110px, .7fr) 1.3fr; align-items: end; gap: 12px; padding: 9px; border: 1px solid var(--line); border-radius: 11px; background: rgba(8, 13, 12, .82); backdrop-filter: blur(14px); }
+.scout-controls label { display: grid; grid-template-columns: 1fr auto; gap: 4px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.scout-controls label output { color: var(--cyan); }
+.accent-two .scout-controls label output { color: var(--orange); }
+.scout-controls input { grid-column: 1 / -1; width: 100%; accent-color: var(--cyan); }
+.accent-two .scout-controls input { accent-color: var(--orange); }
+.scout-pad { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+.scout-pad button { min-width: 0; height: 37px; padding: 0; border: 1px solid var(--line); border-radius: 7px; background: rgba(255,255,255,.07); color: white; font: inherit; font-size: 16px; font-weight: 850; cursor: pointer; touch-action: none; }
+.scout-pad button.active { border-color: var(--cyan); background: var(--cyan); color: #07100f; }
+.accent-two .scout-pad button.active { border-color: var(--orange); background: var(--orange); }
+.scout-pad .scout-stop { color: #ff9d92; border-color: rgba(255,91,71,.4); }
 
 .toast { position: fixed; z-index: 10; left: 50%; bottom: 26px; transform: translate(-50%, 150%); padding: 12px 18px; border-radius: 999px; background: #ff5b47; color: white; font-size: 13px; font-weight: 750; transition: transform .2s ease; }
 .toast.show { transform: translate(-50%, 0); }
@@ -172,9 +183,10 @@ input[type="range"] { width: 100%; margin: 9px 0 15px; accent-color: var(--lime)
   .stop-button { padding: 8px; }
   .telemetry { left: 18px; right: 18px; bottom: 13px; }
   .compact { padding: 15px 18px; }
-  .placeholder { inset: 58px 18px 34px; }
-  .placeholder .camera-icon { width: 40px; height: 40px; margin-bottom: 6px; }
   .esp-panel .telemetry { left: 18px; right: 18px; bottom: 11px; }
+  .scout-controls { left: 12px; right: 12px; bottom: 31px; padding: 6px; gap: 7px; }
+  .scout-pad button { height: 31px; font-size: 14px; }
+  .scout-offline { inset: 55px 12px 78px; font-size: 11px; }
 }
 
 @media (max-width: 520px) {

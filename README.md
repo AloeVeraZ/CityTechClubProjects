@@ -40,8 +40,8 @@
   <tr>
     <td width="50%" align="center" valign="top">
       <h3>STEM Research Academy Robot Lab</h3>
-      <p>A Raspberry Pi hotspot and browser control station for one mecanum robot and two future ESP32 camera robots.</p>
-      <p><strong>Included:</strong> Mecanum motor control, C270 camera streaming, dashboard, hotspot setup, tests, and a rerunnable Pi installer.</p>
+      <p>A Raspberry Pi hotspot and browser control station for one mecanum robot and two ECHO differential-drive camera robots.</p>
+      <p><strong>Included:</strong> Mecanum control, ECHO scout firmware, C270 streaming, three-robot HUD, hotspot setup, tests, and a rerunnable Pi installer.</p>
       <p><a href="stem-research-academy/README.md"><strong>View the project</strong></a></p>
     </td>
   </tr>

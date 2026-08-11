@@ -44,48 +44,58 @@
     </section>
 
     <aside class="secondary-stack">
-      <section class="panel esp-panel">
-        {% if esp32_one_stream %}
-          <img class="video" src="{{ esp32_one_stream }}" alt="ESP32 robot one camera feed">
-        {% endif %}
+      <section class="panel esp-panel" data-scout-panel="a">
+        <img class="video scout-video" src="{{ esp32_one_stream }}" alt="ECHO Scout A camera feed">
         <div class="grid-backdrop"></div>
         <header class="panel-header compact">
           <div>
             <p class="eyebrow">Robot 02 · Differential</p>
-            <h2>ESP32 Scout A</h2>
+            <h2>ECHO Scout A</h2>
           </div>
-          <span class="status waiting"><i></i> Placeholder</span>
+          <span class="status waiting" id="scout-a-status"><i></i> Waiting</span>
         </header>
-        {% if not esp32_one_stream %}
-          <div class="placeholder">
-            <span class="camera-icon">◉</span>
-            <strong>Camera feed reserved</strong>
-            <p>Two-motor drive and video controls will appear here.</p>
+        <div class="scout-offline">
+          <span class="camera-icon">◉</span>
+          <strong>Camera awaiting scout</strong>
+        </div>
+        <div class="scout-controls" data-scout="a">
+          <label>Speed <output>35%</output><input type="range" min="10" max="70" value="35"></label>
+          <div class="scout-pad" aria-label="ECHO Scout A controls">
+            <button data-motion="left" aria-label="Scout A left">←</button>
+            <button data-motion="forward" aria-label="Scout A forward">↑</button>
+            <button class="scout-stop" data-motion="stop" aria-label="Stop Scout A">■</button>
+            <button data-motion="back" aria-label="Scout A backward">↓</button>
+            <button data-motion="right" aria-label="Scout A right">→</button>
           </div>
-        {% endif %}
-        <footer class="telemetry"><span>Future ESP32 endpoint</span><span>10.42.0.x</span></footer>
+        </div>
+        <footer class="telemetry"><span id="scout-a-motion">CSI idle</span><span>echo-scout-a.local</span></footer>
       </section>
 
-      <section class="panel esp-panel accent-two">
-        {% if esp32_two_stream %}
-          <img class="video" src="{{ esp32_two_stream }}" alt="ESP32 robot two camera feed">
-        {% endif %}
+      <section class="panel esp-panel accent-two" data-scout-panel="b">
+        <img class="video scout-video" src="{{ esp32_two_stream }}" alt="ECHO Scout B camera feed">
         <div class="grid-backdrop"></div>
         <header class="panel-header compact">
           <div>
             <p class="eyebrow">Robot 03 · Differential</p>
-            <h2>ESP32 Scout B</h2>
+            <h2>ECHO Scout B</h2>
           </div>
-          <span class="status waiting"><i></i> Placeholder</span>
+          <span class="status waiting" id="scout-b-status"><i></i> Waiting</span>
         </header>
-        {% if not esp32_two_stream %}
-          <div class="placeholder">
-            <span class="camera-icon">◉</span>
-            <strong>Camera feed reserved</strong>
-            <p>Two-motor drive and video controls will appear here.</p>
+        <div class="scout-offline">
+          <span class="camera-icon">◉</span>
+          <strong>Camera awaiting scout</strong>
+        </div>
+        <div class="scout-controls" data-scout="b">
+          <label>Speed <output>35%</output><input type="range" min="10" max="70" value="35"></label>
+          <div class="scout-pad" aria-label="ECHO Scout B controls">
+            <button data-motion="left" aria-label="Scout B left">←</button>
+            <button data-motion="forward" aria-label="Scout B forward">↑</button>
+            <button class="scout-stop" data-motion="stop" aria-label="Stop Scout B">■</button>
+            <button data-motion="back" aria-label="Scout B backward">↓</button>
+            <button data-motion="right" aria-label="Scout B right">→</button>
           </div>
-        {% endif %}
-        <footer class="telemetry"><span>Future ESP32 endpoint</span><span>10.42.0.x</span></footer>
+        </div>
+        <footer class="telemetry"><span id="scout-b-motion">CSI idle</span><span>echo-scout-b.local</span></footer>
       </section>
     </aside>
   </main>

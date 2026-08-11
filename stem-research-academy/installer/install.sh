@@ -62,9 +62,11 @@ if [ "${STEM_SKIP_OS_UPGRADE:-0}" != "1" ]; then
     apt_get full-upgrade -y
 fi
 apt_get install -y \
+    avahi-daemon \
     ca-certificates \
     curl \
     git \
+    libnss-mdns \
     network-manager \
     python3 \
     python3-flask \
@@ -131,8 +133,8 @@ if ! sudo test -f "$CONFIG_FILE"; then
     CONFIG_TEMP="$(mktemp)"
     cat > "$CONFIG_TEMP" <<'EOF'
 # This file survives application upgrades. Edit it, then reboot or restart services.
-HOTSPOT_SSID=tripletrobot
-HOTSPOT_PASSWORD=STEMRobotics
+HOTSPOT_SSID=EchoSwarm
+HOTSPOT_PASSWORD=roboswarm1
 WIFI_INTERFACE=wlan0
 HOTSPOT_ADDRESS=10.42.0.1/24
 HOTSPOT_CHANNEL=6
@@ -145,6 +147,8 @@ DRIVE_WATCHDOG_SECONDS=0.4
 ESP32_ONE_STREAM_URL=
 ESP32_TWO_STREAM_URL=
 KIOSK_URL=http://127.0.0.1:8080
+SCOUT_A_HOST=echo-scout-a.local
+SCOUT_B_HOST=echo-scout-b.local
 EOF
     sudo install -m 0600 "$CONFIG_TEMP" "$CONFIG_FILE"
     rm -f "$CONFIG_TEMP"
@@ -160,8 +164,8 @@ ensure_config_key() {
 }
 
 ensure_config_key KIOSK_URL "$KIOSK_URL"
-ensure_config_key HOTSPOT_SSID "tripletrobot"
-ensure_config_key HOTSPOT_PASSWORD "STEMRobotics"
+ensure_config_key HOTSPOT_SSID "EchoSwarm"
+ensure_config_key HOTSPOT_PASSWORD "roboswarm1"
 ensure_config_key WIFI_INTERFACE "wlan0"
 ensure_config_key HOTSPOT_ADDRESS "10.42.0.1/24"
 ensure_config_key HOTSPOT_CHANNEL "6"
@@ -173,11 +177,16 @@ ensure_config_key CAMERA_FPS "20"
 ensure_config_key DRIVE_WATCHDOG_SECONDS "0.4"
 ensure_config_key ESP32_ONE_STREAM_URL ""
 ensure_config_key ESP32_TWO_STREAM_URL ""
+ensure_config_key SCOUT_A_HOST "echo-scout-a.local"
+ensure_config_key SCOUT_B_HOST "echo-scout-b.local"
 
-# The requested Pi and hotspot name is installer-managed on every update.
-sudo sed -i -E 's/^HOTSPOT_SSID=.*/HOTSPOT_SSID=tripletrobot/' "$CONFIG_FILE"
+# Hotspot credentials are installer-managed so firmware and Pi stay in sync.
+sudo sed -i -E \
+    -e 's/^HOTSPOT_SSID=.*/HOTSPOT_SSID=EchoSwarm/' \
+    -e 's/^HOTSPOT_PASSWORD=.*/HOTSPOT_PASSWORD=roboswarm1/' \
+    "$CONFIG_FILE"
 sudo chmod 0600 "$CONFIG_FILE"
-sudo hostnamectl set-hostname tripletrobot
+sudo hostnamectl set-hostname echoswarm
 
 say "Installing the hotspot and dashboard services..."
 sudo install -m 0755 "$APP_DIR/installer/hotspot.sh" /usr/local/sbin/stem-robot-hotspot
@@ -194,6 +203,7 @@ sudo install -m 0644 \
 getent group gpio >/dev/null && sudo usermod -aG gpio "$APP_USER" || true
 getent group video >/dev/null && sudo usermod -aG video "$APP_USER" || true
 sudo systemctl enable NetworkManager.service
+sudo systemctl enable avahi-daemon.service
 sudo systemctl set-default graphical.target
 sudo systemctl enable lightdm.service 2>/dev/null || true
 sudo systemctl daemon-reload
@@ -263,19 +273,24 @@ say "Validating the server before enabling it..."
 sudo systemctl restart stem-robot-dashboard.service
 
 say "Installation complete."
-echo "Pi name: tripletrobot"
-echo "Hotspot name: tripletrobot"
-echo "Hotspot password remains unchanged because the requested 'triplet' is too short for WPA2."
+echo "Pi name: echoswarm"
+echo "Hotspot name: EchoSwarm"
+echo "Hotspot password: roboswarm1"
 echo "Dashboard: http://10.42.0.1:8080"
 echo "The hotspot starts at boot and can accept both ESP32 robots."
 echo "The attached Pi screen opens the same dashboard automatically in fullscreen mode."
-echo "The Pi will reboot in 10 seconds so group and network changes take effect."
-echo "Set STEM_NO_REBOOT=1 before running the installer to skip the automatic reboot."
+echo "The Pi will reboot automatically in 10 seconds."
 
-if [ "${STEM_NO_REBOOT:-0}" = "1" ]; then
-    say "Automatic reboot skipped. Run: sudo reboot"
+# A transient systemd timer survives this piped installer process exiting.
+# This is more reliable than sleeping inside `curl | bash` and then rebooting.
+sync
+if command -v systemd-run >/dev/null 2>&1; then
+    REBOOT_UNIT="stem-robot-installer-reboot-$(date +%s)"
+    sudo systemd-run \
+        --unit="$REBOOT_UNIT" \
+        --on-active=10s \
+        --timer-property=AccuracySec=1s \
+        "$(command -v systemctl)" reboot
 else
-    sync
-    sleep 10
-    sudo reboot
+    sudo shutdown -r +1 "STEM robot installation complete"
 fi

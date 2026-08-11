@@ -2,7 +2,7 @@
 
 # STEM Research Academy
 
-### One Raspberry Pi mecanum robot, two future ESP32 scout robots, and one shared control station
+### One Raspberry Pi mecanum robot, two ECHO differential-drive scouts, and one shared control station
 
 ![Raspberry Pi](https://img.shields.io/badge/controller-Raspberry%20Pi-C51A4A?logo=raspberrypi&logoColor=white)
 ![Python](https://img.shields.io/badge/server-Python-3776AB?logo=python&logoColor=white)
@@ -11,7 +11,7 @@
 
 </div>
 
-This research platform gives a team one browser dashboard for three robots. The Raspberry Pi creates its own Wi-Fi hotspot, hosts the website, streams a Logitech C270 webcam, and drives a four-wheel mecanum chassis. Two differential-drive ESP32 robots can join the hotspot; their camera and control panels are already reserved in the interface while their firmware is developed.
+This research platform gives a team one browser dashboard for three robots. The Raspberry Pi creates its own Wi-Fi hotspot, hosts the website, streams a Logitech C270 webcam, and drives a four-wheel mecanum chassis. Two identical ECHO-board differential-drive robots join the same hotspot and are controlled through the upper-right and lower-right HUD panels.
 
 ## Research team
 
@@ -27,7 +27,7 @@ The project is organized for **three mentors** and **two students**. Names can b
 
 ## Current capabilities
 
-- Creates the secured 2.4 GHz `tripletrobot` hotspot with NetworkManager.
+- Creates the secured 2.4 GHz `EchoSwarm` hotspot with NetworkManager.
 - Serves the dashboard at `http://10.42.0.1:8080`.
 - Opens the same dashboard automatically in a self-restarting fullscreen Chromium kiosk on the Pi display.
 - Auto-sizes the dashboard for the attached display, phones, tablets, and laptops.
@@ -35,7 +35,7 @@ The project is organized for **three mentors** and **two students**. Names can b
 - Drives forward/backward with W/S, strafes with A/D, and rotates with Q/E.
 - Stops immediately when drive keys are released, the browser loses focus, or Space is pressed.
 - Uses a server-side command watchdog to stop the motors if control messages disappear for 400 ms.
-- Reserves the upper-right and lower-right quarters for two future two-motor ESP32 robots.
+- Proxies status, CSI disturbance data, and fail-safe drive commands to both ECHO scouts.
 - Starts the hotspot and control server automatically after boot.
 - Uses a clean, rerunnable installer based on the TrainUI installation workflow.
 
@@ -43,11 +43,11 @@ The project is organized for **three mentors** and **two students**. Names can b
 
 ```text
 ┌──────────────────────────────┬──────────────────────────────┐
-│                              │ ESP32 Scout A                │
-│  Mecanum robot               │ Camera + controls reserved   │
+│                              │ ECHO Scout A                 │
+│  Mecanum robot               │ Camera + drive controls      │
 │  C270 feed + WASD controls   ├──────────────────────────────┤
-│                              │ ESP32 Scout B                │
-│                              │ Camera + controls reserved   │
+│                              │ ECHO Scout B                 │
+│                              │ Camera + drive controls      │
 └──────────────────────────────┴──────────────────────────────┘
              50%                           25% + 25%
 ```
@@ -63,15 +63,13 @@ curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main
 The installer requests `sudo` only for packages, networking, user groups, and system services. It then reboots. Connect a phone or computer to:
 
 ```text
-Wi-Fi network name (SSID): tripletrobot
-Wi-Fi password:            STEMRobotics
-Pi hostname:               tripletrobot
+Wi-Fi network name (SSID): EchoSwarm
+Wi-Fi password:            roboswarm1
+Pi hostname:               echoswarm
 Website:                   http://10.42.0.1:8080
 ```
 
 Wi-Fi uses a network name (SSID), not a username. The actual Raspberry Pi Linux login remains the normal account created in Raspberry Pi Imager; the installer does not rename that account because doing so can break its home directory, services, and SSH access.
-
-The requested password `triplet` cannot be used with this WPA2 hotspot because it contains seven characters; WPA2 requires 8–63 characters. The installer therefore keeps the existing working password instead of breaking hotspot startup. Once an eight-character-or-longer replacement is chosen, update `HOTSPOT_PASSWORD` in `/etc/stem-research-academy/config.env` and rerun the installer.
 
 Change the default password before demonstrations involving untrusted visitors.
 
@@ -90,13 +88,9 @@ Run the same `curl` command whenever the project should be updated. Every run:
 9. Reapplies auto-login, fullscreen, anti-blanking, and anti-sleep settings.
 10. Compiles the Python source and verifies Flask/OpenCV imports before rebooting.
 
-Persistent settings live outside the replaced folder at `/etc/stem-research-academy/config.env`, so hotspot credentials and future ESP32 camera URLs survive updates. If the installer is being tested without a reboot, use:
+Persistent hardware and camera settings live outside the replaced folder at `/etc/stem-research-academy/config.env`. The installer deliberately reapplies the documented `EchoSwarm` credentials on every update so the Pi and both flashed scouts cannot drift onto different network settings.
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/install.sh | STEM_NO_REBOOT=1 bash
-```
-
-The Pi needs an internet path while updating. Once `wlan0` is acting as the hotspot, use Ethernet or a second Wi-Fi adapter for internet access before rerunning the installer. Every rerun downloads a clean application copy, upgrades required packages, rebuilds the Python environment, migrates configuration keys, and regenerates the system and kiosk files, so it can repair an older installation as well as update a current one.
+The Pi needs an internet path while updating. Once `wlan0` is acting as the hotspot, use Ethernet or a second Wi-Fi adapter for internet access before rerunning the installer. Every rerun downloads a clean application copy, upgrades required packages, rebuilds the Python environment, migrates configuration keys, and regenerates the system and kiosk files, so it can repair an older installation as well as update a current one. At the end, a transient systemd timer schedules the reboot independently of the `curl | bash` process, making automatic reboot reliable after the terminal command exits.
 
 For recovery testing only, `STEM_SKIP_OS_UPGRADE=1` can be passed to `bash` to skip the full operating-system upgrade while still refreshing the application and its configuration:
 
@@ -144,22 +138,27 @@ An accessible hardware emergency stop or motor-power switch should still be used
 
 Multiple keys can be held for combined motion. The speed slider limits all four wheel outputs.
 
-## ESP32 placeholders
+## ECHO Scout firmware
 
-Both future robots are expected to use two motors for differential drive and a camera. The Pi hotspot already supplies DHCP addresses in `10.42.0.0/24`. Once their camera firmware exists, add the stream URLs to `/etc/stem-research-academy/config.env`:
+The shared Arduino sketch is [`firmware/echo-scout/ECHO_Robot_Controller.ino`](firmware/echo-scout/ECHO_Robot_Controller.ino). Flash one board with `ROBOT_ID = 'A'` and the other with `ROBOT_ID = 'B'`. Both join `EchoSwarm` in Wi-Fi station mode, start with their motors stopped, use ECHO motor channels 1 and 6 through EchoLib's `TankDriveTrain`, and advertise these addresses:
 
-```bash
-ESP32_ONE_STREAM_URL=http://10.42.0.20/stream
-ESP32_TWO_STREAM_URL=http://10.42.0.21/stream
+```text
+http://echo-scout-a.local
+http://echo-scout-b.local
 ```
 
-Then restart the dashboard:
+The Pi calls the scouts through same-origin proxy endpoints, so a phone only needs to open the main Pi dashboard. Each scout also serves a small independent touch UI for bench testing. Both layers use a 500 ms firmware watchdog; if commands stop arriving, the affected scout stops itself.
 
-```bash
-sudo systemctl restart stem-robot-dashboard
+The sketch exposes `/drive`, `/stop`, `/status`, and `/motion`. `/status` includes connection strength, stopped/running state, uptime, and the coarse CSI disturbance reading. Read the [firmware-specific guide](firmware/echo-scout/README.md) before the first wheels-up motor test.
+
+If separate ESP32-CAM boards are installed, the HUD expects:
+
+```text
+http://echo-scout-a-cam.local/stream
+http://echo-scout-b-cam.local/stream
 ```
 
-Motor-control endpoints for the ESP32 robots are intentionally not implemented yet.
+Those URLs can be overridden with `ESP32_ONE_STREAM_URL` and `ESP32_TWO_STREAM_URL` in `/etc/stem-research-academy/config.env`.
 
 ## Configuration and service commands
 

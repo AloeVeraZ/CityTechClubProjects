@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from robot_server.app import app, drive
 
@@ -36,8 +37,32 @@ class ServerTests(unittest.TestCase):
     def test_dashboard_renders_all_three_robots(self):
         response = self.client.get("/")
         self.assertIn(b"Chassis control", response.data)
-        self.assertIn(b"ESP32 Scout A", response.data)
-        self.assertIn(b"ESP32 Scout B", response.data)
+        self.assertIn(b"ECHO Scout A", response.data)
+        self.assertIn(b"ECHO Scout B", response.data)
+
+    @patch("robot_server.app._scout_request", return_value={"id": "A", "motion": False})
+    def test_scout_status_proxy(self, scout_request):
+        response = self.client.get("/api/scouts/a/status")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.get_json()["online"])
+        scout_request.assert_called_once_with("a", "/status")
+
+    @patch("robot_server.app._scout_request", return_value={"ok": True})
+    def test_scout_drive_proxy_clamps_values(self, scout_request):
+        response = self.client.post(
+            "/api/scouts/b/drive",
+            json={"x": 500, "y": -500, "speed": 35},
+        )
+        self.assertEqual(response.status_code, 200)
+        scout_request.assert_called_once_with(
+            "b", "/drive", {"x": 100, "y": -100, "speed": 35}
+        )
+
+    @patch("robot_server.app._scout_request", side_effect=OSError("offline"))
+    def test_offline_scout_status_is_safe(self, _scout_request):
+        response = self.client.get("/api/scouts/a/status")
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.get_json()["online"])
 
 
 if __name__ == "__main__":
