@@ -81,8 +81,8 @@ Run the same `curl` command whenever the project should be updated. Every run:
 
 1. Runs a complete Raspberry Pi OS upgrade, then installs current required packages.
 2. Downloads a clean copy of the latest `main` branch.
-3. Stops the old dashboard and preserves it as `~/STEMResearchAcademy.backup.TIMESTAMP`.
-4. Replaces `~/STEMResearchAcademy` with the fresh project files.
+3. Removes stale installer backups, cleans the APT cache, checks free space, and stops the old dashboard.
+4. Replaces `~/STEMResearchAcademy` with fresh project files while avoiding a duplicate virtual environment.
 5. Rebuilds the Python environment and upgrades its packages.
 6. Reinstalls and enables the hotspot and dashboard services.
 7. Installs or updates the compatible Chromium and Raspberry Pi desktop packages.

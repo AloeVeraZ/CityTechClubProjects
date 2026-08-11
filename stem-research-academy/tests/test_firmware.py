@@ -56,10 +56,17 @@ class EchoScoutFirmwareTests(unittest.TestCase):
         self.assertNotIn("STEM_NO_REBOOT", self.installer)
 
     def test_installer_avoids_git_index_pack_for_normal_github_updates(self):
-        self.assertIn("https://codeload.github.com/", self.installer)
-        self.assertIn('tar -tzf "$ARCHIVE_FILE"', self.installer)
-        self.assertIn("--strip-components=1", self.installer)
+        self.assertIn("https://api.github.com/repos/", self.installer)
+        self.assertIn("https://raw.githubusercontent.com/", self.installer)
+        self.assertIn("sparse-checkout set", self.installer)
+        self.assertIn("--filter=blob:none --no-checkout", self.installer)
         self.assertIn("core.compression=0", self.installer)
+
+    def test_installer_reclaims_its_own_stale_copies(self):
+        self.assertIn("prune_old_installations", self.installer)
+        self.assertIn('sudo apt-get clean', self.installer)
+        self.assertIn('rm -rf -- "$PREVIOUS_APP_DIR/.venv"', self.installer)
+        self.assertIn("At least 128 MB of free space", self.installer)
 
     def test_installer_uses_resizable_window_and_simple_dashboard_address(self):
         self.assertIn('nginx-light', self.installer)

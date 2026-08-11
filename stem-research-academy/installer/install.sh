@@ -13,6 +13,9 @@ TEMP_CHECKOUT=""
 AUTOSTART_DIR="$HOME/.config/autostart"
 LABWC_DIR="$HOME/.config/labwc"
 KIOSK_URL="http://127.0.0.1:8080"
+APP_PARENT="$(dirname "$APP_DIR")"
+APP_NAME="$(basename "$APP_DIR")"
+MIN_FREE_KB=131072
 
 say() { printf '\n\033[1;36m[STEM Robot Lab]\033[0m %s\n' "$*"; }
 fail() { printf '\n\033[1;31m[INSTALL ERROR]\033[0m %s\n' "$*" >&2; exit 1; }
@@ -49,10 +52,46 @@ apt_get() {
     done
 }
 
+prune_old_installations() {
+    local candidate resolved_parent resolved_candidate
+    resolved_parent="$(realpath -m "$APP_PARENT")"
+    if [ "$APP_NAME" = "." ] || [ "$APP_NAME" = "/" ] || [ "$resolved_parent" = "/" ]; then
+        fail "Unsafe application path: $APP_DIR"
+    fi
+    while IFS= read -r -d '' candidate; do
+        resolved_candidate="$(realpath -m "$candidate")"
+        case "$resolved_candidate" in
+            "$resolved_parent"/"$APP_NAME".backup.*|"$resolved_parent"/"$APP_NAME".previous)
+                say "Removing stale installer backup: $resolved_candidate"
+                rm -rf -- "$resolved_candidate"
+                ;;
+            *) fail "Refusing to remove unexpected backup path: $resolved_candidate" ;;
+        esac
+    done < <(
+        find "$resolved_parent" -mindepth 1 -maxdepth 1 -type d \
+            \( -name "$APP_NAME.backup.*" -o -name "$APP_NAME.previous" \) -print0
+    )
+}
+
+check_free_space() {
+    local available_kb
+    available_kb="$(df -Pk "$APP_PARENT" | awk 'END {print $4}')"
+    if [ -z "$available_kb" ] || [ "$available_kb" -lt "$MIN_FREE_KB" ]; then
+        df -h "$APP_PARENT" || true
+        fail "At least 128 MB of free space is required after cleanup. Remove unrelated files, then rerun the same command."
+    fi
+    say "Disk check passed: $((available_kb / 1024)) MB available."
+}
+
 if [ "$(id -u)" -eq 0 ]; then
     fail "Run this as the normal Raspberry Pi user, without sudo."
 fi
 command -v sudo >/dev/null 2>&1 || fail "sudo is required."
+
+say "Cleaning space left by earlier installer runs..."
+prune_old_installations
+sudo apt-get clean
+check_free_space
 
 say "Installing current Raspberry Pi OS packages..."
 apt_get update
@@ -105,36 +144,82 @@ else
     apt_get install -y python3-rpi.gpio
 fi
 
+# Package downloads are no longer needed after installation. Reclaim them
+# before creating the temporary project checkout and Python environment.
+sudo apt-get clean
+check_free_space
+
 say "Downloading a clean copy of the latest project..."
 TEMP_CHECKOUT="$(mktemp -d)"
 DOWNLOAD_ROOT=""
 
-# Git's index-pack can fail on a Pi because of a broken transfer or memory
-# pressure ("fetch-pack: invalid index-pack output"). GitHub's tar archive
-# contains the same branch files without invoking index-pack, so prefer it.
+# Download only this project directory. This avoids both Git index-pack errors
+# and the space cost of unrelated large files elsewhere in the monorepo.
 REPO_PATH="${REPO_URL#https://github.com/}"
 if [ "$REPO_PATH" != "$REPO_URL" ]; then
     REPO_PATH="${REPO_PATH%.git}"
-    ARCHIVE_URL="https://codeload.github.com/${REPO_PATH}/tar.gz/refs/heads/${REPO_BRANCH}"
-    ARCHIVE_FILE="$TEMP_CHECKOUT/project.tar.gz"
-    ARCHIVE_ROOT="$TEMP_CHECKOUT/archive-repository"
-    say "Downloading the branch archive (avoids Git pack corruption)..."
-    if curl -fL --retry 5 --retry-delay 2 --connect-timeout 20 \
-        "$ARCHIVE_URL" -o "$ARCHIVE_FILE" && \
-        tar -tzf "$ARCHIVE_FILE" >/dev/null; then
-        mkdir -p "$ARCHIVE_ROOT"
-        tar -xzf "$ARCHIVE_FILE" --strip-components=1 -C "$ARCHIVE_ROOT"
-        DOWNLOAD_ROOT="$ARCHIVE_ROOT"
+    API_ROOT="$TEMP_CHECKOUT/api-repository"
+    say "Downloading only $SOURCE_SUBDIR from GitHub..."
+    if python3 - "$REPO_PATH" "$REPO_BRANCH" "$SOURCE_SUBDIR" "$API_ROOT" <<'PY'
+import json
+import pathlib
+import sys
+import time
+import urllib.parse
+import urllib.request
+
+repo, branch, source_subdir, destination = sys.argv[1:]
+headers = {"User-Agent": "STEM-Research-Academy-Installer"}
+
+def download(url, attempts=5):
+    last_error = None
+    for attempt in range(attempts):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=30) as response:
+                return response.read()
+        except Exception as error:
+            last_error = error
+            if attempt + 1 < attempts:
+                time.sleep(2)
+    raise last_error
+
+ref = urllib.parse.quote(branch, safe="")
+tree_url = f"https://api.github.com/repos/{repo}/git/trees/{ref}?recursive=1"
+tree = json.loads(download(tree_url))
+if tree.get("truncated"):
+    raise RuntimeError("GitHub returned a truncated repository tree")
+
+prefix = source_subdir.rstrip("/") + "/"
+files = [entry["path"] for entry in tree.get("tree", []) if entry.get("type") == "blob" and entry["path"].startswith(prefix)]
+if not files:
+    raise RuntimeError(f"{source_subdir} was not found in {repo}@{branch}")
+
+root = pathlib.Path(destination).resolve()
+for path in files:
+    target = (root / path).resolve()
+    if root not in target.parents:
+        raise RuntimeError(f"Unsafe repository path: {path}")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    raw_path = urllib.parse.quote(path, safe="/")
+    raw_branch = urllib.parse.quote(branch, safe="")
+    target.write_bytes(download(f"https://raw.githubusercontent.com/{repo}/{raw_branch}/{raw_path}"))
+print(f"Downloaded {len(files)} project files.")
+PY
+    then
+        DOWNLOAD_ROOT="$API_ROOT"
     else
-        say "Archive download failed validation; trying a low-memory Git clone..."
+        say "Directory download failed; trying a sparse low-memory Git clone..."
     fi
 fi
 
 if [ -z "$DOWNLOAD_ROOT" ]; then
     GIT_ROOT="$TEMP_CHECKOUT/git-repository"
     git -c http.version=HTTP/1.1 -c core.compression=0 clone \
-        --depth 1 --filter=blob:none --branch "$REPO_BRANCH" --single-branch \
+        --depth 1 --filter=blob:none --no-checkout --branch "$REPO_BRANCH" --single-branch \
         "$REPO_URL" "$GIT_ROOT"
+    git -C "$GIT_ROOT" sparse-checkout init --cone
+    git -C "$GIT_ROOT" sparse-checkout set "$SOURCE_SUBDIR"
+    git -C "$GIT_ROOT" checkout "$REPO_BRANCH"
     DOWNLOAD_ROOT="$GIT_ROOT"
 fi
 
@@ -145,9 +230,14 @@ python3 -m compileall -q "$FRESH_SOURCE/robot_server" "$FRESH_SOURCE/run.py"
 sudo systemctl stop stem-robot-dashboard.service 2>/dev/null || true
 
 if [ -e "$APP_DIR" ]; then
-    BACKUP_DIR="${APP_DIR}.backup.$(date +%Y%m%d-%H%M%S).$$"
-    say "Preserving the previous installation at $BACKUP_DIR"
-    mv "$APP_DIR" "$BACKUP_DIR"
+    PREVIOUS_APP_DIR="${APP_DIR}.previous"
+    say "Replacing the previous installation..."
+    mv "$APP_DIR" "$PREVIOUS_APP_DIR"
+    # The isolated environment is reproducible and is the largest part of an
+    # installation. Do not duplicate it while constructing the replacement.
+    if [ -d "$PREVIOUS_APP_DIR/.venv" ]; then
+        rm -rf -- "$PREVIOUS_APP_DIR/.venv"
+    fi
 fi
 
 mkdir -p "$APP_DIR"
@@ -331,6 +421,10 @@ say "Validating the server before enabling it..."
 "$VENV_DIR/bin/python" -m compileall -q "$APP_DIR/robot_server" "$APP_DIR/run.py"
 "$VENV_DIR/bin/python" -c 'import flask; import cv2; print("Flask and OpenCV imports passed.")'
 sudo systemctl restart stem-robot-dashboard.service
+
+if [ -n "${PREVIOUS_APP_DIR:-}" ] && [ -d "$PREVIOUS_APP_DIR" ]; then
+    rm -rf -- "$PREVIOUS_APP_DIR"
+fi
 
 say "Installation complete."
 echo "Pi name: echoswarm"
