@@ -3,8 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="server-time-ms" content="{{ server_time_ms }}">
   <title>STEM Research Academy Robot Lab</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css', v=3) }}">
 </head>
 <body>
   <main class="dashboard">
@@ -101,6 +102,6 @@
   </main>
   <button class="kill-all" id="kill-all" type="button">Kill all robots · Esc</button>
   <div class="toast" id="toast" role="status">Controls disconnected — motors stopped</div>
-  <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+  <script src="{{ url_for('static', filename='dashboard.js', v=3) }}"></script>
 </body>
 </html>

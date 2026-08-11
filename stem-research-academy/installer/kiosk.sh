@@ -47,6 +47,12 @@ while true; do
         --disable-infobars \
         --disable-session-crashed-bubble \
         --disable-component-update \
+        --disable-background-networking \
+        --disable-sync \
+        --disable-translate \
+        --disable-features=MediaRouter \
+        --disk-cache-size=1 \
+        --media-cache-size=1 \
         --disable-pinch \
         --overscroll-history-navigation=0 \
         --password-store=basic \

@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from robot_server.motor import MecanumDrive
 
@@ -6,15 +7,17 @@ from robot_server.motor import MecanumDrive
 class FakePWM:
     def __init__(self):
         self.duty = None
+        self.running = False
 
     def start(self, duty):
         self.duty = duty
+        self.running = True
 
     def ChangeDutyCycle(self, duty):
         self.duty = duty
 
     def stop(self):
-        pass
+        self.running = False
 
 
 class FakeGPIO:
@@ -70,7 +73,18 @@ class MecanumMixTests(unittest.TestCase):
         for forward_pin in (5, 16, 20, 13):
             self.assertEqual(gpio.pwms[forward_pin].duty, 75)
         for reverse_pin in (6, 19, 21, 26):
-            self.assertEqual(gpio.pwms[reverse_pin].duty, 0)
+            self.assertFalse(gpio.pwms[reverse_pin].running)
+        self.assertEqual(sum(pwm.running for pwm in gpio.pwms.values()), 4)
+        drive.close()
+
+    def test_full_reversal_uses_one_shared_deadtime(self):
+        gpio = FakeGPIO()
+        drive = MecanumDrive(gpio_module=gpio)
+        drive.drive(1, 0, 0, 0.75)
+        with patch("robot_server.motor.time.sleep") as sleep:
+            drive.drive(-1, 0, 0, 0.75)
+        sleep.assert_called_once_with(0.015)
+        self.assertEqual(sum(pwm.running for pwm in gpio.pwms.values()), 4)
         drive.close()
 
 

@@ -1,3 +1,4 @@
+import time
 import unittest
 from unittest.mock import patch
 
@@ -14,6 +15,11 @@ class ServerTests(unittest.TestCase):
         drive_sequences.clear()
         scout_sequences.clear()
 
+    @staticmethod
+    def current_command(**values):
+        values["expires_at_ms"] = round(time.time() * 1000) + 1000
+        return values
+
     def test_health(self):
         response = self.client.get("/healthz")
         self.assertEqual(response.status_code, 200)
@@ -22,27 +28,48 @@ class ServerTests(unittest.TestCase):
     def test_drive_command(self):
         response = self.client.post(
             "/api/drive",
-            json={"forward": 1, "strafe": 0, "rotate": 0, "speed": 0.5},
+            json=self.current_command(forward=1, strafe=0, rotate=0, speed=0.5),
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(drive.last_command["forward"], 1)
         self.assertEqual(drive.last_command["speed"], 0.5)
 
     def test_invalid_drive_command(self):
-        response = self.client.post("/api/drive", json={"forward": "fast"})
+        response = self.client.post("/api/drive", json=self.current_command(forward="fast"))
         self.assertEqual(response.status_code, 400)
 
     def test_stale_big_robot_command_is_ignored(self):
-        self.client.post("/api/drive", json={"forward": 0, "session": "test", "sequence": 2})
+        self.client.post(
+            "/api/drive",
+            json=self.current_command(forward=0, session="test", sequence=2),
+        )
         response = self.client.post(
-            "/api/drive", json={"forward": 1, "session": "test", "sequence": 1}
+            "/api/drive",
+            json=self.current_command(forward=1, session="test", sequence=1),
         )
         self.assertTrue(response.get_json()["stale"])
         self.assertEqual(drive.last_command["forward"], 0)
 
     def test_non_finite_drive_command(self):
-        response = self.client.post("/api/drive", json={"forward": "NaN"})
+        response = self.client.post("/api/drive", json=self.current_command(forward="NaN"))
         self.assertEqual(response.status_code, 400)
+
+    def test_expired_big_robot_command_cannot_replay(self):
+        drive.drive(1, 0, 0, 0.5)
+        response = self.client.post(
+            "/api/drive", json={"forward": 1, "expires_at_ms": 1}
+        )
+        self.assertEqual(response.status_code, 409)
+        self.assertTrue(response.get_json()["expired"])
+        self.assertEqual(drive.last_command["forward"], 0)
+
+    def test_implausible_future_command_is_rejected(self):
+        response = self.client.post(
+            "/api/drive",
+            json={"forward": 1, "expires_at_ms": round(time.time() * 1000) + 60_000},
+        )
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(drive.last_command["forward"], 0)
 
     def test_dashboard_renders_all_three_robots(self):
         response = self.client.get("/")
@@ -52,17 +79,19 @@ class ServerTests(unittest.TestCase):
 
     @patch("robot_server.app._scout_request", return_value={"id": "A", "motion": False})
     def test_scout_status_proxy(self, scout_request):
-        response = self.client.get("/api/scouts/a/status")
+        with patch("robot_server.app.scout_registry.snapshot", return_value={"ip": "10.42.0.20"}):
+            response = self.client.get("/api/scouts/a/status")
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.get_json()["online"])
         scout_request.assert_called_once_with("a", "/status")
 
     @patch("robot_server.app._scout_request", return_value={"ok": True})
     def test_scout_drive_proxy_clamps_values(self, scout_request):
-        response = self.client.post(
-            "/api/scouts/b/drive",
-            json={"x": 500, "y": -500, "speed": 35},
-        )
+        with patch("robot_server.app.scout_registry.snapshot", return_value={"ip": "10.42.0.21"}):
+            response = self.client.post(
+                "/api/scouts/b/drive",
+                json=self.current_command(x=500, y=-500, speed=35),
+            )
         self.assertEqual(response.status_code, 200)
         scout_request.assert_called_once_with(
             "b", "/drive", {"x": 100, "y": -100, "speed": 35}
@@ -70,22 +99,32 @@ class ServerTests(unittest.TestCase):
 
     @patch("robot_server.app._scout_request", return_value={"ok": True})
     def test_stale_scout_command_is_not_forwarded(self, scout_request):
-        self.client.post(
-            "/api/scouts/a/drive",
-            json={"x": 0, "y": 0, "session": "test", "sequence": 2},
-        )
-        response = self.client.post(
-            "/api/scouts/a/drive",
-            json={"x": 0, "y": 100, "session": "test", "sequence": 1},
-        )
+        with patch("robot_server.app.scout_registry.snapshot", return_value={"ip": "10.42.0.20"}):
+            self.client.post(
+                "/api/scouts/a/drive",
+                json=self.current_command(x=0, y=0, session="test", sequence=2),
+            )
+            response = self.client.post(
+                "/api/scouts/a/drive",
+                json=self.current_command(x=0, y=100, session="test", sequence=1),
+            )
         self.assertTrue(response.get_json()["stale"])
         self.assertEqual(scout_request.call_count, 1)
 
-    @patch("robot_server.app._scout_request", side_effect=OSError("offline"))
-    def test_offline_scout_status_is_safe(self, _scout_request):
+    @patch("robot_server.app._scout_request", side_effect=OSError("must not be called"))
+    def test_offline_scout_status_is_safe(self, scout_request):
         response = self.client.get("/api/scouts/a/status")
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.get_json()["online"])
+        scout_request.assert_not_called()
+
+    @patch("robot_server.app._scout_request", side_effect=OSError("must not be called"))
+    def test_offline_scout_drive_fails_fast(self, scout_request):
+        response = self.client.post(
+            "/api/scouts/a/drive", json=self.current_command(x=0, y=100)
+        )
+        self.assertEqual(response.status_code, 409)
+        scout_request.assert_not_called()
 
 
 if __name__ == "__main__":

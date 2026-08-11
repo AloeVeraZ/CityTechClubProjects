@@ -8,6 +8,8 @@
   const host = document.querySelector('#host');
   const toast = document.querySelector('#toast');
   const session = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+  const initialServerTime = Number(document.querySelector('meta[name="server-time-ms"]')?.content);
+  let serverClockOffset = Number.isFinite(initialServerTime) ? initialServerTime - Date.now() : 0;
   let bigSequence = 0;
   let lastVector = '';
   const scoutSequences = {a: 0, b: 0};
@@ -20,6 +22,67 @@
     '1,0,0': 'Moving forward', '-1,0,0': 'Moving backward',
     '0,1,0': 'Strafing left', '0,-1,0': 'Strafing right',
     '0,0,1': 'Rotating left', '0,0,-1': 'Rotating right', '0,0,0': 'Standing by'
+  };
+
+  // At most one request per robot may be active. If input changes while that
+  // request is running, only the newest command is retained. An urgent stop
+  // aborts the active fetch and goes to the front immediately.
+  function createLatestChannel(url, onFailure = () => {}) {
+    let active = null;
+    let pending = null;
+    let generation = 0;
+
+    async function pump() {
+      if (active || !pending) return;
+      const payload = pending;
+      pending = null;
+      const controller = new AbortController();
+      const currentGeneration = ++generation;
+      active = {controller, generation: currentGeneration};
+      const timeout = window.setTimeout(() => controller.abort(), 180);
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload),
+          cache: 'no-store',
+          signal: controller.signal
+        });
+        if (!response.ok && response.status !== 409) throw new Error(`request failed: ${response.status}`);
+      } catch (error) {
+        if (error.name !== 'AbortError') onFailure(error);
+      } finally {
+        window.clearTimeout(timeout);
+        if (active?.generation === currentGeneration) active = null;
+        if (pending) pump();
+      }
+    }
+
+    return (payload, urgent = false) => {
+      pending = payload;
+      if (urgent && active) {
+        active.controller.abort();
+        active = null;
+      }
+      pump();
+    };
+  }
+
+  function commandTiming() {
+    const issuedAt = Math.round(Date.now() + serverClockOffset);
+    return {issued_at_ms: issuedAt, expires_at_ms: issuedAt + 300};
+  }
+
+  function showControlFailure() {
+    status.classList.add('offline');
+    status.innerHTML = '<i></i> Control delayed';
+    showToast('Command link delayed - watchdog stopped the motors');
+  }
+
+  const queueBig = createLatestChannel('/api/drive', showControlFailure);
+  const queueScouts = {
+    a: createLatestChannel('/api/scouts/a/drive'),
+    b: createLatestChannel('/api/scouts/b/drive')
   };
 
   function bigVector() {
@@ -35,27 +98,14 @@
     document.querySelectorAll('[data-key]').forEach(key => key.classList.toggle('active', bigPressed.has(key.dataset.key)));
   }
 
-  async function sendBig(force = false, override = null) {
+  function sendBig(force = false, override = null, urgent = false) {
     const command = override || bigVector();
     const signature = JSON.stringify(command);
     const moving = command.forward || command.strafe || command.rotate;
     if (!force && !moving && signature === lastVector) return;
     lastVector = signature;
-    const sequence = ++bigSequence;
     direction.textContent = labels[`${command.forward},${command.strafe},${command.rotate}`] || 'Combined movement';
-    try {
-      const response = await fetch('/api/drive', {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({...command, session, sequence}), cache: 'no-store', keepalive: !moving
-      });
-      if (!response.ok) throw new Error('drive request failed');
-      status.classList.remove('offline');
-      status.innerHTML = '<i></i> Pi online';
-    } catch (_) {
-      status.classList.add('offline');
-      status.innerHTML = '<i></i> Disconnected';
-      showToast('Control link lost - motors stopped');
-    }
+    queueBig({...command, session, sequence: ++bigSequence, ...commandTiming()}, urgent);
   }
 
   function killBig(show = false) {
@@ -63,7 +113,7 @@
     renderKeys();
     direction.textContent = 'Big robot stopped';
     lastVector = '';
-    sendBig(true, {forward: 0, strafe: 0, rotate: 0, speed: 0}).catch(() => {});
+    sendBig(true, {forward: 0, strafe: 0, rotate: 0, speed: 0}, true);
     if (show) showToast('Big robot kill switch activated');
   }
 
@@ -89,17 +139,17 @@
     return 'stop';
   }
 
-  async function sendScout(id, motion) {
+  function sendScout(id, motion, urgent = false) {
     const controls = document.querySelector(`[data-scout="${id}"]`);
     const vector = scoutMotion[motion] || scoutMotion.stop;
     const speedLimit = Number(controls.querySelector('input').value);
-    const sequence = ++scoutSequences[id];
-    const response = await fetch(`/api/scouts/${id}/drive`, {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({...vector, speed: speedLimit, session, sequence}),
-      cache: 'no-store', keepalive: motion === 'stop'
-    });
-    if (!response.ok) throw new Error('scout unavailable');
+    queueScouts[id]({
+      ...vector,
+      speed: speedLimit,
+      session,
+      sequence: ++scoutSequences[id],
+      ...commandTiming()
+    }, urgent);
   }
 
   function renderScoutButtons(id, motion = activeScoutMotion(id)) {
@@ -111,7 +161,7 @@
   function killScout(id, show = false) {
     scoutPressed[id].clear();
     renderScoutButtons(id, 'stop');
-    sendScout(id, 'stop').catch(() => {});
+    sendScout(id, 'stop', true);
     if (show) showToast(`ECHO Scout ${id.toUpperCase()} kill switch activated`);
   }
 
@@ -153,7 +203,7 @@
       if (event.repeat) return;
       scoutPressed[id].add(motion);
       renderScoutButtons(id);
-      sendScout(id, activeScoutMotion(id)).catch(() => {});
+      sendScout(id, activeScoutMotion(id));
       return;
     }
   });
@@ -164,7 +214,7 @@
       event.preventDefault();
       bigPressed.delete(key);
       renderKeys();
-      sendBig(true);
+      sendBig(true, null, bigPressed.size === 0);
       return;
     }
     for (const id of ['a', 'b']) {
@@ -173,7 +223,8 @@
       event.preventDefault();
       scoutPressed[id].delete(motion);
       renderScoutButtons(id);
-      sendScout(id, activeScoutMotion(id)).catch(() => {});
+      const nextMotion = activeScoutMotion(id);
+      sendScout(id, nextMotion, nextMotion === 'stop');
       return;
     }
   });
@@ -201,22 +252,29 @@
         button.setPointerCapture?.(event.pointerId);
         scoutPressed[id].add(motion);
         renderScoutButtons(id);
-        sendScout(id, activeScoutMotion(id)).catch(() => {});
+        sendScout(id, activeScoutMotion(id));
       });
       ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type => button.addEventListener(type, () => {
         scoutPressed[id].delete(motion);
         renderScoutButtons(id);
-        sendScout(id, activeScoutMotion(id)).catch(() => {});
+        const nextMotion = activeScoutMotion(id);
+        sendScout(id, nextMotion, nextMotion === 'stop');
       }));
     });
   });
 
   async function refreshStatus() {
+    const requestStartedAt = Date.now();
     try {
       const response = await fetch('/api/status', {cache: 'no-store'});
       const data = await response.json();
-      status.classList.remove('offline');
-      status.innerHTML = `<i></i> Pi ${data.gpio === 'hardware' ? 'online' : 'simulation'}`;
+      const responseReceivedAt = Date.now();
+      if (Number.isFinite(data.server_time_ms)) {
+        serverClockOffset = data.server_time_ms - ((requestStartedAt + responseReceivedAt) / 2);
+      }
+      const hardwareReady = data.gpio === 'hardware';
+      status.classList.toggle('offline', !hardwareReady);
+      status.innerHTML = `<i></i> ${hardwareReady ? 'Pi controls ready' : 'GPIO unavailable - motors disabled'}`;
       host.textContent = `${data.hostname} / ${location.host}`;
     } catch (_) {
       status.classList.add('offline');
@@ -250,12 +308,14 @@
     }
   }
 
-  window.setInterval(() => { if (bigPressed.size) sendBig(true); }, 60);
+  // These are safety heartbeats, not a request flood: each channel retains
+  // only its latest command and never builds a queue.
+  window.setInterval(() => { if (bigPressed.size) sendBig(true); }, 80);
   window.setInterval(() => {
-    for (const id of ['a', 'b']) if (scoutPressed[id].size) sendScout(id, activeScoutMotion(id)).catch(() => {});
-  }, 80);
+    for (const id of ['a', 'b']) if (scoutPressed[id].size) sendScout(id, activeScoutMotion(id));
+  }, 100);
   window.setInterval(refreshStatus, 3000);
-  window.setInterval(() => { refreshScout('a'); refreshScout('b'); }, 1000);
+  window.setInterval(() => { refreshScout('a'); refreshScout('b'); }, 2000);
   refreshStatus();
   refreshScout('a');
   refreshScout('b');

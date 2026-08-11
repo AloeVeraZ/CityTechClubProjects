@@ -143,8 +143,8 @@ PORT=8080
 CAMERA_DEVICE=/dev/video0
 CAMERA_WIDTH=640
 CAMERA_HEIGHT=480
-CAMERA_FPS=12
-DRIVE_WATCHDOG_SECONDS=0.25
+CAMERA_FPS=10
+DRIVE_WATCHDOG_SECONDS=0.20
 ESP32_ONE_STREAM_URL=
 ESP32_TWO_STREAM_URL=
 KIOSK_URL=http://127.0.0.1:8080
@@ -174,8 +174,8 @@ ensure_config_key PORT "8080"
 ensure_config_key CAMERA_DEVICE "/dev/video0"
 ensure_config_key CAMERA_WIDTH "640"
 ensure_config_key CAMERA_HEIGHT "480"
-ensure_config_key CAMERA_FPS "12"
-ensure_config_key DRIVE_WATCHDOG_SECONDS "0.25"
+ensure_config_key CAMERA_FPS "10"
+ensure_config_key DRIVE_WATCHDOG_SECONDS "0.20"
 ensure_config_key ESP32_ONE_STREAM_URL ""
 ensure_config_key ESP32_TWO_STREAM_URL ""
 ensure_config_key SCOUT_A_HOST "echo-scout-a.local"
@@ -187,8 +187,8 @@ sudo sed -i -E \
     -e 's/^HOTSPOT_PASSWORD=.*/HOTSPOT_PASSWORD=roboswarm1/' \
     -e 's/^CAMERA_WIDTH=.*/CAMERA_WIDTH=640/' \
     -e 's/^CAMERA_HEIGHT=.*/CAMERA_HEIGHT=480/' \
-    -e 's/^CAMERA_FPS=.*/CAMERA_FPS=12/' \
-    -e 's/^DRIVE_WATCHDOG_SECONDS=.*/DRIVE_WATCHDOG_SECONDS=0.25/' \
+    -e 's/^CAMERA_FPS=.*/CAMERA_FPS=10/' \
+    -e 's/^DRIVE_WATCHDOG_SECONDS=.*/DRIVE_WATCHDOG_SECONDS=0.20/' \
     "$CONFIG_FILE"
 sudo chmod 0600 "$CONFIG_FILE"
 sudo hostnamectl set-hostname echoswarm

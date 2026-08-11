@@ -51,8 +51,8 @@ class EchoScoutFirmwareTests(unittest.TestCase):
     def test_installer_uses_resizable_window_and_simple_dashboard_address(self):
         self.assertIn('nginx-light', self.installer)
         self.assertIn('listen 80 default_server', self.installer)
-        self.assertIn('CAMERA_FPS=12', self.installer)
-        self.assertIn('DRIVE_WATCHDOG_SECONDS=0.25', self.installer)
+        self.assertIn('CAMERA_FPS=10', self.installer)
+        self.assertIn('DRIVE_WATCHDOG_SECONDS=0.20', self.installer)
         self.assertNotIn('fullscreen robot dashboard', self.installer)
 
 

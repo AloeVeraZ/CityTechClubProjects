@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import atexit
 import json
+import logging
 import math
 import os
 import socket
@@ -20,13 +21,17 @@ from .motor import MecanumDrive
 from .scouts import ScoutRegistry
 
 
-WATCHDOG_SECONDS = float(os.environ.get("DRIVE_WATCHDOG_SECONDS", "0.25"))
+# Drive heartbeats are intentionally frequent and must not flood journald.
+# Warnings, tracebacks, and explicit application errors remain visible.
+logging.getLogger("werkzeug").setLevel(logging.WARNING)
+
+WATCHDOG_SECONDS = float(os.environ.get("DRIVE_WATCHDOG_SECONDS", "0.20"))
 drive = MecanumDrive()
 camera = CameraStream(
     device=os.environ.get("CAMERA_DEVICE", "/dev/video0"),
     width=int(os.environ.get("CAMERA_WIDTH", "640")),
     height=int(os.environ.get("CAMERA_HEIGHT", "480")),
-    fps=int(os.environ.get("CAMERA_FPS", "12")),
+    fps=int(os.environ.get("CAMERA_FPS", "10")),
 )
 last_drive_at = 0.0
 state_lock = threading.Lock()
@@ -56,13 +61,21 @@ def _scout_request(scout_id: str, path: str, query: dict | None = None) -> dict:
     suffix = f"?{urllib.parse.urlencode(query)}" if query else ""
     host = scout_registry.host_for(scout_id, scout["host"])
     url = f"http://{host}{path}{suffix}"
-    with urllib.request.urlopen(url, timeout=0.45) as response:
+    with urllib.request.urlopen(url, timeout=0.20) as response:
         body = response.read(8192).decode("utf-8")
     return json.loads(body) if body else {"ok": True}
 
 
 def create_app() -> Flask:
     app = Flask(__name__)
+    app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+
+    @app.after_request
+    def prevent_stale_dashboard(response):
+        if request.endpoint != "camera_feed":
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+        return response
 
     @app.get("/")
     def index():
@@ -70,6 +83,7 @@ def create_app() -> Flask:
             "index.html",
             esp32_one_stream=SCOUTS["a"]["camera"],
             esp32_two_stream=SCOUTS["b"]["camera"],
+            server_time_ms=round(time.time() * 1000),
         )
 
     @app.get("/camera.mjpg")
@@ -85,6 +99,7 @@ def create_app() -> Flask:
             camera_available=camera.available,
             camera_error=camera.error,
             command=drive.last_command,
+            server_time_ms=round(time.time() * 1000),
         )
 
     @app.post("/api/drive")
@@ -98,8 +113,17 @@ def create_app() -> Flask:
             speed = float(payload.get("speed", 0.75))
             sequence = int(payload.get("sequence", 0))
             session = str(payload.get("session", "legacy"))[:64]
+            expires_at_ms = int(payload["expires_at_ms"])
         except (TypeError, ValueError):
             return jsonify(error="Drive values must be numbers"), 400
+        except KeyError:
+            return jsonify(error="Current control protocol required", expired=True), 409
+        server_now_ms = round(time.time() * 1000)
+        if expires_at_ms < server_now_ms or expires_at_ms > server_now_ms + 1000:
+            with state_lock:
+                drive.stop()
+                last_drive_at = 0
+            return jsonify(ok=True, expired=True, sequence=sequence), 409
         with state_lock:
             if sequence and sequence <= drive_sequences.get(session, -1):
                 return jsonify(ok=True, stale=True, sequence=sequence)
@@ -116,7 +140,10 @@ def create_app() -> Flask:
 
     @app.post("/api/stop")
     def command_stop():
-        drive.stop()
+        global last_drive_at
+        with state_lock:
+            drive.stop()
+            last_drive_at = 0
         return jsonify(ok=True)
 
     @app.get("/api/scouts/<scout_id>/status")
@@ -124,6 +151,14 @@ def create_app() -> Flask:
         if scout_id not in SCOUTS:
             return jsonify(error="Unknown scout"), 404
         heartbeat = scout_registry.snapshot(scout_id)
+        if heartbeat is None:
+            return jsonify(
+                online=False,
+                connected=False,
+                name=SCOUTS[scout_id]["name"],
+                host=SCOUTS[scout_id]["host"],
+                heartbeat=None,
+            )
         try:
             status_data = _scout_request(scout_id, "/status")
             status_data["online"] = True
@@ -146,16 +181,23 @@ def create_app() -> Flask:
         if scout_id not in SCOUTS:
             return jsonify(error="Unknown scout"), 404
         payload = request.get_json(silent=True) or {}
+        heartbeat = scout_registry.snapshot(scout_id)
+        if heartbeat is None:
+            return jsonify(error=f"{SCOUTS[scout_id]['name']} has no current heartbeat"), 409
         try:
             x = float(payload.get("x", 0))
             y = float(payload.get("y", 0))
             speed = float(payload.get("speed", 35))
             sequence = int(payload.get("sequence", 0))
             session = str(payload.get("session", "legacy"))[:64]
+            expires_at_ms = int(payload["expires_at_ms"])
             if not all(math.isfinite(value) for value in (x, y, speed)):
                 raise ValueError
-        except (TypeError, ValueError):
+        except (KeyError, TypeError, ValueError):
             return jsonify(error="Scout drive values must be finite numbers"), 400
+        server_now_ms = round(time.time() * 1000)
+        if expires_at_ms < server_now_ms or expires_at_ms > server_now_ms + 1000:
+            return jsonify(ok=True, expired=True, sequence=sequence), 409
         query = {
             "x": round(max(-100, min(100, x))),
             "y": round(max(-100, min(100, y))),
@@ -180,6 +222,8 @@ def create_app() -> Flask:
     def scout_stop(scout_id: str):
         if scout_id not in SCOUTS:
             return jsonify(error="Unknown scout"), 404
+        if scout_registry.snapshot(scout_id) is None:
+            return jsonify(ok=True, connected=False)
         try:
             result = _scout_request(scout_id, "/stop")
             return jsonify(result)
@@ -200,8 +244,7 @@ def _watchdog() -> None:
             expired = last_drive_at and time.monotonic() - last_drive_at > WATCHDOG_SECONDS
             if expired:
                 last_drive_at = 0
-        if expired:
-            drive.stop()
+                drive.stop()
 
 
 def cleanup() -> None:

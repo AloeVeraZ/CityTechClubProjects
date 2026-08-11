@@ -32,33 +32,36 @@ class _Motor:
             gpio.setup(pin, gpio.OUT, initial=gpio.LOW)
         self.forward_pwm = gpio.PWM(pins.forward, frequency)
         self.reverse_pwm = gpio.PWM(pins.reverse, frequency)
-        self.forward_pwm.start(0)
-        self.reverse_pwm.start(0)
+        self._active_pwm = None
         self._direction = 0
 
     def set(self, value: float) -> None:
         duty = min(100.0, abs(value) * 100.0)
         direction = 1 if value > 0 else -1 if value < 0 else 0
-        if direction and self._direction and direction != self._direction:
-            # Briefly remove power before reversing to protect the H-bridge.
-            self.forward_pwm.ChangeDutyCycle(0)
-            self.reverse_pwm.ChangeDutyCycle(0)
-            time.sleep(0.015)
-        if value > 0:
-            self.reverse_pwm.ChangeDutyCycle(0)
-            self.forward_pwm.ChangeDutyCycle(duty)
-        elif value < 0:
-            self.forward_pwm.ChangeDutyCycle(0)
-            self.reverse_pwm.ChangeDutyCycle(duty)
-        else:
-            self.forward_pwm.ChangeDutyCycle(0)
-            self.reverse_pwm.ChangeDutyCycle(0)
+        target_pwm = self.forward_pwm if value > 0 else self.reverse_pwm if value < 0 else None
+        inactive_pin = self.pins.reverse if value > 0 else self.pins.forward
+
+        if target_pwm is not self._active_pwm:
+            if self._active_pwm is not None:
+                self._active_pwm.ChangeDutyCycle(0)
+                self._active_pwm.stop()
+            self._active_pwm = target_pwm
+            if target_pwm is not None:
+                self.gpio.output(inactive_pin, self.gpio.LOW)
+                target_pwm.start(duty)
+        elif target_pwm is not None:
+            target_pwm.ChangeDutyCycle(duty)
+
+        if target_pwm is None:
+            self.gpio.output((self.pins.forward, self.pins.reverse), self.gpio.LOW)
         self._direction = direction
+
+    def would_reverse(self, value: float) -> bool:
+        direction = 1 if value > 0 else -1 if value < 0 else 0
+        return bool(direction and self._direction and direction != self._direction)
 
     def close(self) -> None:
         self.set(0)
-        self.forward_pwm.stop()
-        self.reverse_pwm.stop()
 
 
 class MecanumDrive:
@@ -115,9 +118,21 @@ class MecanumDrive:
             )
             speed = max(0.0, min(1.0, float(speed)))
             mixed = self.mix(forward, strafe, rotate)
-            for name, value in mixed.items():
+            outputs = {name: value * speed for name, value in mixed.items()}
+            if any(
+                self._motors[name].would_reverse(value)
+                for name, value in outputs.items()
+                if name in self._motors
+            ):
+                # Remove power from every channel once, then apply the new
+                # direction. A single shared deadtime avoids four sequential
+                # 15 ms sleeps during a full chassis reversal.
+                for motor in self._motors.values():
+                    motor.set(0)
+                time.sleep(0.015)
+            for name, value in outputs.items():
                 if name in self._motors:
-                    self._motors[name].set(value * speed)
+                    self._motors[name].set(value)
             self.last_command = {
                 "forward": forward,
                 "strafe": strafe,

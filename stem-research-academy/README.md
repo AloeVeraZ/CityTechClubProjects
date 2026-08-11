@@ -34,7 +34,7 @@ The project is organized for **three mentors** and **two students**. Names can b
 - Streams a Logitech C270 or other V4L2 webcam from `/dev/video0`.
 - Drives forward/backward with W/S, strafes with A/D, and rotates with Q/E.
 - Stops immediately when drive keys are released, the browser loses focus, or a kill switch is pressed.
-- Uses sequenced commands and a 250 ms server watchdog to reject stale input and stop if messages disappear.
+- Uses a latest-command-only channel, 300 ms command expiration, sequence checks, and a 200 ms server watchdog. Delayed commands are discarded instead of replayed.
 - Proxies status, CSI disturbance data, and fail-safe drive commands to both ECHO scouts.
 - Starts the hotspot and control server automatically after boot.
 - Uses a clean, rerunnable installer based on the TrainUI installation workflow.
@@ -142,6 +142,10 @@ An accessible hardware emergency stop or motor-power switch should still be used
 | All robots | Escape | Kill every robot immediately |
 
 Multiple keys can be held for combined motion. The speed slider limits all four wheel outputs.
+
+Each keyboard group is routed to a different API endpoint: WASD/QE cannot issue Scout commands, Arrow keys cannot issue mecanum commands, and IJKL cannot issue commands to either of the other robots. The browser keeps at most one request in flight per robot and overwrites pending input with the newest state, preventing a slow connection from building a motor-command backlog.
+
+If the header says `GPIO unavailable - motors disabled`, the keyboard and web server are working but the Raspberry Pi GPIO backend did not load. Rerun the installer and check `sudo journalctl -u stem-robot-dashboard -n 100` rather than continuing a motor test.
 
 ## ECHO Scout firmware
 

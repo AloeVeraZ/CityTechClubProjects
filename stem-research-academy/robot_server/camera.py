@@ -7,7 +7,7 @@ import time
 
 
 class CameraStream:
-    def __init__(self, device: str = "/dev/video0", width: int = 1280, height: int = 720, fps: int = 20) -> None:
+    def __init__(self, device: str = "/dev/video0", width: int = 640, height: int = 480, fps: int = 10) -> None:
         self.device = device
         self.width = width
         self.height = height
@@ -39,18 +39,26 @@ class CameraStream:
             if not camera.isOpened():
                 raise RuntimeError(f"Could not open camera {self.device}")
 
+            frame_interval = 1 / max(1, self.fps)
+            next_frame_at = time.monotonic()
             while self._running:
                 ok, image = camera.read()
                 if not ok:
                     self.error = "Camera stopped returning frames"
                     time.sleep(0.2)
                     continue
-                ok, encoded = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, 78])
+                ok, encoded = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, 65])
                 if ok:
                     with self._condition:
                         self._frame = encoded.tobytes()
                         self.error = None
                         self._condition.notify_all()
+                next_frame_at += frame_interval
+                delay = next_frame_at - time.monotonic()
+                if delay > 0:
+                    time.sleep(delay)
+                else:
+                    next_frame_at = time.monotonic()
             camera.release()
         except Exception as error:  # Camera errors must not take down motor control.
             self.error = str(error)
@@ -79,4 +87,3 @@ class CameraStream:
             self._condition.notify_all()
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=2)
-
