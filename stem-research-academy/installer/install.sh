@@ -107,8 +107,38 @@ fi
 
 say "Downloading a clean copy of the latest project..."
 TEMP_CHECKOUT="$(mktemp -d)"
-git clone --depth 1 --branch "$REPO_BRANCH" --single-branch "$REPO_URL" "$TEMP_CHECKOUT/repository"
-FRESH_SOURCE="$TEMP_CHECKOUT/repository/$SOURCE_SUBDIR"
+DOWNLOAD_ROOT=""
+
+# Git's index-pack can fail on a Pi because of a broken transfer or memory
+# pressure ("fetch-pack: invalid index-pack output"). GitHub's tar archive
+# contains the same branch files without invoking index-pack, so prefer it.
+REPO_PATH="${REPO_URL#https://github.com/}"
+if [ "$REPO_PATH" != "$REPO_URL" ]; then
+    REPO_PATH="${REPO_PATH%.git}"
+    ARCHIVE_URL="https://codeload.github.com/${REPO_PATH}/tar.gz/refs/heads/${REPO_BRANCH}"
+    ARCHIVE_FILE="$TEMP_CHECKOUT/project.tar.gz"
+    ARCHIVE_ROOT="$TEMP_CHECKOUT/archive-repository"
+    say "Downloading the branch archive (avoids Git pack corruption)..."
+    if curl -fL --retry 5 --retry-delay 2 --connect-timeout 20 \
+        "$ARCHIVE_URL" -o "$ARCHIVE_FILE" && \
+        tar -tzf "$ARCHIVE_FILE" >/dev/null; then
+        mkdir -p "$ARCHIVE_ROOT"
+        tar -xzf "$ARCHIVE_FILE" --strip-components=1 -C "$ARCHIVE_ROOT"
+        DOWNLOAD_ROOT="$ARCHIVE_ROOT"
+    else
+        say "Archive download failed validation; trying a low-memory Git clone..."
+    fi
+fi
+
+if [ -z "$DOWNLOAD_ROOT" ]; then
+    GIT_ROOT="$TEMP_CHECKOUT/git-repository"
+    git -c http.version=HTTP/1.1 -c core.compression=0 clone \
+        --depth 1 --filter=blob:none --branch "$REPO_BRANCH" --single-branch \
+        "$REPO_URL" "$GIT_ROOT"
+    DOWNLOAD_ROOT="$GIT_ROOT"
+fi
+
+FRESH_SOURCE="$DOWNLOAD_ROOT/$SOURCE_SUBDIR"
 [ -f "$FRESH_SOURCE/run.py" ] || fail "$SOURCE_SUBDIR was not found in the downloaded repository."
 python3 -m compileall -q "$FRESH_SOURCE/robot_server" "$FRESH_SOURCE/run.py"
 

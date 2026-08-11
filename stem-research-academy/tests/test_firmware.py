@@ -28,11 +28,14 @@ class EchoScoutFirmwareTests(unittest.TestCase):
         self.assertIn("HOTSPOT_PASSWORD=roboswarm1", self.installer)
 
     def test_echo_differential_drive_api_and_safety_are_present(self):
-        self.assertIn("TankDriveTrain drivetrain", self.source)
+        self.assertIn("TankDrive drivetrain", self.source)
+        self.assertNotIn("TankDriveTrain", self.source)
+        self.assertNotIn("motors.reverse(", self.source)
         self.assertIn("LEFT_MOTOR_ID = 1", self.source)
         self.assertIn("RIGHT_MOTOR_ID = 6", self.source)
         self.assertIn("COMMAND_TIMEOUT_MS = 500", self.source)
-        self.assertIn("motors.stopAll()", self.source)
+        self.assertIn("drivetrain.setBrake()", self.source)
+        self.assertIn("drivetrain.drive(0, 0)", self.source)
 
     def test_pi_integration_endpoints_and_station_mode_are_present(self):
         self.assertIn("WiFi.mode(WIFI_STA)", self.source)
@@ -51,6 +54,12 @@ class EchoScoutFirmwareTests(unittest.TestCase):
         self.assertIn("--on-active=10s", self.installer)
         self.assertIn("systemctl)\" reboot", self.installer)
         self.assertNotIn("STEM_NO_REBOOT", self.installer)
+
+    def test_installer_avoids_git_index_pack_for_normal_github_updates(self):
+        self.assertIn("https://codeload.github.com/", self.installer)
+        self.assertIn('tar -tzf "$ARCHIVE_FILE"', self.installer)
+        self.assertIn("--strip-components=1", self.installer)
+        self.assertIn("core.compression=0", self.installer)
 
     def test_installer_uses_resizable_window_and_simple_dashboard_address(self):
         self.assertIn('nginx-light', self.installer)

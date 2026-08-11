@@ -149,7 +149,7 @@ If the header says `GPIO unavailable - motors disabled`, the keyboard and web se
 
 ## ECHO Scout firmware
 
-The shared Arduino sketch is [`firmware/echo-scout/ECHO_Robot_Controller.ino`](firmware/echo-scout/ECHO_Robot_Controller.ino). Flash one board with `ROBOT_ID = 'A'` and the other with `ROBOT_ID = 'B'`. Both join `EchoSwarm` in Wi-Fi station mode, start with their motors stopped, use ECHO motor channels 1 and 6 through EchoLib's `TankDriveTrain`, and advertise these addresses:
+The shared Arduino sketch is [`firmware/echo-scout/ECHO_Robot_Controller.ino`](firmware/echo-scout/ECHO_Robot_Controller.ino). Flash one board with `ROBOT_ID = 'A'` and the other with `ROBOT_ID = 'B'`. Both join `EchoSwarm` in Wi-Fi station mode, start with their motors stopped, use ECHO motor channels 1 and 6 through EchoLib's `TankDrive`, and advertise these addresses:
 
 ```text
 http://echo-scout-a.local

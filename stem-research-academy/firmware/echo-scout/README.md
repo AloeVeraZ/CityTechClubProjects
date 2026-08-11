@@ -24,7 +24,7 @@ The CSI result only means that Wi-Fi multipath changed. It cannot identify a per
 - EchoLib from 3DBuffalo.
 - EchoLib's documented dependencies, including Adafruit BusIO.
 
-The sketch uses the documented `MotorControllers` and `TankDriveTrain` APIs. Motor 1 is treated as the left side and Motor 6 as the right side, matching 3DBuffalo's Zippy example.
+The sketch uses EchoLib's `MotorControllers` and `TankDrive` APIs. Motor 1 is treated as the left side and Motor 6 as the right side, matching 3DBuffalo's Zippy example. The class name is `TankDrive`, not `TankDriveTrain`.
 
 ## Expected Serial Monitor output
 
@@ -44,14 +44,7 @@ Scout B prints `echo-scout-b.local`. The central Pi dashboard is `http://echoswa
 
 The provided motor assignment has not been physically validated. Lift the wheels clear of the floor, disconnect any payload, keep access to motor power, and leave the default 35% speed limit in place. Flash Scout A first and open `http://echo-scout-a.local` while connected to `EchoSwarm`.
 
-If forward makes one side run backward, change only the appropriate constant:
-
-```cpp
-constexpr bool REVERSE_LEFT_MOTOR = false;
-constexpr bool REVERSE_RIGHT_MOTOR = false;
-```
-
-Do not compensate for reversed wiring by swapping unrelated motor IDs in several functions.
+If forward makes one side run backward, stop the test and correct that side's motor wiring before continuing. The sketch deliberately stays with the verified `TankDrive` interface and does not call undocumented motor-reversal methods.
 
 ## Camera integration
 

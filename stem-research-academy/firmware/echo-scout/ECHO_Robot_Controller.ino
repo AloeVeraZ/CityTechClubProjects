@@ -35,8 +35,6 @@ constexpr char WIFI_PASSWORD[] = "roboswarm1";
 
 constexpr uint8_t LEFT_MOTOR_ID = 1;
 constexpr uint8_t RIGHT_MOTOR_ID = 6;
-constexpr bool REVERSE_LEFT_MOTOR = false;
-constexpr bool REVERSE_RIGHT_MOTOR = false;
 constexpr uint8_t STARTUP_SPEED_LIMIT = 35;
 constexpr unsigned long COMMAND_TIMEOUT_MS = 500;
 constexpr unsigned long WIFI_RETRY_MS = 5000;
@@ -58,7 +56,7 @@ const char *cameraHost() { return ROBOT_ID == 'A' ? "echo-scout-a-cam.local" : "
 // EchoLib's documented differential-drive class accepts turn (X) and
 // forward/reverse (Y) values. Motors 1 and 6 match the Zippy example.
 MotorControllers motors;
-TankDriveTrain drivetrain(motors, LEFT_MOTOR_ID, RIGHT_MOTOR_ID);
+TankDrive drivetrain(motors, LEFT_MOTOR_ID, RIGHT_MOTOR_ID);
 WebServer server(80);
 WiFiUDP csiUdp;
 
@@ -360,10 +358,7 @@ void setup() {
   Serial.begin(115200);
   delay(300);
 
-  motors.setBrake();
-  motors.stopAll();
-  if (REVERSE_LEFT_MOTOR) motors.reverse(LEFT_MOTOR_ID);
-  if (REVERSE_RIGHT_MOTOR) motors.reverse(RIGHT_MOTOR_ID);
+  drivetrain.setBrake();
   stopMotors();
 
   connectWiFi();
