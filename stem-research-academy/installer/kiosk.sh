@@ -35,12 +35,12 @@ until curl --fail --silent --max-time 2 "$KIOSK_URL/healthz" >/dev/null; do
     sleep 1
 done
 
-# Relaunch Chromium if it exits so the Linux desktop does not become the
-# robot's resting screen after a renderer crash or accidental close.
+# Use a normal resizable app window so Terminal and other Pi tools remain
+# accessible. If the window is closed, relaunch it; minimizing is unaffected.
 while true; do
     "$BROWSER" \
-        --kiosk \
-        --start-fullscreen \
+        --app="$KIOSK_URL" \
+        --window-size=1200,760 \
         --no-first-run \
         --no-default-browser-check \
         --noerrdialogs \
@@ -50,7 +50,6 @@ while true; do
         --disable-pinch \
         --overscroll-history-navigation=0 \
         --password-store=basic \
-        --user-data-dir="$KIOSK_PROFILE" \
-        "$KIOSK_URL" >> "$KIOSK_LOG" 2>&1 || true
+        --user-data-dir="$KIOSK_PROFILE" >> "$KIOSK_LOG" 2>&1 || true
     sleep 2
 done

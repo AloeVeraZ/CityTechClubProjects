@@ -17,19 +17,24 @@ from flask import Flask, Response, jsonify, render_template, request
 
 from .camera import CameraStream
 from .motor import MecanumDrive
+from .scouts import ScoutRegistry
 
 
-WATCHDOG_SECONDS = float(os.environ.get("DRIVE_WATCHDOG_SECONDS", "0.4"))
+WATCHDOG_SECONDS = float(os.environ.get("DRIVE_WATCHDOG_SECONDS", "0.25"))
 drive = MecanumDrive()
 camera = CameraStream(
     device=os.environ.get("CAMERA_DEVICE", "/dev/video0"),
-    width=int(os.environ.get("CAMERA_WIDTH", "1280")),
-    height=int(os.environ.get("CAMERA_HEIGHT", "720")),
-    fps=int(os.environ.get("CAMERA_FPS", "20")),
+    width=int(os.environ.get("CAMERA_WIDTH", "640")),
+    height=int(os.environ.get("CAMERA_HEIGHT", "480")),
+    fps=int(os.environ.get("CAMERA_FPS", "12")),
 )
 last_drive_at = 0.0
 state_lock = threading.Lock()
 shutdown_event = threading.Event()
+drive_sequences: dict[str, int] = {}
+scout_sequences: dict[tuple[str, str], int] = {}
+scout_command_locks = {"a": threading.Lock(), "b": threading.Lock()}
+scout_registry = ScoutRegistry()
 SCOUTS = {
     "a": {
         "name": "ECHO Scout A",
@@ -49,7 +54,8 @@ def _scout_request(scout_id: str, path: str, query: dict | None = None) -> dict:
     if scout is None:
         raise KeyError(scout_id)
     suffix = f"?{urllib.parse.urlencode(query)}" if query else ""
-    url = f"http://{scout['host']}{path}{suffix}"
+    host = scout_registry.host_for(scout_id, scout["host"])
+    url = f"http://{host}{path}{suffix}"
     with urllib.request.urlopen(url, timeout=0.45) as response:
         body = response.read(8192).decode("utf-8")
     return json.loads(body) if body else {"ok": True}
@@ -90,15 +96,23 @@ def create_app() -> Flask:
             strafe = float(payload.get("strafe", 0))
             rotate = float(payload.get("rotate", 0))
             speed = float(payload.get("speed", 0.75))
+            sequence = int(payload.get("sequence", 0))
+            session = str(payload.get("session", "legacy"))[:64]
         except (TypeError, ValueError):
             return jsonify(error="Drive values must be numbers"), 400
-        try:
-            drive.drive(forward, strafe, rotate, speed)
-        except ValueError as error:
-            return jsonify(error=str(error)), 400
         with state_lock:
+            if sequence and sequence <= drive_sequences.get(session, -1):
+                return jsonify(ok=True, stale=True, sequence=sequence)
+            if sequence:
+                drive_sequences[session] = sequence
+                if len(drive_sequences) > 64:
+                    drive_sequences.pop(next(iter(drive_sequences)))
+            try:
+                drive.drive(forward, strafe, rotate, speed)
+            except ValueError as error:
+                return jsonify(error=str(error)), 400
             last_drive_at = time.monotonic()
-        return jsonify(ok=True)
+        return jsonify(ok=True, sequence=sequence)
 
     @app.post("/api/stop")
     def command_stop():
@@ -109,16 +123,21 @@ def create_app() -> Flask:
     def scout_status(scout_id: str):
         if scout_id not in SCOUTS:
             return jsonify(error="Unknown scout"), 404
+        heartbeat = scout_registry.snapshot(scout_id)
         try:
             status_data = _scout_request(scout_id, "/status")
             status_data["online"] = True
-            status_data["host"] = SCOUTS[scout_id]["host"]
+            status_data["connected"] = True
+            status_data["host"] = scout_registry.host_for(scout_id, SCOUTS[scout_id]["host"])
+            status_data["heartbeat"] = heartbeat
             return jsonify(status_data)
         except (OSError, ValueError, json.JSONDecodeError, urllib.error.URLError) as error:
             return jsonify(
                 online=False,
+                connected=heartbeat is not None,
                 name=SCOUTS[scout_id]["name"],
-                host=SCOUTS[scout_id]["host"],
+                host=heartbeat["ip"] if heartbeat else SCOUTS[scout_id]["host"],
+                heartbeat=heartbeat,
                 error=str(error),
             )
 
@@ -131,6 +150,8 @@ def create_app() -> Flask:
             x = float(payload.get("x", 0))
             y = float(payload.get("y", 0))
             speed = float(payload.get("speed", 35))
+            sequence = int(payload.get("sequence", 0))
+            session = str(payload.get("session", "legacy"))[:64]
             if not all(math.isfinite(value) for value in (x, y, speed)):
                 raise ValueError
         except (TypeError, ValueError):
@@ -140,11 +161,20 @@ def create_app() -> Flask:
             "y": round(max(-100, min(100, y))),
             "speed": round(max(0, min(100, speed))),
         }
-        try:
-            result = _scout_request(scout_id, "/drive", query)
-            return jsonify(result)
-        except (OSError, ValueError, json.JSONDecodeError, urllib.error.URLError) as error:
-            return jsonify(error=f"{SCOUTS[scout_id]['name']} is unreachable: {error}"), 502
+        with scout_command_locks[scout_id]:
+            sequence_key = (scout_id, session)
+            if sequence and sequence <= scout_sequences.get(sequence_key, -1):
+                return jsonify(ok=True, stale=True, sequence=sequence)
+            if sequence:
+                scout_sequences[sequence_key] = sequence
+                if len(scout_sequences) > 128:
+                    scout_sequences.pop(next(iter(scout_sequences)))
+            try:
+                result = _scout_request(scout_id, "/drive", query)
+                result.update(sequence=sequence)
+                return jsonify(result)
+            except (OSError, ValueError, json.JSONDecodeError, urllib.error.URLError) as error:
+                return jsonify(error=f"{SCOUTS[scout_id]['name']} is unreachable: {error}"), 502
 
     @app.post("/api/scouts/<scout_id>/stop")
     def scout_stop(scout_id: str):
@@ -178,6 +208,7 @@ def cleanup() -> None:
     shutdown_event.set()
     drive.close()
     camera.close()
+    scout_registry.close()
 
 
 threading.Thread(target=_watchdog, name="motor-watchdog", daemon=True).start()

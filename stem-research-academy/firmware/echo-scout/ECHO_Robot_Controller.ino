@@ -42,6 +42,8 @@ constexpr unsigned long COMMAND_TIMEOUT_MS = 500;
 constexpr unsigned long WIFI_RETRY_MS = 5000;
 
 constexpr uint16_t PI_CSI_UDP_PORT = 5005;
+constexpr uint16_t PI_HEARTBEAT_UDP_PORT = 5006;
+constexpr unsigned long HEARTBEAT_INTERVAL_MS = 1000;
 const IPAddress PI_ADDRESS(10, 42, 0, 1);
 
 static_assert(ROBOT_ID == 'A' || ROBOT_ID == 'B', "ROBOT_ID must be A or B");
@@ -59,6 +61,7 @@ WiFiUDP csiUdp;
 
 unsigned long lastCommandAt = 0;
 unsigned long lastWiFiAttemptAt = 0;
+unsigned long lastHeartbeatAt = 0;
 bool motorsStopped = true;
 bool mdnsStarted = false;
 
@@ -180,6 +183,17 @@ void processCsi() {
   csiUdp.endPacket();
 }
 
+void sendHeartbeat() {
+  if (WiFi.status() != WL_CONNECTED || millis() - lastHeartbeatAt < HEARTBEAT_INTERVAL_MS) return;
+  lastHeartbeatAt = millis();
+  String heartbeat = "{\"id\":\"" + String(ROBOT_ID) + "\",\"rssi\":";
+  heartbeat += String(WiFi.RSSI());
+  heartbeat += ",\"uptime_ms\":" + String(millis()) + "}";
+  csiUdp.beginPacket(PI_ADDRESS, PI_HEARTBEAT_UDP_PORT);
+  csiUdp.print(heartbeat);
+  csiUdp.endPacket();
+}
+
 // ---------------------------------------------------------------------------
 // Motor safety and HTTP API
 // ---------------------------------------------------------------------------
@@ -296,6 +310,7 @@ void setup() {
 void loop() {
   server.handleClient();
   processCsi();
+  sendHeartbeat();
 
   if (!motorsStopped && millis() - lastCommandAt > COMMAND_TIMEOUT_MS) stopMotors();
 
@@ -308,4 +323,3 @@ void loop() {
   }
   delay(2);
 }
-

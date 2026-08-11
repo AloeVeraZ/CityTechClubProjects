@@ -33,8 +33,8 @@
           <span class="key" data-key="s">S<small>back</small></span>
           <span class="key" data-key="d">D<small>right</small></span>
         </div>
-        <p class="hint">Hold keys to drive · release to stop · Space is emergency stop</p>
-        <button class="stop-button" id="stop" type="button">Stop all motors</button>
+        <p class="hint">WASD drive · Q/E rotate · Space kills only this robot</p>
+        <button class="stop-button" id="stop" type="button">Kill big robot · all 4 motors</button>
       </div>
 
       <footer class="telemetry">
@@ -45,7 +45,6 @@
 
     <aside class="secondary-stack">
       <section class="panel esp-panel" data-scout-panel="a">
-        <img class="video scout-video" src="{{ esp32_one_stream }}" alt="ECHO Scout A camera feed">
         <div class="grid-backdrop"></div>
         <header class="panel-header compact">
           <div>
@@ -54,16 +53,17 @@
           </div>
           <span class="status waiting" id="scout-a-status"><i></i> Waiting</span>
         </header>
-        <div class="scout-offline">
-          <span class="camera-icon">◉</span>
-          <strong>Camera awaiting scout</strong>
+        <div class="scout-connection">
+          <span class="connection-icon">A</span>
+          <strong id="scout-a-connection">Waiting for ECHO heartbeat</strong>
+          <small>Arrow keys</small>
         </div>
         <div class="scout-controls" data-scout="a">
           <label>Speed <output>35%</output><input type="range" min="10" max="70" value="35"></label>
           <div class="scout-pad" aria-label="ECHO Scout A controls">
             <button data-motion="left" aria-label="Scout A left">←</button>
             <button data-motion="forward" aria-label="Scout A forward">↑</button>
-            <button class="scout-stop" data-motion="stop" aria-label="Stop Scout A">■</button>
+            <button class="scout-stop" data-motion="stop" aria-label="Kill Scout A">KILL A</button>
             <button data-motion="back" aria-label="Scout A backward">↓</button>
             <button data-motion="right" aria-label="Scout A right">→</button>
           </div>
@@ -72,7 +72,6 @@
       </section>
 
       <section class="panel esp-panel accent-two" data-scout-panel="b">
-        <img class="video scout-video" src="{{ esp32_two_stream }}" alt="ECHO Scout B camera feed">
         <div class="grid-backdrop"></div>
         <header class="panel-header compact">
           <div>
@@ -81,16 +80,17 @@
           </div>
           <span class="status waiting" id="scout-b-status"><i></i> Waiting</span>
         </header>
-        <div class="scout-offline">
-          <span class="camera-icon">◉</span>
-          <strong>Camera awaiting scout</strong>
+        <div class="scout-connection">
+          <span class="connection-icon">B</span>
+          <strong id="scout-b-connection">Waiting for ECHO heartbeat</strong>
+          <small>I / J / K / L keys</small>
         </div>
         <div class="scout-controls" data-scout="b">
           <label>Speed <output>35%</output><input type="range" min="10" max="70" value="35"></label>
           <div class="scout-pad" aria-label="ECHO Scout B controls">
             <button data-motion="left" aria-label="Scout B left">←</button>
             <button data-motion="forward" aria-label="Scout B forward">↑</button>
-            <button class="scout-stop" data-motion="stop" aria-label="Stop Scout B">■</button>
+            <button class="scout-stop" data-motion="stop" aria-label="Kill Scout B">KILL B</button>
             <button data-motion="back" aria-label="Scout B backward">↓</button>
             <button data-motion="right" aria-label="Scout B right">→</button>
           </div>
@@ -99,6 +99,7 @@
       </section>
     </aside>
   </main>
+  <button class="kill-all" id="kill-all" type="button">Kill all robots · Esc</button>
   <div class="toast" id="toast" role="status">Controls disconnected — motors stopped</div>
   <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
 </body>

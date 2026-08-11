@@ -68,6 +68,7 @@ apt_get install -y \
     git \
     libnss-mdns \
     network-manager \
+    nginx-light \
     python3 \
     python3-flask \
     python3-opencv \
@@ -140,10 +141,10 @@ HOTSPOT_ADDRESS=10.42.0.1/24
 HOTSPOT_CHANNEL=6
 PORT=8080
 CAMERA_DEVICE=/dev/video0
-CAMERA_WIDTH=1280
-CAMERA_HEIGHT=720
-CAMERA_FPS=20
-DRIVE_WATCHDOG_SECONDS=0.4
+CAMERA_WIDTH=640
+CAMERA_HEIGHT=480
+CAMERA_FPS=12
+DRIVE_WATCHDOG_SECONDS=0.25
 ESP32_ONE_STREAM_URL=
 ESP32_TWO_STREAM_URL=
 KIOSK_URL=http://127.0.0.1:8080
@@ -171,10 +172,10 @@ ensure_config_key HOTSPOT_ADDRESS "10.42.0.1/24"
 ensure_config_key HOTSPOT_CHANNEL "6"
 ensure_config_key PORT "8080"
 ensure_config_key CAMERA_DEVICE "/dev/video0"
-ensure_config_key CAMERA_WIDTH "1280"
-ensure_config_key CAMERA_HEIGHT "720"
-ensure_config_key CAMERA_FPS "20"
-ensure_config_key DRIVE_WATCHDOG_SECONDS "0.4"
+ensure_config_key CAMERA_WIDTH "640"
+ensure_config_key CAMERA_HEIGHT "480"
+ensure_config_key CAMERA_FPS "12"
+ensure_config_key DRIVE_WATCHDOG_SECONDS "0.25"
 ensure_config_key ESP32_ONE_STREAM_URL ""
 ensure_config_key ESP32_TWO_STREAM_URL ""
 ensure_config_key SCOUT_A_HOST "echo-scout-a.local"
@@ -184,6 +185,10 @@ ensure_config_key SCOUT_B_HOST "echo-scout-b.local"
 sudo sed -i -E \
     -e 's/^HOTSPOT_SSID=.*/HOTSPOT_SSID=EchoSwarm/' \
     -e 's/^HOTSPOT_PASSWORD=.*/HOTSPOT_PASSWORD=roboswarm1/' \
+    -e 's/^CAMERA_WIDTH=.*/CAMERA_WIDTH=640/' \
+    -e 's/^CAMERA_HEIGHT=.*/CAMERA_HEIGHT=480/' \
+    -e 's/^CAMERA_FPS=.*/CAMERA_FPS=12/' \
+    -e 's/^DRIVE_WATCHDOG_SECONDS=.*/DRIVE_WATCHDOG_SECONDS=0.25/' \
     "$CONFIG_FILE"
 sudo chmod 0600 "$CONFIG_FILE"
 sudo hostnamectl set-hostname echoswarm
@@ -209,7 +214,7 @@ sudo systemctl enable lightdm.service 2>/dev/null || true
 sudo systemctl daemon-reload
 sudo systemctl enable stem-robot-hotspot.service stem-robot-dashboard.service
 
-say "Configuring the attached screen as a fullscreen robot dashboard..."
+say "Configuring the attached screen as a resizable robot dashboard window..."
 chmod +x "$APP_DIR/installer/kiosk.sh"
 mkdir -p "$AUTOSTART_DIR" "$LABWC_DIR"
 
@@ -217,8 +222,8 @@ cat > "$AUTOSTART_DIR/stem-robot-kiosk.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Version=1.0
-Name=Triple T Robot Dashboard
-Comment=Fullscreen STEM Research Academy robot controls
+Name=EchoSwarm Robot Dashboard
+Comment=Resizable STEM Research Academy robot controls
 Exec=$APP_DIR/installer/kiosk.sh
 Path=$APP_DIR
 Terminal=false
@@ -257,6 +262,31 @@ fi
 
 sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target 2>/dev/null || true
 
+say "Adding simple dashboard addresses for hotspot devices..."
+NGINX_TEMP="$(mktemp)"
+cat > "$NGINX_TEMP" <<'EOF'
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_buffering off;
+        proxy_read_timeout 1h;
+    }
+}
+EOF
+sudo install -m 0644 "$NGINX_TEMP" /etc/nginx/sites-available/echoswarm-dashboard
+rm -f "$NGINX_TEMP"
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo ln -sfn /etc/nginx/sites-available/echoswarm-dashboard /etc/nginx/sites-enabled/echoswarm-dashboard
+sudo nginx -t
+sudo systemctl enable nginx.service
+sudo systemctl restart nginx.service
+
 CMDLINE_FILE="/boot/firmware/cmdline.txt"
 [ -f "$CMDLINE_FILE" ] || CMDLINE_FILE="/boot/cmdline.txt"
 if [ -f "$CMDLINE_FILE" ]; then
@@ -276,9 +306,11 @@ say "Installation complete."
 echo "Pi name: echoswarm"
 echo "Hotspot name: EchoSwarm"
 echo "Hotspot password: roboswarm1"
-echo "Dashboard: http://10.42.0.1:8080"
+echo "Dashboard: http://10.42.0.1"
+echo "Dashboard name: http://echoswarm.local"
+echo "Direct fallback: http://10.42.0.1:8080"
 echo "The hotspot starts at boot and can accept both ESP32 robots."
-echo "The attached Pi screen opens the same dashboard automatically in fullscreen mode."
+echo "The attached Pi screen opens the dashboard in a resizable application window."
 echo "The Pi will reboot automatically in 10 seconds."
 
 # A transient systemd timer survives this piped installer process exiting.

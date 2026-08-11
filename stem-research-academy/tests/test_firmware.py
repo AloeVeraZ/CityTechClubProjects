@@ -36,6 +36,8 @@ class EchoScoutFirmwareTests(unittest.TestCase):
 
     def test_pi_integration_endpoints_and_station_mode_are_present(self):
         self.assertIn("WiFi.mode(WIFI_STA)", self.source)
+        self.assertIn("PI_HEARTBEAT_UDP_PORT = 5006", self.source)
+        self.assertIn("sendHeartbeat()", self.source)
         for endpoint in ("/drive", "/stop", "/status", "/motion"):
             self.assertIn(f'"{endpoint}"', self.source)
         self.assertNotIn("192, 168, 4", self.source)
@@ -45,6 +47,13 @@ class EchoScoutFirmwareTests(unittest.TestCase):
         self.assertIn("--on-active=10s", self.installer)
         self.assertIn("systemctl)\" reboot", self.installer)
         self.assertNotIn("STEM_NO_REBOOT", self.installer)
+
+    def test_installer_uses_resizable_window_and_simple_dashboard_address(self):
+        self.assertIn('nginx-light', self.installer)
+        self.assertIn('listen 80 default_server', self.installer)
+        self.assertIn('CAMERA_FPS=12', self.installer)
+        self.assertIn('DRIVE_WATCHDOG_SECONDS=0.25', self.installer)
+        self.assertNotIn('fullscreen robot dashboard', self.installer)
 
 
 if __name__ == "__main__":

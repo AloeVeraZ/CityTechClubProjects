@@ -12,6 +12,7 @@
 6. Applies a 500 ms command watchdog, stopping both motors if the browser, Pi, or Wi-Fi link disappears.
 7. Samples Wi-Fi Channel State Information and reports a coarse nearby-disturbance level in `/status`.
 8. Sends compact CSI summaries to UDP port 5005 on the Pi for future research processing.
+9. Broadcasts a heartbeat to UDP port 5006 once per second, allowing the Pi to confirm connection and learn the scout's current DHCP address without relying on `.local` resolution.
 
 The CSI result only means that Wi-Fi multipath changed. It cannot identify a person, determine direction or distance, count occupants, or replace a camera. Its threshold must be tuned in the actual room.
 
@@ -40,4 +41,3 @@ Do not compensate for reversed wiring by swapping unrelated motor IDs in several
 ## Camera integration
 
 This ECHO sketch does not invent camera pin mappings. If each scout has a separate ESP32-CAM streamer, configure those boards as `echo-scout-a-cam.local` and `echo-scout-b-cam.local` with `/stream` endpoints. The central HUD already uses those addresses. If the camera is electrically attached to the ECHO ESP32-S3 itself, its exact sensor model and pin map are required before camera firmware can safely be added.
-

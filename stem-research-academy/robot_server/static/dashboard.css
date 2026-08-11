@@ -143,11 +143,12 @@ input[type="range"] { width: 100%; margin: 9px 0 15px; accent-color: var(--lime)
 .accent-two .eyebrow { color: var(--orange); }
 .compact { padding: 22px 24px; }
 .esp-panel .telemetry { left: 24px; right: 24px; bottom: 17px; }
-.scout-video { opacity: .72; }
-.scout-offline { position: absolute; z-index: 1; inset: 68px 20px 92px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--muted); text-align: center; }
-.scout-offline .camera-icon { display: grid; place-items: center; width: 38px; height: 38px; margin-bottom: 6px; border: 1px solid var(--line); border-radius: 50%; color: var(--cyan); }
-.accent-two .scout-offline .camera-icon { color: var(--orange); }
-.camera-live .scout-offline { display: none; }
+.scout-connection { position: absolute; z-index: 1; inset: 64px 20px 94px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--muted); text-align: center; }
+.connection-icon { display: grid; place-items: center; width: 38px; height: 38px; margin-bottom: 3px; border: 1px solid var(--line); border-radius: 50%; color: var(--cyan); font-weight: 850; }
+.accent-two .connection-icon { color: var(--orange); }
+.scout-connection small { color: #7f918d; font-size: 10px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+.scout-connected .scout-connection strong { color: #d9ff93; }
+.scout-connected .connection-icon { color: #14200e; border-color: var(--lime); background: var(--lime); box-shadow: 0 0 20px rgba(185,255,56,.28); }
 .scout-controls { position: absolute; z-index: 4; left: 18px; right: 18px; bottom: 38px; display: grid; grid-template-columns: minmax(110px, .7fr) 1.3fr; align-items: end; gap: 12px; padding: 9px; border: 1px solid var(--line); border-radius: 11px; background: rgba(8, 13, 12, .82); backdrop-filter: blur(14px); }
 .scout-controls label { display: grid; grid-template-columns: 1fr auto; gap: 4px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .scout-controls label output { color: var(--cyan); }
@@ -158,7 +159,10 @@ input[type="range"] { width: 100%; margin: 9px 0 15px; accent-color: var(--lime)
 .scout-pad button { min-width: 0; height: 37px; padding: 0; border: 1px solid var(--line); border-radius: 7px; background: rgba(255,255,255,.07); color: white; font: inherit; font-size: 16px; font-weight: 850; cursor: pointer; touch-action: none; }
 .scout-pad button.active { border-color: var(--cyan); background: var(--cyan); color: #07100f; }
 .accent-two .scout-pad button.active { border-color: var(--orange); background: var(--orange); }
-.scout-pad .scout-stop { color: #ff9d92; border-color: rgba(255,91,71,.4); }
+.scout-pad .scout-stop { color: #ff9d92; border-color: rgba(255,91,71,.4); font-size: 9px; letter-spacing: .03em; }
+
+.kill-all { position: fixed; z-index: 9; top: 16px; left: 50%; transform: translateX(-50%); padding: 9px 15px; border: 1px solid rgba(255,91,71,.65); border-radius: 999px; background: rgba(67,14,10,.9); color: #ffd1cc; font: inherit; font-size: 10px; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; cursor: pointer; box-shadow: 0 8px 30px rgba(0,0,0,.32); }
+.kill-all:hover, .kill-all:focus-visible { background: #ff5b47; color: white; outline: none; }
 
 .toast { position: fixed; z-index: 10; left: 50%; bottom: 26px; transform: translate(-50%, 150%); padding: 12px 18px; border-radius: 999px; background: #ff5b47; color: white; font-size: 13px; font-weight: 750; transition: transform .2s ease; }
 .toast.show { transform: translate(-50%, 0); }
@@ -186,7 +190,9 @@ input[type="range"] { width: 100%; margin: 9px 0 15px; accent-color: var(--lime)
   .esp-panel .telemetry { left: 18px; right: 18px; bottom: 11px; }
   .scout-controls { left: 12px; right: 12px; bottom: 31px; padding: 6px; gap: 7px; }
   .scout-pad button { height: 31px; font-size: 14px; }
-  .scout-offline { inset: 55px 12px 78px; font-size: 11px; }
+  .scout-pad .scout-stop { font-size: 8px; }
+  .scout-connection { inset: 51px 12px 78px; font-size: 11px; }
+  .kill-all { top: 9px; padding: 7px 12px; }
 }
 
 @media (max-width: 520px) {

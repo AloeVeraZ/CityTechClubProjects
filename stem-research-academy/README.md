@@ -28,13 +28,13 @@ The project is organized for **three mentors** and **two students**. Names can b
 ## Current capabilities
 
 - Creates the secured 2.4 GHz `EchoSwarm` hotspot with NetworkManager.
-- Serves the dashboard at `http://10.42.0.1:8080`.
-- Opens the same dashboard automatically in a self-restarting fullscreen Chromium kiosk on the Pi display.
+- Serves the dashboard at `http://10.42.0.1`, `http://echoswarm.local`, and the fallback `http://10.42.0.1:8080`.
+- Opens it automatically in a self-restarting, resizable Chromium application window on the Pi display.
 - Auto-sizes the dashboard for the attached display, phones, tablets, and laptops.
 - Streams a Logitech C270 or other V4L2 webcam from `/dev/video0`.
 - Drives forward/backward with W/S, strafes with A/D, and rotates with Q/E.
-- Stops immediately when drive keys are released, the browser loses focus, or Space is pressed.
-- Uses a server-side command watchdog to stop the motors if control messages disappear for 400 ms.
+- Stops immediately when drive keys are released, the browser loses focus, or a kill switch is pressed.
+- Uses sequenced commands and a 250 ms server watchdog to reject stale input and stop if messages disappear.
 - Proxies status, CSI disturbance data, and fail-safe drive commands to both ECHO scouts.
 - Starts the hotspot and control server automatically after boot.
 - Uses a clean, rerunnable installer based on the TrainUI installation workflow.
@@ -66,7 +66,9 @@ The installer requests `sudo` only for packages, networking, user groups, and sy
 Wi-Fi network name (SSID): EchoSwarm
 Wi-Fi password:            roboswarm1
 Pi hostname:               echoswarm
-Website:                   http://10.42.0.1:8080
+Website:                   http://10.42.0.1
+Named address:             http://echoswarm.local
+Direct fallback:           http://10.42.0.1:8080
 ```
 
 Wi-Fi uses a network name (SSID), not a username. The actual Raspberry Pi Linux login remains the normal account created in Raspberry Pi Imager; the installer does not rename that account because doing so can break its home directory, services, and SSH access.
@@ -84,8 +86,8 @@ Run the same `curl` command whenever the project should be updated. Every run:
 5. Rebuilds the Python environment and upgrades its packages.
 6. Reinstalls and enables the hotspot and dashboard services.
 7. Installs or updates the compatible Chromium and Raspberry Pi desktop packages.
-8. Recreates both current Wayland/labwc and older X11 kiosk autostart entries.
-9. Reapplies auto-login, fullscreen, anti-blanking, and anti-sleep settings.
+8. Recreates both current Wayland/labwc and older X11 dashboard autostart entries.
+9. Reapplies auto-login, resizable-window, anti-blanking, and anti-sleep settings.
 10. Compiles the Python source and verifies Flask/OpenCV imports before rebooting.
 
 Persistent hardware and camera settings live outside the replaced folder at `/etc/stem-research-academy/config.env`. The installer deliberately reapplies the documented `EchoSwarm` credentials on every update so the Pi and both flashed scouts cannot drift onto different network settings.
@@ -100,9 +102,9 @@ curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main
 
 ## Attached Pi screen
 
-After installation and reboot, the Pi automatically signs in to its graphical desktop and immediately opens Chromium in fullscreen kiosk mode at `http://127.0.0.1:8080`. This is the same dashboard served to phones and laptops at `http://10.42.0.1:8080`.
+After installation and reboot, the Pi signs in to its graphical desktop and opens Chromium as a normal application window at `http://127.0.0.1:8080`. It can be resized or minimized, leaving the desktop and Terminal available. Closing it causes the launcher to reopen it after two seconds, so the control station cannot remain accidentally closed. Phones and laptops on `EchoSwarm` use `http://10.42.0.1` or `http://echoswarm.local`.
 
-The interface uses the browser viewport rather than a fixed pixel resolution. Wide screens use the mecanum panel on the left and the two ESP32 panels on the right. Narrow or portrait displays stack the panels vertically. If Chromium is closed or crashes, the kiosk launcher starts it again after two seconds.
+The interface uses the browser viewport rather than a fixed pixel resolution. Wide screens use the mecanum panel on the left and the two ESP32 panels on the right. Narrow or portrait displays stack the panels vertically.
 
 The kiosk supports:
 
@@ -110,7 +112,7 @@ The kiosk supports:
 - Older Raspberry Pi OS desktop releases using X11/LXDE autostart.
 - Raspberry Pi OS Lite, when compatible Raspberry Pi desktop packages are available.
 
-Kiosk logs are stored at `~/.local/state/stem-robot-kiosk.log`.
+Dashboard-window logs are stored at `~/.local/state/stem-robot-kiosk.log`.
 
 ## Motor wiring and first test
 
@@ -129,12 +131,15 @@ An accessible hardware emergency stop or motor-power switch should still be used
 
 ## Keyboard controls
 
-| Key | Motion |
-|---|---|
-| W / S | Forward / backward |
-| A / D | Strafe left / right |
-| Q / E | Rotate left / right |
-| Space | Stop all motors immediately |
+| Robot | Key | Motion |
+|---|---|---|
+| Big mecanum | W / S | Forward / backward |
+| Big mecanum | A / D | Strafe left / right |
+| Big mecanum | Q / E | Rotate left / right |
+| Big mecanum | Space | Kill all four big-robot motors |
+| ECHO Scout A | Arrow keys | Differential drive |
+| ECHO Scout B | I / J / K / L | Forward / left / backward / right |
+| All robots | Escape | Kill every robot immediately |
 
 Multiple keys can be held for combined motion. The speed slider limits all four wheel outputs.
 
@@ -147,7 +152,7 @@ http://echo-scout-a.local
 http://echo-scout-b.local
 ```
 
-The Pi calls the scouts through same-origin proxy endpoints, so a phone only needs to open the main Pi dashboard. Each scout also serves a small independent touch UI for bench testing. Both layers use a 500 ms firmware watchdog; if commands stop arriving, the affected scout stops itself.
+The Pi calls the scouts through same-origin proxy endpoints, so a phone only needs to open the main Pi dashboard. Each scout sends a UDP heartbeat to the Pi once per second, allowing the HUD to confirm `Connected` even before cameras are fitted. Each scout also serves a small independent touch UI for bench testing. Both layers use a 500 ms firmware watchdog; if commands stop arriving, the affected scout stops itself.
 
 The sketch exposes `/drive`, `/stop`, `/status`, and `/motion`. `/status` includes connection strength, stopped/running state, uptime, and the coarse CSI disturbance reading. Read the [firmware-specific guide](firmware/echo-scout/README.md) before the first wheels-up motor test.
 
@@ -173,7 +178,7 @@ sudo journalctl -u stem-robot-dashboard -f
 systemctl status stem-robot-hotspot
 nmcli connection show stem-robot-hotspot
 
-# Check the local fullscreen browser
+# Check the local dashboard window
 tail -f ~/.local/state/stem-robot-kiosk.log
 
 # Restart everything after configuration changes
