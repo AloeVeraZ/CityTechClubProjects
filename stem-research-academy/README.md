@@ -27,8 +27,10 @@ The project is organized for **three mentors** and **two students**. Names can b
 
 ## Current capabilities
 
-- Creates the secured 2.4 GHz `STEM-Robot-Lab` hotspot with NetworkManager.
+- Creates the secured 2.4 GHz `tripletrobot` hotspot with NetworkManager.
 - Serves the dashboard at `http://10.42.0.1:8080`.
+- Opens the same dashboard automatically in a self-restarting fullscreen Chromium kiosk on the Pi display.
+- Auto-sizes the dashboard for the attached display, phones, tablets, and laptops.
 - Streams a Logitech C270 or other V4L2 webcam from `/dev/video0`.
 - Drives forward/backward with W/S, strafes with A/D, and rotates with Q/E.
 - Stops immediately when drive keys are released, the browser loses focus, or Space is pressed.
@@ -61,10 +63,15 @@ curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main
 The installer requests `sudo` only for packages, networking, user groups, and system services. It then reboots. Connect a phone or computer to:
 
 ```text
-Wi-Fi:    STEM-Robot-Lab
-Password: STEMRobotics
-Website:  http://10.42.0.1:8080
+Wi-Fi network name (SSID): tripletrobot
+Wi-Fi password:            STEMRobotics
+Pi hostname:               tripletrobot
+Website:                   http://10.42.0.1:8080
 ```
+
+Wi-Fi uses a network name (SSID), not a username. The actual Raspberry Pi Linux login remains the normal account created in Raspberry Pi Imager; the installer does not rename that account because doing so can break its home directory, services, and SSH access.
+
+The requested password `triplet` cannot be used with this WPA2 hotspot because it contains seven characters; WPA2 requires 8–63 characters. The installer therefore keeps the existing working password instead of breaking hotspot startup. Once an eight-character-or-longer replacement is chosen, update `HOTSPOT_PASSWORD` in `/etc/stem-research-academy/config.env` and rerun the installer.
 
 Change the default password before demonstrations involving untrusted visitors.
 
@@ -72,13 +79,16 @@ Change the default password before demonstrations involving untrusted visitors.
 
 Run the same `curl` command whenever the project should be updated. Every run:
 
-1. Refreshes the Raspberry Pi package index and installs current required packages.
+1. Runs a complete Raspberry Pi OS upgrade, then installs current required packages.
 2. Downloads a clean copy of the latest `main` branch.
 3. Stops the old dashboard and preserves it as `~/STEMResearchAcademy.backup.TIMESTAMP`.
 4. Replaces `~/STEMResearchAcademy` with the fresh project files.
 5. Rebuilds the Python environment and upgrades its packages.
 6. Reinstalls and enables the hotspot and dashboard services.
-7. Compiles the Python source and verifies Flask/OpenCV imports before rebooting.
+7. Installs or updates the compatible Chromium and Raspberry Pi desktop packages.
+8. Recreates both current Wayland/labwc and older X11 kiosk autostart entries.
+9. Reapplies auto-login, fullscreen, anti-blanking, and anti-sleep settings.
+10. Compiles the Python source and verifies Flask/OpenCV imports before rebooting.
 
 Persistent settings live outside the replaced folder at `/etc/stem-research-academy/config.env`, so hotspot credentials and future ESP32 camera URLs survive updates. If the installer is being tested without a reboot, use:
 
@@ -86,7 +96,27 @@ Persistent settings live outside the replaced folder at `/etc/stem-research-acad
 curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/install.sh | STEM_NO_REBOOT=1 bash
 ```
 
-The Pi needs an internet path while updating. Once `wlan0` is acting as the hotspot, use Ethernet or a second Wi-Fi adapter for internet access before rerunning the installer.
+The Pi needs an internet path while updating. Once `wlan0` is acting as the hotspot, use Ethernet or a second Wi-Fi adapter for internet access before rerunning the installer. Every rerun downloads a clean application copy, upgrades required packages, rebuilds the Python environment, migrates configuration keys, and regenerates the system and kiosk files, so it can repair an older installation as well as update a current one.
+
+For recovery testing only, `STEM_SKIP_OS_UPGRADE=1` can be passed to `bash` to skip the full operating-system upgrade while still refreshing the application and its configuration:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/install.sh | STEM_SKIP_OS_UPGRADE=1 bash
+```
+
+## Attached Pi screen
+
+After installation and reboot, the Pi automatically signs in to its graphical desktop and immediately opens Chromium in fullscreen kiosk mode at `http://127.0.0.1:8080`. This is the same dashboard served to phones and laptops at `http://10.42.0.1:8080`.
+
+The interface uses the browser viewport rather than a fixed pixel resolution. Wide screens use the mecanum panel on the left and the two ESP32 panels on the right. Narrow or portrait displays stack the panels vertically. If Chromium is closed or crashes, the kiosk launcher starts it again after two seconds.
+
+The kiosk supports:
+
+- Current Raspberry Pi OS using Wayland and labwc.
+- Older Raspberry Pi OS desktop releases using X11/LXDE autostart.
+- Raspberry Pi OS Lite, when compatible Raspberry Pi desktop packages are available.
+
+Kiosk logs are stored at `~/.local/state/stem-robot-kiosk.log`.
 
 ## Motor wiring and first test
 
@@ -143,6 +173,9 @@ sudo journalctl -u stem-robot-dashboard -f
 # Check the hotspot
 systemctl status stem-robot-hotspot
 nmcli connection show stem-robot-hotspot
+
+# Check the local fullscreen browser
+tail -f ~/.local/state/stem-robot-kiosk.log
 
 # Restart everything after configuration changes
 sudo systemctl restart stem-robot-dashboard stem-robot-hotspot

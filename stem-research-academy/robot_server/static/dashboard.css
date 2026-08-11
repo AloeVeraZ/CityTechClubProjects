@@ -23,7 +23,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   height: 100dvh;
-  min-height: 560px;
+  min-height: 480px;
   padding: 10px;
   gap: 10px;
 }
@@ -152,10 +152,29 @@ input[type="range"] { width: 100%; margin: 9px 0 15px; accent-color: var(--lime)
 .toast { position: fixed; z-index: 10; left: 50%; bottom: 26px; transform: translate(-50%, 150%); padding: 12px 18px; border-radius: 999px; background: #ff5b47; color: white; font-size: 13px; font-weight: 750; transition: transform .2s ease; }
 .toast.show { transform: translate(-50%, 0); }
 
-@media (max-width: 850px), (orientation: portrait) {
+@media (max-width: 700px), (orientation: portrait) {
   body { overflow: auto; }
   .dashboard { grid-template-columns: 1fr; grid-template-rows: minmax(640px, 75dvh) minmax(620px, 100dvh); height: auto; }
   .secondary-stack { min-height: 620px; }
+}
+
+@media (max-height: 600px) and (orientation: landscape) and (min-width: 701px) {
+  .dashboard { min-height: 0; padding: 6px; gap: 6px; }
+  .secondary-stack { gap: 6px; }
+  .panel { border-radius: 15px; }
+  .panel-header { padding: 16px 18px; }
+  h1 { font-size: clamp(30px, 4vw, 48px); }
+  h2 { font-size: clamp(20px, 2.4vw, 30px); }
+  .drive-card { left: 18px; bottom: 43px; width: calc(100% - 36px); padding: 12px; }
+  .drive-card input[type="range"] { margin: 5px 0 9px; }
+  .key { min-height: 42px; }
+  .hint { margin: 7px 0; font-size: 10px; }
+  .stop-button { padding: 8px; }
+  .telemetry { left: 18px; right: 18px; bottom: 13px; }
+  .compact { padding: 15px 18px; }
+  .placeholder { inset: 58px 18px 34px; }
+  .placeholder .camera-icon { width: 40px; height: 40px; margin-bottom: 6px; }
+  .esp-panel .telemetry { left: 18px; right: 18px; bottom: 11px; }
 }
 
 @media (max-width: 520px) {
