@@ -6,12 +6,15 @@
   const direction = document.querySelector('#direction');
   const status = document.querySelector('#pi-status');
   const host = document.querySelector('#host');
+  const cameraMessage = document.querySelector('#camera-message');
+  const cameraImage = document.querySelector('.video');
   const toast = document.querySelector('#toast');
   const session = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
   const initialServerTime = Number(document.querySelector('meta[name="server-time-ms"]')?.content);
   let serverClockOffset = Number.isFinite(initialServerTime) ? initialServerTime - Date.now() : 0;
   let bigSequence = 0;
   let lastVector = '';
+  let lastCameraRetryAt = 0;
   const scoutSequences = {a: 0, b: 0};
   const bigKeys = new Set(['w', 'a', 's', 'd', 'q', 'e']);
   const scoutKeys = {
@@ -276,6 +279,14 @@
       status.classList.toggle('offline', !hardwareReady);
       status.innerHTML = `<i></i> ${hardwareReady ? 'Pi controls ready' : 'GPIO unavailable - motors disabled'}`;
       host.textContent = `${data.hostname} / ${location.host}`;
+      cameraMessage.classList.toggle('hidden', data.camera_available);
+      cameraMessage.textContent = data.camera_error
+        ? `Camera unavailable: ${data.camera_error}`
+        : data.camera_device ? `Opening ${data.camera_device}...` : 'Looking for Logitech C270...';
+      if (!data.camera_available && data.camera_error && Date.now() - lastCameraRetryAt > 5000) {
+        lastCameraRetryAt = Date.now();
+        cameraImage.src = `/camera.mjpg?retry=${lastCameraRetryAt}`;
+      }
     } catch (_) {
       status.classList.add('offline');
       status.innerHTML = '<i></i> Disconnected';

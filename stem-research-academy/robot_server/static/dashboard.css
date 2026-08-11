@@ -42,6 +42,8 @@ body {
 
 .primary-panel { background: #101817; }
 .video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.camera-message { position: absolute; z-index: 1; inset: 0; display: grid; place-items: center; padding: 28px; color: var(--muted); text-align: center; }
+.camera-message.hidden { display: none; }
 .shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(3, 8, 7, .76), rgba(3, 8, 7, .08) 34%, rgba(3, 8, 7, .9)); }
 
 .panel-header {

@@ -31,7 +31,7 @@ The project is organized for **three mentors** and **two students**. Names can b
 - Serves the dashboard at `http://10.42.0.1`, `http://echoswarm.local`, and the fallback `http://10.42.0.1:8080`.
 - Opens it automatically in a self-restarting, resizable Chromium application window on the Pi display.
 - Auto-sizes the dashboard for the attached display, phones, tablets, and laptops.
-- Streams a Logitech C270 or other V4L2 webcam from `/dev/video0`.
+- Automatically finds the Logitech C270's capture-capable V4L2 node and streams it in the large robot panel.
 - Drives forward/backward with W/S, strafes with A/D, and rotates with Q/E.
 - Stops immediately when drive keys are released, the browser loses focus, or a kill switch is pressed.
 - Uses a latest-command-only channel, 300 ms command expiration, sequence checks, and a 200 ms server watchdog. Delayed commands are discarded instead of replayed.
@@ -81,14 +81,15 @@ Run the same `curl` command whenever the project should be updated. Every run:
 
 1. Runs a complete Raspberry Pi OS upgrade, then installs current required packages.
 2. Downloads a clean copy of the latest `main` branch.
-3. Removes stale installer backups, cleans the APT cache, checks free space, and stops the old dashboard.
-4. Replaces `~/STEMResearchAcademy` with fresh project files while avoiding a duplicate virtual environment.
-5. Rebuilds the Python environment and upgrades its packages.
-6. Reinstalls and enables the hotspot and dashboard services.
-7. Installs or updates the compatible Chromium and Raspberry Pi desktop packages.
-8. Recreates both current Wayland/labwc and older X11 dashboard autostart entries.
-9. Reapplies auto-login, resizable-window, anti-blanking, and anti-sleep settings.
-10. Compiles the Python source and verifies Flask/OpenCV imports before rebooting.
+3. Removes stale installer backups, cleans the APT cache, and checks free space.
+4. Builds and validates the replacement beside the working application before stopping the dashboard.
+5. Uses Raspberry Pi OS's tested Flask and OpenCV packages without a duplicate pip download.
+6. Atomically swaps in the validated application and restores the previous copy if a later step fails.
+7. Reinstalls and enables the hotspot and dashboard services.
+8. Installs or updates the compatible Chromium and Raspberry Pi desktop packages.
+9. Recreates both current Wayland/labwc and older X11 dashboard autostart entries.
+10. Reapplies auto-login, resizable-window, anti-blanking, and anti-sleep settings.
+11. Verifies the live dashboard health endpoint before reporting success and rebooting.
 
 Persistent hardware and camera settings live outside the replaced folder at `/etc/stem-research-academy/config.env`. The installer deliberately reapplies the documented `EchoSwarm` credentials on every update so the Pi and both flashed scouts cannot drift onto different network settings.
 
@@ -113,6 +114,10 @@ The kiosk supports:
 - Raspberry Pi OS Lite, when compatible Raspberry Pi desktop packages are available.
 
 Dashboard-window logs are stored at `~/.local/state/stem-robot-kiosk.log`.
+
+## Logitech C270 camera
+
+The dashboard automatically prefers the C270's persistent `/dev/v4l/by-id/` capture node, verifies that the node returns real frames, and then tries the remaining `/dev/video*` nodes. The large robot panel displays either the live MJPEG feed or the exact capture error and retries after a disconnect. Camera selection and errors are also reported by `http://10.42.0.1:8080/api/status`; `v4l2-ctl --list-devices` shows the nodes detected by Raspberry Pi OS.
 
 ## Motor wiring and first test
 

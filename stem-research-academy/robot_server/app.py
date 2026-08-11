@@ -28,7 +28,7 @@ logging.getLogger("werkzeug").setLevel(logging.WARNING)
 WATCHDOG_SECONDS = float(os.environ.get("DRIVE_WATCHDOG_SECONDS", "0.20"))
 drive = MecanumDrive()
 camera = CameraStream(
-    device=os.environ.get("CAMERA_DEVICE", "/dev/video0"),
+    device=os.environ.get("CAMERA_DEVICE", "auto"),
     width=int(os.environ.get("CAMERA_WIDTH", "640")),
     height=int(os.environ.get("CAMERA_HEIGHT", "480")),
     fps=int(os.environ.get("CAMERA_FPS", "10")),
@@ -98,6 +98,7 @@ def create_app() -> Flask:
             gpio="hardware" if drive.is_hardware else "simulation",
             camera_available=camera.available,
             camera_error=camera.error,
+            camera_device=camera.selected_device,
             command=drive.last_command,
             server_time_ms=round(time.time() * 1000),
         )

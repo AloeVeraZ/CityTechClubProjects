@@ -65,8 +65,20 @@ class EchoScoutFirmwareTests(unittest.TestCase):
     def test_installer_reclaims_its_own_stale_copies(self):
         self.assertIn("prune_old_installations", self.installer)
         self.assertIn('sudo apt-get clean', self.installer)
-        self.assertIn('rm -rf -- "$PREVIOUS_APP_DIR/.venv"', self.installer)
+        self.assertIn('"$APP_NAME".installing.*', self.installer)
         self.assertIn("At least 128 MB of free space", self.installer)
+
+    def test_installer_builds_offline_before_atomic_swap(self):
+        build = self.installer.index("python3 -m venv --without-pip --system-site-packages")
+        imports = self.installer.index("Flask and OpenCV imports passed")
+        stop = self.installer.index("systemctl stop stem-robot-dashboard.service", imports)
+        swap = self.installer.index('mv "$STAGED_APP_DIR" "$APP_DIR"')
+        self.assertLess(build, imports)
+        self.assertLess(imports, stop)
+        self.assertLess(stop, swap)
+        self.assertNotIn("pip install --upgrade", self.installer)
+        self.assertIn("Restoring the previous working application", self.installer)
+        self.assertIn("http://127.0.0.1:8080/healthz", self.installer)
 
     def test_installer_uses_resizable_window_and_simple_dashboard_address(self):
         self.assertIn('nginx-light', self.installer)

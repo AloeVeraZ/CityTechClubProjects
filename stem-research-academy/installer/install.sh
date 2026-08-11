@@ -10,24 +10,38 @@ CONFIG_DIR="/etc/stem-research-academy"
 CONFIG_FILE="$CONFIG_DIR/config.env"
 APP_USER="$(id -un)"
 TEMP_CHECKOUT=""
+STAGED_APP_DIR=""
+APP_SWAPPED=0
 AUTOSTART_DIR="$HOME/.config/autostart"
 LABWC_DIR="$HOME/.config/labwc"
 KIOSK_URL="http://127.0.0.1:8080"
 APP_PARENT="$(dirname "$APP_DIR")"
 APP_NAME="$(basename "$APP_DIR")"
+PREVIOUS_APP_DIR="${APP_DIR}.previous"
 MIN_FREE_KB=131072
 
 say() { printf '\n\033[1;36m[STEM Robot Lab]\033[0m %s\n' "$*"; }
 fail() { printf '\n\033[1;31m[INSTALL ERROR]\033[0m %s\n' "$*" >&2; exit 1; }
 
 cleanup() {
+    local status=$?
+    if [ "$status" -ne 0 ] && [ "$APP_SWAPPED" = "1" ] && [ -d "$PREVIOUS_APP_DIR" ]; then
+        say "Restoring the previous working application after the failed update..."
+        sudo systemctl stop stem-robot-dashboard.service 2>/dev/null || true
+        rm -rf -- "$APP_DIR"
+        mv "$PREVIOUS_APP_DIR" "$APP_DIR"
+        sudo systemctl restart stem-robot-dashboard.service 2>/dev/null || true
+    fi
     if [ -n "$TEMP_CHECKOUT" ] && [ -d "$TEMP_CHECKOUT" ]; then
         rm -rf -- "$TEMP_CHECKOUT"
+    fi
+    if [ -n "$STAGED_APP_DIR" ] && [ -d "$STAGED_APP_DIR" ]; then
+        rm -rf -- "$STAGED_APP_DIR"
     fi
 }
 
 trap cleanup EXIT
-trap 'fail "Installation stopped on line $LINENO. Fix the error above and rerun the same command."' ERR
+trap 'status=$?; fail "Installation stopped on line $LINENO (exit $status): $BASH_COMMAND. Fix the error above and rerun the same command."' ERR
 
 apt_get() {
     local attempt=1 output
@@ -61,7 +75,7 @@ prune_old_installations() {
     while IFS= read -r -d '' candidate; do
         resolved_candidate="$(realpath -m "$candidate")"
         case "$resolved_candidate" in
-            "$resolved_parent"/"$APP_NAME".backup.*|"$resolved_parent"/"$APP_NAME".previous)
+            "$resolved_parent"/"$APP_NAME".backup.*|"$resolved_parent"/"$APP_NAME".installing.*)
                 say "Removing stale installer backup: $resolved_candidate"
                 rm -rf -- "$resolved_candidate"
                 ;;
@@ -69,7 +83,7 @@ prune_old_installations() {
         esac
     done < <(
         find "$resolved_parent" -mindepth 1 -maxdepth 1 -type d \
-            \( -name "$APP_NAME.backup.*" -o -name "$APP_NAME.previous" \) -print0
+            \( -name "$APP_NAME.backup.*" -o -name "$APP_NAME.installing.*" \) -print0
     )
 }
 
@@ -227,26 +241,36 @@ FRESH_SOURCE="$DOWNLOAD_ROOT/$SOURCE_SUBDIR"
 [ -f "$FRESH_SOURCE/run.py" ] || fail "$SOURCE_SUBDIR was not found in the downloaded repository."
 python3 -m compileall -q "$FRESH_SOURCE/robot_server" "$FRESH_SOURCE/run.py"
 
-sudo systemctl stop stem-robot-dashboard.service 2>/dev/null || true
+say "Building and validating the replacement application..."
+STAGED_APP_DIR="${APP_DIR}.installing.$$"
+mkdir -p "$STAGED_APP_DIR"
+cp -a "$FRESH_SOURCE/." "$STAGED_APP_DIR/"
 
+# Flask, OpenCV, and GPIO are installed above from Raspberry Pi OS packages.
+# Avoid ensurepip and a second network download here: those are unnecessary,
+# consume scarce storage, and commonly make venv creation fail on small Pis.
+python3 -m venv --without-pip --system-site-packages "$STAGED_APP_DIR/.venv"
+"$STAGED_APP_DIR/.venv/bin/python" -m compileall -q \
+    "$STAGED_APP_DIR/robot_server" "$STAGED_APP_DIR/run.py"
+(
+    cd "$STAGED_APP_DIR"
+    "$STAGED_APP_DIR/.venv/bin/python" -c \
+        'import flask; import cv2; print("Flask and OpenCV imports passed.")'
+)
+
+# Keep the current robot dashboard running until the replacement has passed
+# compilation and dependency imports. A live health request runs after restart.
+sudo systemctl stop stem-robot-dashboard.service 2>/dev/null || true
+if [ -e "$PREVIOUS_APP_DIR" ]; then
+    rm -rf -- "$PREVIOUS_APP_DIR"
+fi
 if [ -e "$APP_DIR" ]; then
-    PREVIOUS_APP_DIR="${APP_DIR}.previous"
     say "Replacing the previous installation..."
     mv "$APP_DIR" "$PREVIOUS_APP_DIR"
-    # The isolated environment is reproducible and is the largest part of an
-    # installation. Do not duplicate it while constructing the replacement.
-    if [ -d "$PREVIOUS_APP_DIR/.venv" ]; then
-        rm -rf -- "$PREVIOUS_APP_DIR/.venv"
-    fi
 fi
-
-mkdir -p "$APP_DIR"
-cp -a "$FRESH_SOURCE/." "$APP_DIR/"
-
-say "Rebuilding the isolated Python environment..."
-python3 -m venv --system-site-packages "$VENV_DIR"
-"$VENV_DIR/bin/python" -m pip install --upgrade pip setuptools wheel
-"$VENV_DIR/bin/python" -m pip install --upgrade -r "$APP_DIR/requirements.txt"
+mv "$STAGED_APP_DIR" "$APP_DIR"
+STAGED_APP_DIR=""
+APP_SWAPPED=1
 
 say "Migrating persistent robot, hotspot, and kiosk configuration..."
 sudo install -d -m 0755 "$CONFIG_DIR"
@@ -260,7 +284,7 @@ WIFI_INTERFACE=wlan0
 HOTSPOT_ADDRESS=10.42.0.1/24
 HOTSPOT_CHANNEL=6
 PORT=8080
-CAMERA_DEVICE=/dev/video0
+CAMERA_DEVICE=auto
 CAMERA_WIDTH=640
 CAMERA_HEIGHT=480
 CAMERA_FPS=10
@@ -291,7 +315,7 @@ ensure_config_key WIFI_INTERFACE "wlan0"
 ensure_config_key HOTSPOT_ADDRESS "10.42.0.1/24"
 ensure_config_key HOTSPOT_CHANNEL "6"
 ensure_config_key PORT "8080"
-ensure_config_key CAMERA_DEVICE "/dev/video0"
+ensure_config_key CAMERA_DEVICE "auto"
 ensure_config_key CAMERA_WIDTH "640"
 ensure_config_key CAMERA_HEIGHT "480"
 ensure_config_key CAMERA_FPS "10"
@@ -305,6 +329,7 @@ ensure_config_key SCOUT_B_HOST "echo-scout-b.local"
 sudo sed -i -E \
     -e 's/^HOTSPOT_SSID=.*/HOTSPOT_SSID=EchoSwarm/' \
     -e 's/^HOTSPOT_PASSWORD=.*/HOTSPOT_PASSWORD=roboswarm1/' \
+    -e 's|^CAMERA_DEVICE=.*|CAMERA_DEVICE=auto|' \
     -e 's/^CAMERA_WIDTH=.*/CAMERA_WIDTH=640/' \
     -e 's/^CAMERA_HEIGHT=.*/CAMERA_HEIGHT=480/' \
     -e 's/^CAMERA_FPS=.*/CAMERA_FPS=10/' \
@@ -421,10 +446,23 @@ say "Validating the server before enabling it..."
 "$VENV_DIR/bin/python" -m compileall -q "$APP_DIR/robot_server" "$APP_DIR/run.py"
 "$VENV_DIR/bin/python" -c 'import flask; import cv2; print("Flask and OpenCV imports passed.")'
 sudo systemctl restart stem-robot-dashboard.service
+DASHBOARD_READY=0
+for attempt in $(seq 1 30); do
+    if curl --fail --silent --max-time 2 http://127.0.0.1:8080/healthz >/dev/null; then
+        DASHBOARD_READY=1
+        break
+    fi
+    sleep 1
+done
+if [ "$DASHBOARD_READY" != "1" ]; then
+    sudo journalctl -u stem-robot-dashboard.service -n 40 --no-pager || true
+    fail "The dashboard did not pass its local health check. The service log is shown above."
+fi
 
 if [ -n "${PREVIOUS_APP_DIR:-}" ] && [ -d "$PREVIOUS_APP_DIR" ]; then
     rm -rf -- "$PREVIOUS_APP_DIR"
 fi
+APP_SWAPPED=0
 
 say "Installation complete."
 echo "Pi name: echoswarm"
