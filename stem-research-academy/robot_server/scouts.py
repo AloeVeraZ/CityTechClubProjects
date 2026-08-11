@@ -9,7 +9,7 @@ import time
 
 
 class ScoutRegistry:
-    def __init__(self, port: int = 5006, max_age: float = 6.0) -> None:
+    def __init__(self, port: int = 5006, max_age: float = 12.0) -> None:
         self.port = port
         self.max_age = max_age
         self._records: dict[str, dict] = {}
@@ -32,14 +32,7 @@ class ScoutRegistry:
                     scout_id = str(data.get("id", "")).lower()
                     if scout_id not in ("a", "b"):
                         continue
-                    with self._lock:
-                        self._records[scout_id] = {
-                            "id": scout_id,
-                            "ip": address[0],
-                            "last_seen": time.monotonic(),
-                            "rssi": data.get("rssi"),
-                            "uptime_ms": data.get("uptime_ms"),
-                        }
+                    self.record(scout_id, address[0], data.get("rssi"), data.get("uptime_ms"), "udp")
                 except socket.timeout:
                     continue
                 except (UnicodeDecodeError, ValueError, OSError):
@@ -48,6 +41,30 @@ class ScoutRegistry:
             self.error = str(error)
         finally:
             listener.close()
+
+    def record(
+        self,
+        scout_id: str,
+        ip: str,
+        rssi: int | None = None,
+        uptime_ms: int | None = None,
+        transport: str = "http",
+    ) -> dict:
+        """Record a verified heartbeat received from a Scout."""
+        normalized_id = str(scout_id).lower()
+        if normalized_id not in ("a", "b"):
+            raise ValueError("Scout id must be A or B")
+        record = {
+            "id": normalized_id,
+            "ip": ip,
+            "last_seen": time.monotonic(),
+            "rssi": rssi,
+            "uptime_ms": uptime_ms,
+            "transport": transport,
+        }
+        with self._lock:
+            self._records[normalized_id] = record
+        return dict(record)
 
     def snapshot(self, scout_id: str) -> dict | None:
         with self._lock:
@@ -68,4 +85,3 @@ class ScoutRegistry:
     def close(self) -> None:
         self._stop.set()
         self._thread.join(timeout=1)
-

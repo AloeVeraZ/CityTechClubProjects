@@ -176,6 +176,28 @@ def create_app() -> Flask:
                 error=str(error),
             )
 
+    @app.route("/api/scouts/register", methods=["GET", "POST"])
+    def register_scout():
+        payload = request.get_json(silent=True) or request.args
+        scout_id = str(payload.get("id", "")).lower()
+        if scout_id not in SCOUTS:
+            return jsonify(error="Scout id must be A or B"), 400
+        try:
+            rssi = int(payload["rssi"]) if payload.get("rssi") not in (None, "") else None
+            uptime_ms = int(payload["uptime_ms"]) if payload.get("uptime_ms") not in (None, "") else None
+        except (TypeError, ValueError):
+            return jsonify(error="Invalid Scout telemetry"), 400
+        remote_ip = request.remote_addr or ""
+        heartbeat = scout_registry.record(scout_id, remote_ip, rssi, uptime_ms, "http")
+        heartbeat.pop("last_seen", None)
+        return jsonify(
+            ok=True,
+            registered=True,
+            id=scout_id.upper(),
+            dashboard="http://10.42.0.1",
+            heartbeat=heartbeat,
+        )
+
     @app.post("/api/scouts/<scout_id>/drive")
     def scout_drive(scout_id: str):
         if scout_id not in SCOUTS:

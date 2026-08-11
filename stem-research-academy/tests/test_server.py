@@ -2,7 +2,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-from robot_server.app import app, drive, drive_sequences, scout_sequences
+from robot_server.app import app, drive, drive_sequences, scout_registry, scout_sequences
 
 
 class ServerTests(unittest.TestCase):
@@ -76,6 +76,23 @@ class ServerTests(unittest.TestCase):
         self.assertIn(b"Chassis control", response.data)
         self.assertIn(b"ECHO Scout A", response.data)
         self.assertIn(b"ECHO Scout B", response.data)
+
+    @patch("robot_server.app.scout_registry.record", return_value={
+        "id": "a", "ip": "10.42.0.31", "last_seen": 1.0,
+        "rssi": -51, "uptime_ms": 1200, "transport": "http",
+    })
+    def test_scout_can_register_its_dhcp_address(self, record):
+        response = self.client.get(
+            "/api/scouts/register?id=A&rssi=-51&uptime_ms=1200",
+            environ_base={"REMOTE_ADDR": "10.42.0.31"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.get_json()["registered"])
+        record.assert_called_once_with("a", "10.42.0.31", -51, 1200, "http")
+
+    def test_scout_registration_rejects_unknown_id(self):
+        response = self.client.get("/api/scouts/register?id=Z")
+        self.assertEqual(response.status_code, 400)
 
     @patch("robot_server.app._scout_request", return_value={"id": "A", "motion": False})
     def test_scout_status_proxy(self, scout_request):

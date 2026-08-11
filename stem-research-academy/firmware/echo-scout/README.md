@@ -11,8 +11,9 @@
 5. Exposes `/drive`, `/stop`, `/status`, and `/motion` endpoints for the central Pi dashboard.
 6. Applies a 500 ms command watchdog, stopping both motors if the browser, Pi, or Wi-Fi link disappears.
 7. Samples Wi-Fi Channel State Information and reports a coarse nearby-disturbance level in `/status`.
-8. Sends compact CSI summaries to UDP port 5005 on the Pi for future research processing.
-9. Broadcasts a heartbeat to UDP port 5006 once per second, allowing the Pi to confirm connection and learn the scout's current DHCP address without relying on `.local` resolution.
+8. Sends compact CSI summaries to UDP port 5005 at a throttled four reports per second, preventing CSI traffic from flooding the control link.
+9. Broadcasts a heartbeat to UDP port 5006 once per second.
+10. Registers its real DHCP address with `http://10.42.0.1:8080/api/scouts/register` every four seconds from a background task. This gives the Pi dashboard a second discovery path without blocking motor control or relying on `.local` resolution.
 
 The CSI result only means that Wi-Fi multipath changed. It cannot identify a person, determine direction or distance, count occupants, or replace a camera. Its threshold must be tuned in the actual room.
 
@@ -24,6 +25,20 @@ The CSI result only means that Wi-Fi multipath changed. It cannot identify a per
 - EchoLib's documented dependencies, including Adafruit BusIO.
 
 The sketch uses the documented `MotorControllers` and `TankDriveTrain` APIs. Motor 1 is treated as the left side and Motor 6 as the right side, matching 3DBuffalo's Zippy example.
+
+## Expected Serial Monitor output
+
+Use **115200 baud**. A correctly connected Scout reports messages similar to:
+
+```text
+Wi-Fi connected. IP address: 10.42.0.x
+Scout control page: http://echo-scout-a.local/
+mDNS ready: http://echo-scout-a.local/
+UDP heartbeat sent to Pi on port 5006.
+Pi registration: HTTP 200 - dashboard connected
+```
+
+Scout B prints `echo-scout-b.local`. The central Pi dashboard is `http://echoswarm.local/` or `http://10.42.0.1/`; `echoform.local` is not a configured hostname. The Scout's `.local` address is optional for Pi integration—the `HTTP 200` registration message is the authoritative confirmation that the Pi HUD can discover it.
 
 ## First motor test
 

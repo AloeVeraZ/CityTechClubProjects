@@ -38,6 +38,10 @@ class EchoScoutFirmwareTests(unittest.TestCase):
         self.assertIn("WiFi.mode(WIFI_STA)", self.source)
         self.assertIn("PI_HEARTBEAT_UDP_PORT = 5006", self.source)
         self.assertIn("sendHeartbeat()", self.source)
+        self.assertIn("registerWithPi()", self.source)
+        self.assertIn('"/api/scouts/register?id="', self.source)
+        self.assertIn("xTaskCreate(piRegistrationTask", self.source)
+        self.assertIn("CSI_REPORT_INTERVAL_MS = 250", self.source)
         for endpoint in ("/drive", "/stop", "/status", "/motion"):
             self.assertIn(f'"{endpoint}"', self.source)
         self.assertNotIn("192, 168, 4", self.source)

@@ -44,6 +44,9 @@ constexpr unsigned long WIFI_RETRY_MS = 5000;
 constexpr uint16_t PI_CSI_UDP_PORT = 5005;
 constexpr uint16_t PI_HEARTBEAT_UDP_PORT = 5006;
 constexpr unsigned long HEARTBEAT_INTERVAL_MS = 1000;
+constexpr unsigned long CSI_REPORT_INTERVAL_MS = 250;
+constexpr uint16_t PI_DASHBOARD_PORT = 8080;
+constexpr unsigned long PI_REGISTRATION_INTERVAL_MS = 4000;
 const IPAddress PI_ADDRESS(10, 42, 0, 1);
 
 static_assert(ROBOT_ID == 'A' || ROBOT_ID == 'B', "ROBOT_ID must be A or B");
@@ -62,8 +65,12 @@ WiFiUDP csiUdp;
 unsigned long lastCommandAt = 0;
 unsigned long lastWiFiAttemptAt = 0;
 unsigned long lastHeartbeatAt = 0;
+unsigned long lastCsiReportAt = 0;
 bool motorsStopped = true;
 bool mdnsStarted = false;
+bool heartbeatAnnounced = false;
+volatile bool piRegistered = false;
+volatile unsigned long lastPiRegistrationAt = 0;
 
 // ---------------------------------------------------------------------------
 // CSI disturbance sensing
@@ -168,8 +175,10 @@ void processCsi() {
     }
   }
 
-  // A compact summary is mirrored to the Pi. The HTTP status endpoint is the
-  // primary integration; UDP port 5005 is reserved for future CSI analysis.
+  // A compact summary is mirrored to the Pi at a fixed low rate. Sending one
+  // datagram per received Wi-Fi packet would flood the control link.
+  if (millis() - lastCsiReportAt < CSI_REPORT_INTERVAL_MS) return;
+  lastCsiReportAt = millis();
   struct __attribute__((packed)) CsiSummary {
     char robotId;
     uint32_t packetCount;
@@ -191,7 +200,62 @@ void sendHeartbeat() {
   heartbeat += ",\"uptime_ms\":" + String(millis()) + "}";
   csiUdp.beginPacket(PI_ADDRESS, PI_HEARTBEAT_UDP_PORT);
   csiUdp.print(heartbeat);
-  csiUdp.endPacket();
+  const bool sent = csiUdp.endPacket() == 1;
+  if (sent && !heartbeatAnnounced) {
+    heartbeatAnnounced = true;
+    Serial.println("UDP heartbeat sent to Pi on port 5006.");
+  }
+}
+
+// Register over TCP as well as UDP. This gives the Pi the Scout's DHCP
+// address even on networks where multicast DNS or UDP discovery is filtered.
+// It runs in a background FreeRTOS task, so a slow registration attempt can
+// never block server.handleClient() or the motor watchdog.
+bool registerWithPi() {
+  if (WiFi.status() != WL_CONNECTED) return false;
+
+  WiFiClient client;
+  client.setTimeout(300);
+  if (!client.connect(PI_ADDRESS, PI_DASHBOARD_PORT)) return false;
+
+  String path = "/api/scouts/register?id=";
+  path += ROBOT_ID;
+  path += "&rssi=" + String(WiFi.RSSI());
+  path += "&uptime_ms=" + String(millis());
+  client.print("GET ");
+  client.print(path);
+  client.print(" HTTP/1.1\r\n");
+  client.print("Host: 10.42.0.1:8080\r\n");
+  client.print("Connection: close\r\n\r\n");
+
+  const unsigned long responseStartedAt = millis();
+  while (!client.available() && client.connected() && millis() - responseStartedAt < 500) {
+    vTaskDelay(pdMS_TO_TICKS(10));
+  }
+  const String statusLine = client.available() ? client.readStringUntil('\n') : "";
+  const bool accepted = statusLine.indexOf(" 200 ") >= 0;
+  client.stop();
+  if (accepted) lastPiRegistrationAt = millis();
+  return accepted;
+}
+
+void piRegistrationTask(void *) {
+  vTaskDelay(pdMS_TO_TICKS(750));
+  bool firstAttempt = true;
+  for (;;) {
+    const bool wasRegistered = piRegistered;
+    const bool registered = registerWithPi();
+    if (registered) {
+      piRegistered = true;
+    } else if (lastPiRegistrationAt == 0 || millis() - lastPiRegistrationAt > PI_REGISTRATION_INTERVAL_MS * 3) {
+      piRegistered = false;
+    }
+    if (piRegistered != wasRegistered || (firstAttempt && !piRegistered)) {
+      Serial.printf("Pi registration: %s\n", piRegistered ? "HTTP 200 - dashboard connected" : "connection lost; retrying");
+    }
+    firstAttempt = false;
+    vTaskDelay(pdMS_TO_TICKS(PI_REGISTRATION_INTERVAL_MS));
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -238,6 +302,7 @@ void handleStatus() {
   json += "\"motion\":" + String(csiMotionDetected ? "true" : "false") + ",";
   json += "\"motion_level\":" + String(csiMotionLevel, 1) + ",";
   json += "\"csi_packets\":" + String(csiPacketCount) + ",";
+  json += "\"pi_registered\":" + String(piRegistered ? "true" : "false") + ",";
   json += "\"uptime_ms\":" + String(millis());
   json += "}";
   sendJson(json);
@@ -285,7 +350,10 @@ void connectWiFi() {
     delay(250);
     Serial.print('.');
   }
-  Serial.printf("\nConnected: http://%s/ (%s)\n", robotHost(), WiFi.localIP().toString().c_str());
+  Serial.printf("\nWi-Fi connected. IP address: %s\n", WiFi.localIP().toString().c_str());
+  Serial.printf("Scout control page: http://%s.local/\n", robotHost());
+  Serial.println("Pi dashboard: http://10.42.0.1/");
+  Serial.println("Registering with Pi at 10.42.0.1:8080...");
 }
 
 void setup() {
@@ -300,10 +368,18 @@ void setup() {
 
   connectWiFi();
   mdnsStarted = MDNS.begin(robotHost());
-  if (mdnsStarted) MDNS.addService("http", "tcp", 80);
+  if (mdnsStarted) {
+    MDNS.addService("http", "tcp", 80);
+    Serial.printf("mDNS ready: http://%s.local/\n", robotHost());
+  } else {
+    Serial.println("mDNS failed; Pi registration will still work by IP.");
+  }
   csiUdp.begin(0);
   startCsi();
   configureServer();
+  if (xTaskCreate(piRegistrationTask, "pi-registration", 4096, nullptr, 1, nullptr) != pdPASS) {
+    Serial.println("Could not start HTTP registration task; UDP heartbeat remains active.");
+  }
   lastCommandAt = millis();
 }
 
