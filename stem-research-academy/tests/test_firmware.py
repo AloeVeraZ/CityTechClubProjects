@@ -133,10 +133,19 @@ class LarpFirmwareTests(unittest.TestCase):
 
     def test_installer_uses_resizable_window_and_simple_dashboard_address(self):
         self.assertIn('nginx-light', self.installer)
-        self.assertIn('listen 80 default_server', self.installer)
+        self.assertIn('server_name 10.42.0.1 3tsahur.local localhost _', self.installer)
         self.assertIn('CAMERA_FPS=10', self.installer)
         self.assertIn('DRIVE_WATCHDOG_SECONDS=0.20', self.installer)
         self.assertNotIn('fullscreen robot dashboard', self.installer)
+
+    def test_nginx_setup_handles_pi_path_and_existing_site_conflicts(self):
+        self.assertIn('[ -x /usr/sbin/nginx ]', self.installer)
+        self.assertIn('NGINX_BIN=/usr/sbin/nginx', self.installer)
+        self.assertIn('"$NGINX_BIN" -t -c "$NGINX_TEST_CONFIG"', self.installer)
+        self.assertIn('install -d -m 0755 /etc/nginx/sites-available /etc/nginx/sites-enabled', self.installer)
+        self.assertIn('rm -f /etc/nginx/sites-enabled/3tsahur-dashboard', self.installer)
+        self.assertNotIn('listen [::]:80 default_server', self.installer)
+        self.assertNotIn('listen 80 default_server', self.installer)
 
     def test_curl_bootstrap_delegates_to_the_versioned_installer(self):
         bootstrap = (INSTALLER.parent / "curl-install.sh").read_text(encoding="utf-8")

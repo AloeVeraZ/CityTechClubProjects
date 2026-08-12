@@ -59,3 +59,14 @@ Open the dashboard and confirm all three camera panels and both LARP heartbeat
 indicators. With wheels raised and low speed selected, test forward/reverse,
 strafe, and rotation. Release each key/button and verify the motors stop. Only
 perform a ground test after every direction is correct.
+
+## Nginx validation during an update
+
+The installer resolves Nginx at `/usr/sbin/nginx` when it is not present in the
+normal user's `PATH`, validates the generated dashboard proxy before changing
+the active sites, and avoids IPv6/default-server declarations that can conflict
+with another Raspberry Pi OS site. If validation still fails, the complete
+Nginx diagnostic is printed and the new dashboard site link is removed. Repair
+the reported existing site or reinstall the package with
+`sudo apt-get install --reinstall nginx-light`, then rerun the same installer
+command.

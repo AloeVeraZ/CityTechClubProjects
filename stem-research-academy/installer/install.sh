@@ -483,11 +483,21 @@ sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.ta
 
 say "Adding simple dashboard addresses for hotspot devices..."
 NGINX_TEMP="$(mktemp)"
+NGINX_TEST_CONFIG="$(mktemp)"
+NGINX_BIN="$(command -v nginx 2>/dev/null || true)"
+if [ -z "$NGINX_BIN" ] && [ -x /usr/sbin/nginx ]; then
+    NGINX_BIN=/usr/sbin/nginx
+fi
+[ -n "$NGINX_BIN" ] && [ -x "$NGINX_BIN" ] || \
+    fail "Nginx was installed but its executable was not found. Try: sudo apt-get install --reinstall nginx-light"
+
 cat > "$NGINX_TEMP" <<'EOF'
 server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    server_name _;
+    # Avoid an IPv6/default-server collision on Pi images that already carry
+    # another Nginx site. Hostname matching still routes every documented
+    # dashboard address here after the stock default link is removed below.
+    listen 80;
+    server_name 10.42.0.1 3tsahur.local localhost _;
 
     location / {
         proxy_pass http://127.0.0.1:8080;
@@ -498,11 +508,35 @@ server {
     }
 }
 EOF
+
+# Check this generated site by itself before modifying /etc/nginx. This gives a
+# useful error on every supported Pi OS image and leaves a working Nginx setup
+# untouched when the candidate is not accepted by the installed Nginx build.
+cat > "$NGINX_TEST_CONFIG" <<EOF
+pid /tmp/3tsahur-nginx-test.pid;
+error_log stderr;
+events {}
+http {
+    include /etc/nginx/mime.types;
+    include $NGINX_TEMP;
+}
+EOF
+if ! sudo "$NGINX_BIN" -t -c "$NGINX_TEST_CONFIG"; then
+    rm -f "$NGINX_TEMP" "$NGINX_TEST_CONFIG"
+    fail "The generated dashboard proxy is not compatible with this Nginx installation. The diagnostic is shown above."
+fi
+rm -f "$NGINX_TEST_CONFIG"
+
+sudo install -d -m 0755 /etc/nginx/sites-available /etc/nginx/sites-enabled
 sudo install -m 0644 "$NGINX_TEMP" /etc/nginx/sites-available/3tsahur-dashboard
 rm -f "$NGINX_TEMP"
-sudo rm -f /etc/nginx/sites-enabled/default
 sudo ln -sfn /etc/nginx/sites-available/3tsahur-dashboard /etc/nginx/sites-enabled/3tsahur-dashboard
-sudo nginx -t
+if ! sudo "$NGINX_BIN" -t; then
+    sudo rm -f /etc/nginx/sites-enabled/3tsahur-dashboard
+    fail "The existing Nginx configuration conflicts with the dashboard site. The diagnostic is shown above; the new site link was removed."
+fi
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo "$NGINX_BIN" -t
 sudo systemctl enable nginx.service
 sudo systemctl restart nginx.service
 
