@@ -9,6 +9,43 @@
 
 > One rugged Raspberry Pi mecanum hub, two mobile camera scouts, and one browser dashboard for safe local reconnaissance experiments.
 
+## START HERE: connect your laptop to the robot
+
+After the Raspberry Pi installer finishes and the Pi reboots, it creates its
+own 2.4 GHz Wi-Fi network. Connect the laptop, phone, or tablet that will
+control the robots with these exact values:
+
+| What you need | Value | What it means |
+| --- | --- | --- |
+| **Wi-Fi name (SSID)** | **`3TSahur-Swarm`** | Select this network in the Wi-Fi menu on your laptop. This is the robot network, not a user-account name. |
+| **Wi-Fi password** | **`roboswarm1`** | Enter this when the laptop asks for the `3TSahur-Swarm` network password. |
+| **Pi IP address** | **`10.42.0.1`** | This is the Raspberry Pi's fixed address while connected to the robot Wi-Fi. |
+| **Dashboard address** | **`http://10.42.0.1`** | Open this address in a web browser to view cameras and control the robots. |
+
+1. Power on the Raspberry Pi and wait for it to finish booting.
+2. On the operator laptop, open Wi-Fi settings and join **`3TSahur-Swarm`**
+   with password **`roboswarm1`**.
+3. Open **[http://10.42.0.1](http://10.42.0.1)** in the laptop's browser.
+4. If that friendly dashboard address does not open, try the direct service
+   address **[http://10.42.0.1:8080](http://10.42.0.1:8080)**.
+
+To open a terminal on the actual Pi from the connected laptop, use:
+
+```bash
+ssh YOUR_PI_USERNAME@10.42.0.1
+```
+
+Replace `YOUR_PI_USERNAME` with the Raspberry Pi OS username that was chosen
+when the SD card was created. The project does **not** set or change that login
+username or its password. `http://3tsahur.local` is also available on devices
+that support mDNS, but `10.42.0.1` is the dependable direct address.
+
+> **Important:** These connection details work after the Pi installer has
+> completed. The first installation still requires local access to the Pi and
+> an internet connection. For a public or shared deployment, change the default
+> hotspot password in the installer and all four scout firmware sketches before
+> flashing them.
+
 **3TSahur** is a Raspberry Pi 4 Model B (4 GB) mecanum-drive control hub with a Logitech C270 USB camera. It coordinates two ECHO differential-drive scout robots—**LARP Scout A** and **LARP Scout B**—each paired with an Inland ESP32-CAM video node. The project creates a self-contained local Wi-Fi control network: no internet connection is required during normal operation.
 
 ## What it can do
@@ -86,9 +123,9 @@ normal operation requires cloud access.
    hotspot credentials in both LARP drive boards and both ESP32-CAM boards.
 4. **Validate one subsystem at a time.** Confirm the Pi dashboard, C270, each
    camera stream, each LARP heartbeat, then raised-wheel drive directions.
-5. **Operate with control priority.** Keep one dashboard camera stream open,
-   start in the Control Priority camera profile if radio capacity is limited,
-   and test `Space`/`Esc` before floor operation.
+5. **Operate with control priority.** The one-page dashboard automatically
+   keeps only the robot camera nearest the viewport open. Test `Space`/`Esc`
+   before floor operation.
 6. **Enable optional analysis last.** Use CSI calibration with the scene clear,
    then enable YOLO only for the selected camera when its performance is
    acceptable.
@@ -97,10 +134,10 @@ normal operation requires cloud access.
 
 - The browser sends only current, expiring commands; stale/reordered input is
   rejected and the Pi watchdog stops 3TSahur if refreshes cease.
-- Switching robot tabs stops all robots and closes inactive MJPEG streams to
-  protect control bandwidth.
+- Scrolling between robot workspaces closes inactive MJPEG streams and opens
+  the camera nearest the viewport to protect control bandwidth.
 - LARP drive status, CSI, timeline, health, vision, snapshots, and camera
-  profiles are auxiliary features. Their failure must display a status only;
+  status are auxiliary features. Their failure must display a status only;
   it cannot disable the core stop/watchdog/control paths.
 - The mission timeline is capped at 120 in-memory events. Snapshots are saved
   locally by the Pi; copy any images you need before rebooting or updating.
@@ -129,7 +166,7 @@ extends that base for the 3TSahur/LARP swarm.
 | --- | --- | --- |
 | Drivetrain | Python mecanum drive and GPIO architecture | Names changed only; exact BCM mapping remains `5/6`, `16/19`, `20/21`, `13/26`. |
 | Deployment | Hotspot, service, kiosk, installer/update rollback | 3TSahur names, local operator workflow, beginner setup/checklists. |
-| Dashboard | Responsive browser controls | Three robot tabs, single active stream, health panel, profiles, timeline, gamepad/dead-man controls. |
+| Dashboard | Responsive browser controls | Three visible robot workspaces, one scroll-selected stream, bottom health/timeline, gamepad/dead-man controls. |
 | Scouts | ECHO drive/control foundations | LARP A/B identities, Wi-Fi recovery, heartbeats, CSI display/calibration, separate camera feeds. |
 | Vision | No optional hub inference workflow | Per-feed YOLO11 Nano toggles, overlays, snapshots, and failure isolation. |
 | Validation | Original functional test foundation | Expanded simulation coverage, API expiry/sequence checks, feature-isolation checks, and timing results. |
@@ -137,9 +174,9 @@ extends that base for the 3TSahur/LARP swarm.
 ```mermaid
 flowchart TB
     Base["Partner integration base\nserver · GPIO architecture · hotspot · installer"] --> Retained["Retained without drivetrain-pin changes"]
-    Retained --> Hub["3TSahur hub\nC270 · mecanum · camera profiles"]
+    Retained --> Hub["3TSahur hub\nauto-detected Logitech camera · mecanum"]
     Retained --> Scouts["LARP Scout A / B\nECHO · ESP32-CAM · CSI"]
-    Hub --> Dashboard["Tabbed operator dashboard\ncontrols · health · timeline"]
+    Hub --> Dashboard["One-page operator dashboard\nleft cameras · right controls · bottom telemetry"]
     Scouts --> Dashboard
     Dashboard --> Optional["Optional YOLO · snapshots · gamepad · dead-man"]
 ```
@@ -215,19 +252,20 @@ Open `http://10.42.0.1` after connecting to the 3TSahur hotspot. On a device tha
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-Only the selected tab keeps its MJPEG feed open. This preserves hotspot
-bandwidth for low-latency robot commands instead of competing with three video
-streams at once.
+All three robot workspaces remain on the page. The workspace nearest the
+viewport keeps its MJPEG feed open while the other two image connections stay
+closed. This preserves hotspot bandwidth for low-latency robot commands
+without making the operator click through tabs.
 
 ### Current dashboard visual system
 
-The UI uses a restrained dark control-room system inspired by the compact card,
-segmented-navigation, and progressive-disclosure patterns catalogued on
-[21st.dev](https://21st.dev/). Thin borders, consistent spacing, and a neutral
-canvas keep the live camera and drive controls visually dominant. Camera
-analysis, CSI details, auxiliary actuators, system health, and the mission
-timeline can each be collapsed. The bottom mission drawer starts minimized and
-remembers the operator's layout on that browser.
+The UI uses a restrained dark control-room system inspired by the compact card
+and segmented-navigation patterns catalogued on [21st.dev](https://21st.dev/).
+Each robot is a complete horizontal workspace: its camera is always in the
+left column and every camera-analysis, speed, drive, CSI, gimbal, ramp, and stop
+control is in the right column. Nothing floats over a camera or control panel.
+System health, safety settings, and the mission timeline are a separate static
+section at the end of the page.
 
 ```text
 +-----------------------------------------------------------------------+
@@ -236,17 +274,21 @@ remembers the operator's layout on that browser.
 +-----------------------------------------------------------------------+
 | [01 3TSahur]       [02 LARP Scout A]       [03 LARP Scout B]         |
 +--------------------------------------+--------------------------------+
-| Selected live camera                 | Selected robot controls        |
-| vision + snapshot overlay            | status, speed, drive, stop     |
-|                                      | CSI / gimbal / ramp as needed  |
+| 3TSahur camera                        | all 3TSahur controls            |
 +--------------------------------------+--------------------------------+
-| STOP ALL (Esc)       Collapsible mission, health, and analysis tools  |
+| LARP A camera                         | all LARP A controls             |
++--------------------------------------+--------------------------------+
+| LARP B camera                         | all LARP B controls             |
++--------------------------------------+--------------------------------+
+| safety settings      system health       mission timeline             |
 +-----------------------------------------------------------------------+
 ```
 
-The disclosure-state helper uses browser-local storage only. The redesign adds
-no packages, API calls, polling, video streams, model work, CSS filters, or
-motor-control code, so collapsed panels do not alter Pi or network load.
+The dashboard presents one automatic USB-camera mode instead of three operator
+quality choices. Linux V4L2 reports the attached model (for example, C270 or
+C930), and the UI shows the detected name plus the resolution/FPS actually
+negotiated by that camera. The redesign adds no packages, polling, simultaneous
+video streams, model work, CSS filters, or motor-control changes.
 
 The dashboard works with mouse/touch controls and the following keyboard shortcuts when the page is focused:
 
@@ -723,7 +765,7 @@ pip install -r requirements.txt
 python -m unittest discover -s tests -v
 ```
 
-The current target desktop simulation ran **77 tests successfully**; the
+The current target desktop simulation ran **78 tests successfully**; the
 independently checked partner baseline ran **32 tests successfully**. The target
 suite covers dashboard/UI,
 mecanum mixing, camera discovery/recovery/profile isolation, firmware invariants,

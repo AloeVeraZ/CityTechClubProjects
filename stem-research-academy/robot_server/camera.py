@@ -6,6 +6,7 @@ import glob
 import os
 import threading
 import time
+from pathlib import Path
 
 
 class CameraStream:
@@ -22,8 +23,32 @@ class CameraStream:
         self._generation = 0
         self.error: str | None = None
         self.selected_device: str | None = None
+        self.camera_name = "USB camera"
+        self.capture_width: int | None = None
+        self.capture_height: int | None = None
+        self.capture_fps: int | None = None
         self.last_frame_at: float | None = None
         self.restart_count = 0
+
+    @staticmethod
+    def _camera_name(device: str) -> str:
+        """Return the V4L2 model name without assuming one Logitech model."""
+        persistent_name = device.replace("\\", "/").rsplit("/", 1)[-1]
+        if persistent_name.startswith("usb-"):
+            persistent_name = persistent_name[4:].split("-video-index", 1)[0]
+            parts = persistent_name.split("_", 1)
+            if len(parts) == 2 and all(character in "0123456789abcdefABCDEF" for character in parts[0]):
+                persistent_name = parts[1]
+            return persistent_name.replace("_", " ").strip() or "USB camera"
+
+        video_node = os.path.realpath(device).replace("\\", "/").rsplit("/", 1)[-1]
+        try:
+            name = (Path("/sys/class/video4linux") / video_node / "name").read_text(encoding="utf-8").strip()
+            if name:
+                return name
+        except OSError:
+            pass
+        return "USB camera"
 
     def _candidate_devices(self) -> list[str]:
         """Return capture candidates with Logitech/by-id devices first."""
@@ -117,6 +142,11 @@ class CameraStream:
                         camera = candidate
                         first_frame = image
                         self.selected_device = os.path.realpath(device)
+                        self.camera_name = self._camera_name(device)
+                        self.capture_width = int(image.shape[1])
+                        self.capture_height = int(image.shape[0])
+                        reported_fps = round(float(candidate.get(cv2.CAP_PROP_FPS)))
+                        self.capture_fps = reported_fps if reported_fps > 0 else self.fps
                         break
                     time.sleep(0.1)
                 if camera is not None:
@@ -207,6 +237,10 @@ class CameraStream:
                 self.last_frame_at = None
                 self.error = None
                 self.selected_device = None
+                self.camera_name = "USB camera"
+                self.capture_width = None
+                self.capture_height = None
+                self.capture_fps = None
             if was_running:
                 self.start()
 

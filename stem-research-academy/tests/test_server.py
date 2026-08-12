@@ -42,6 +42,8 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
         self.assertIn(data["camera_profile"], {"control", "balanced", "detail"})
+        self.assertEqual(data["camera_mode"], "automatic")
+        self.assertIn("camera_name", data)
         self.assertIn("vision", data)
         self.assertIn("3tsahur", data["vision"])
         self.assertIn("system_health", data)
@@ -96,10 +98,10 @@ class ServerTests(unittest.TestCase):
 
     def test_dashboard_renders_all_three_robots(self):
         response = self.client.get("/")
-        self.assertIn(b"Robot dashboards", response.data)
-        self.assertIn(b'data-tab="3tsahur"', response.data)
-        self.assertIn(b'data-tab="larp-a"', response.data)
-        self.assertIn(b'data-tab="larp-b"', response.data)
+        self.assertIn(b"Jump to a robot workspace", response.data)
+        self.assertIn(b'data-robot-panel="3tsahur"', response.data)
+        self.assertIn(b'data-robot-panel="larp-a"', response.data)
+        self.assertIn(b'data-robot-panel="larp-b"', response.data)
         self.assertIn(b'data-stream-for="3tsahur"', response.data)
         self.assertIn(b'data-stream-for="larp-a"', response.data)
         self.assertIn(b'data-stream-for="larp-b"', response.data)

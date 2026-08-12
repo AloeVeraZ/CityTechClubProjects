@@ -8,6 +8,9 @@
   const host = document.querySelector('#host');
   const cameraMessage = document.querySelector('#camera-message');
   const cameraImage = document.querySelector('[data-stream-for="3tsahur"]');
+  const hubCameraLabel = document.querySelector('#hub-camera-label');
+  const hubCameraModel = document.querySelector('#hub-camera-model');
+  const hubCameraMode = document.querySelector('#hub-camera-mode');
   const cameraFeeds = [...document.querySelectorAll('[data-stream-for][data-stream-src]')];
   const toast = document.querySelector('#toast');
   const autoPriority = document.querySelector('#auto-priority');
@@ -40,23 +43,6 @@
     '0,1,0': 'Strafing left', '0,-1,0': 'Strafing right',
     '0,0,1': 'Rotating left', '0,0,-1': 'Rotating right', '0,0,0': 'Standing by'
   };
-
-  // Optional panels use native <details> for keyboard and screen-reader
-  // support. Remember the operator's layout without adding network traffic.
-  const disclosureStorageKey = 'stem-dashboard-disclosures-v1';
-  try {
-    const savedDisclosures = JSON.parse(localStorage.getItem(disclosureStorageKey) || '{}');
-    document.querySelectorAll('[data-disclosure-key]').forEach(disclosure => {
-      const key = disclosure.dataset.disclosureKey;
-      if (typeof savedDisclosures[key] === 'boolean') disclosure.open = savedDisclosures[key];
-      disclosure.addEventListener('toggle', () => {
-        savedDisclosures[key] = disclosure.open;
-        localStorage.setItem(disclosureStorageKey, JSON.stringify(savedDisclosures));
-      });
-    });
-  } catch (_) {
-    // Private browsing or restricted storage must not affect dashboard use.
-  }
 
   // At most one request per robot may be active. If input changes while that
   // request is running, only the newest command is retained. An urgent stop
@@ -135,7 +121,7 @@
     if (cameraTrafficPaused) {
       cameraTrafficPaused = false;
       delete document.body.dataset.controlPriority;
-      activateOnlySelectedCamera(activeRobotTab);
+      activateVisibleCamera(activeRobotTab);
     }
   }
 
@@ -247,13 +233,13 @@
     if (show) showToast('ALL ROBOTS STOPPED');
   }
 
-  const robotTabs = [...document.querySelectorAll('[role="tab"][data-tab]')];
-  const robotPanels = [...document.querySelectorAll('[role="tabpanel"][data-tab-panel]')];
+  const robotJumps = [...document.querySelectorAll('[data-robot-jump]')];
+  const robotPanels = [...document.querySelectorAll('[data-robot-panel]')];
 
-  function activateOnlySelectedCamera(id) {
+  function activateVisibleCamera(id) {
     activeRobotTab = id;
     // MJPEG feeds are continuous network traffic. Keep exactly one feed open
-    // so the shared 2.4 GHz Pi hotspot always has room for control packets.
+    // while all three camera workspaces remain visible on this one-page UI.
     cameraFeeds.forEach(feed => {
       if (cameraTrafficPaused) {
         feed.removeAttribute('src');
@@ -267,28 +253,34 @@
     });
   }
 
-  function selectRobotTab(id, focus = false) {
-    const selectedTab = robotTabs.find(tab => tab.dataset.tab === id);
-    if (!selectedTab) return;
-    const changingTabs = selectedTab.getAttribute('aria-selected') !== 'true';
-    robotTabs.forEach(tab => {
-      const selected = tab === selectedTab;
-      tab.classList.toggle('active', selected);
-      tab.setAttribute('aria-selected', String(selected));
-      tab.tabIndex = selected ? 0 : -1;
-    });
+  function setActiveRobotContext(id) {
+    if (!robotPanels.some(panel => panel.dataset.robotPanel === id)) return;
+    robotJumps.forEach(link => link.classList.toggle('active', link.dataset.robotJump === id));
     robotPanels.forEach(panel => {
-      const selected = panel.dataset.tabPanel === id;
-      panel.classList.toggle('active', selected);
-      panel.hidden = !selected;
+      panel.classList.toggle('active', panel.dataset.robotPanel === id);
     });
-    activateOnlySelectedCamera(id);
+    activateVisibleCamera(id);
     if (id !== "3tsahur" && gimbalMode) setGimbalMode(false, false);
-    // A tab change changes the operator's visual context. Stop all movement
-    // before showing another robot so a held or touch command cannot continue.
-    if (changingTabs) killAll();
-    if (focus) selectedTab.focus();
   }
+
+  // The page never hides a robot. Scrolling or interacting with a workspace
+  // only selects which continuous MJPEG stream receives hotspot bandwidth and
+  // which camera the C/L analysis shortcuts address.
+  const panelVisibility = new Map(robotPanels.map(panel => [panel.dataset.robotPanel, 0]));
+  if ('IntersectionObserver' in window) {
+    const panelObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => panelVisibility.set(entry.target.dataset.robotPanel, entry.intersectionRatio));
+      const nearest = [...panelVisibility.entries()].sort((a, b) => b[1] - a[1])[0];
+      if (nearest && nearest[1] > 0 && nearest[0] !== activeRobotTab) setActiveRobotContext(nearest[0]);
+    }, {threshold: [0, .15, .3, .5, .7, 1]});
+    robotPanels.forEach(panel => panelObserver.observe(panel));
+  }
+  robotPanels.forEach(panel => {
+    const selectPanel = () => setActiveRobotContext(panel.dataset.robotPanel);
+    panel.addEventListener('pointerdown', selectPanel);
+    panel.addEventListener('focusin', selectPanel);
+  });
+  robotJumps.forEach(link => link.addEventListener('click', () => setActiveRobotContext(link.dataset.robotJump)));
 
   function clearVisionOverlay(source) {
     const canvas = document.querySelector(`[data-vision-overlay="${source}"]`);
@@ -548,20 +540,6 @@
   }));
   speed.addEventListener('input', () => { speedValue.value = `${speed.value}%`; sendBig(true); });
 
-  robotTabs.forEach((tab, index) => {
-    tab.addEventListener('click', () => selectRobotTab(tab.dataset.tab));
-    tab.addEventListener('keydown', event => {
-      let nextIndex = null;
-      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIndex = (index + 1) % robotTabs.length;
-      if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIndex = (index - 1 + robotTabs.length) % robotTabs.length;
-      if (event.key === 'Home') nextIndex = 0;
-      if (event.key === 'End') nextIndex = robotTabs.length - 1;
-      if (nextIndex === null) return;
-      event.preventDefault();
-      selectRobotTab(robotTabs[nextIndex].dataset.tab, true);
-    });
-  });
-
   document.querySelectorAll('.scout-controls').forEach(controls => {
     const id = controls.dataset.scout;
     const slider = controls.querySelector('input');
@@ -600,7 +578,6 @@
         serverClockOffset = data.server_time_ms - ((requestStartedAt + responseReceivedAt) / 2);
       }
       const hardwareReady = data.gpio === 'hardware';
-      cameraProfile.value = data.camera_profile || 'balanced';
       renderActuatorStatus(data.actuators);
       const health = data.system_health || {};
       const temperature = Number.isFinite(health.temperature_c) ? `${health.temperature_c}°C` : 'n/a';
@@ -608,7 +585,12 @@
       const throttle = health.throttling_warning === true ? 'detected' : health.throttling_warning === false ? 'clear' : 'n/a';
       const disk = Number.isFinite(health.disk_free_mb) ? `${health.disk_free_mb} MB free` : 'checking';
       const evidence = data.evidence || {};
-      document.querySelector('#health-panel').innerHTML = `<dt>Pi control</dt><dd>${hardwareReady ? 'ready' : 'simulation'}</dd><dt>Camera</dt><dd>${data.camera_available ? `${data.camera_width}x${data.camera_height} @ ${data.camera_fps}` : 'unavailable'} · ${data.camera_restart_count || 0} retries</dd><dt>Temperature</dt><dd>${temperature}</dd><dt>Power</dt><dd>${power}</dd><dt>Throttling</dt><dd>${throttle}</dd><dt>Storage</dt><dd>${disk}</dd><dt>Evidence</dt><dd>${(evidence.items || []).length} saved · ${evidence.queue_depth || 0} queued</dd><dt>Network</dt><dd>${location.host}</dd>`;
+      const cameraName = data.camera_name || 'USB camera';
+      const cameraMode = `${data.camera_width}x${data.camera_height} @ ${data.camera_fps} FPS`;
+      hubCameraModel.textContent = cameraName;
+      hubCameraMode.textContent = data.camera_available ? `Automatic compatibility mode · ${cameraMode}` : 'Automatic detection is waiting for a camera';
+      hubCameraLabel.textContent = `3TSahur · ${cameraName}`;
+      document.querySelector('#health-panel').innerHTML = `<dt>Pi control</dt><dd>${hardwareReady ? 'ready' : 'simulation'}</dd><dt>Camera</dt><dd>${data.camera_available ? `${cameraName} · ${cameraMode}` : 'unavailable'} · ${data.camera_restart_count || 0} retries</dd><dt>Temperature</dt><dd>${temperature}</dd><dt>Power</dt><dd>${power}</dd><dt>Throttling</dt><dd>${throttle}</dd><dt>Storage</dt><dd>${disk}</dd><dt>Evidence</dt><dd>${(evidence.items || []).length} saved · ${evidence.queue_depth || 0} queued</dd><dt>Network</dt><dd>${location.host}</dd>`;
       const healthWarnings = [
         !hardwareReady,
         !data.camera_available,
@@ -624,7 +606,7 @@
       cameraMessage.classList.toggle('hidden', data.camera_available);
       cameraMessage.textContent = data.camera_error
         ? `Camera unavailable: ${data.camera_error}`
-        : data.camera_device ? `Opening ${data.camera_device}...` : 'Looking for Logitech C270...';
+        : data.camera_device ? `Opening ${cameraName}…` : 'Looking for a Logitech USB camera…';
       if (!data.camera_available && data.camera_error && Date.now() - lastCameraRetryAt > 5000) {
         lastCameraRetryAt = Date.now();
         if (activeRobotTab === '3tsahur') cameraImage.src = `${cameraImage.dataset.streamSrc}?retry=${lastCameraRetryAt}`;
@@ -707,7 +689,6 @@
   }, 1200);
   window.setInterval(() => refreshVision(activeRobotTab), 500);
   const deadman = document.querySelector('#deadman');
-  const cameraProfile = document.querySelector('#camera-profile');
   let lastGamepadSignature = '';
   let lastGamepadSentAt = 0;
   const calibration = {a: null, b: null};
@@ -722,13 +703,12 @@
   document.querySelectorAll('[data-calibrate]').forEach(button => button.addEventListener('click', () => startCalibration(button.dataset.calibrate)));
   deadman.addEventListener('change', () => { killAll(); reportEvent('safety', 'dashboard', `Dead-man mode ${deadman.checked ? 'enabled' : 'disabled'}`); });
   autoPriority.addEventListener('change', () => { if (!autoPriority.checked) controlPriorityUntil = 0; applyControlPriority(); reportEvent('network', 'dashboard', `Adaptive control priority ${autoPriority.checked ? 'enabled' : 'disabled'}`); });
-  cameraProfile.addEventListener('change', async () => { const profile = cameraProfile.value; killBig(); try { const response = await fetch('/api/camera/profile', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({profile}), cache: 'no-store'}); const data = await response.json(); if (!response.ok) throw Error(data.error); cameraImage.removeAttribute('src'); window.requestAnimationFrame(() => { if (activeRobotTab === '3tsahur') cameraImage.src = `${cameraImage.dataset.streamSrc}?profile=${Date.now()}`; }); reportEvent('camera-profile', '3tsahur', `Camera profile: ${profile}`); showToast(`Camera set to ${data.width}x${data.height} @ ${data.fps} FPS`); } catch (error) { showToast(error.message || 'Camera profile unavailable'); } });
   window.addEventListener('keydown', event => { if (deadman.checked && event.key === 'Shift') document.body.dataset.deadman = 'held'; });
   window.addEventListener('keyup', event => { if (deadman.checked && event.key === 'Shift') { delete document.body.dataset.deadman; killAll(); } });
   window.setInterval(refreshEvents, 2000);
   window.setInterval(applyControlPriority, 250);
-  window.setInterval(() => { const pad = navigator.getGamepads?.()[0]; if (!pad || activeRobotTab !== '3tsahur') return; const held = Boolean(pad.buttons[0]?.pressed); if (deadman.checked && !held) { delete document.body.dataset.deadman; if (gamepadWasMoving) killBig(); gamepadWasMoving = false; lastGamepadSignature = ''; return; } if (deadman.checked) document.body.dataset.deadman = 'held'; const forward = Math.abs(pad.axes[1] || 0) > .18 ? -(pad.axes[1] || 0) : 0; const strafe = Math.abs(pad.axes[0] || 0) > .18 ? pad.axes[0] : 0; const rotate = Math.abs(pad.axes[2] || 0) > .18 ? pad.axes[2] : 0; const moving = Boolean(forward || strafe || rotate); const command = {forward, strafe, rotate, speed: Number(speed.value) / 100}; const signature = JSON.stringify(command); const now = performance.now(); if (moving && (signature !== lastGamepadSignature || now - lastGamepadSentAt >= 80)) { sendBig(true, command); lastGamepadSignature = signature; lastGamepadSentAt = now; } else if (!moving && gamepadWasMoving) { sendBig(true, {forward: 0, strafe: 0, rotate: 0, speed: 0}, true); lastGamepadSignature = ''; } gamepadWasMoving = moving; }, 100);
-  activateOnlySelectedCamera(activeRobotTab);
+  window.setInterval(() => { const pad = navigator.getGamepads?.()[0]; if (!pad) return; const held = Boolean(pad.buttons[0]?.pressed); if (deadman.checked && !held) { delete document.body.dataset.deadman; if (gamepadWasMoving) killBig(); gamepadWasMoving = false; lastGamepadSignature = ''; return; } if (deadman.checked) document.body.dataset.deadman = 'held'; const forward = Math.abs(pad.axes[1] || 0) > .18 ? -(pad.axes[1] || 0) : 0; const strafe = Math.abs(pad.axes[0] || 0) > .18 ? pad.axes[0] : 0; const rotate = Math.abs(pad.axes[2] || 0) > .18 ? pad.axes[2] : 0; const moving = Boolean(forward || strafe || rotate); const command = {forward, strafe, rotate, speed: Number(speed.value) / 100}; const signature = JSON.stringify(command); const now = performance.now(); if (moving && (signature !== lastGamepadSignature || now - lastGamepadSentAt >= 80)) { sendBig(true, command); lastGamepadSignature = signature; lastGamepadSentAt = now; } else if (!moving && gamepadWasMoving) { sendBig(true, {forward: 0, strafe: 0, rotate: 0, speed: 0}, true); lastGamepadSignature = ''; } gamepadWasMoving = moving; }, 100);
+  activateVisibleCamera(activeRobotTab);
   refreshStatus();
   refreshScout('a');
   refreshScout('b');

@@ -9,27 +9,28 @@ SCRIPT = (PROJECT_ROOT / "robot_server" / "static" / "dashboard.js").read_text(e
 
 
 class DashboardTabTests(unittest.TestCase):
-    def test_all_three_robot_tabs_have_separate_panels(self):
+    def test_all_three_robot_workspaces_are_visible_on_one_page(self):
         for robot in ("3tsahur", "larp-a", "larp-b"):
-            self.assertIn(f'data-tab="{robot}"', TEMPLATE)
-            self.assertIn(f'data-tab-panel="{robot}"', TEMPLATE)
-        self.assertEqual(TEMPLATE.count('role="tab"'), 3)
-        self.assertEqual(TEMPLATE.count('role="tabpanel"'), 3)
+            self.assertIn(f'data-robot-jump="{robot}"', TEMPLATE)
+            self.assertIn(f'data-robot-panel="{robot}"', TEMPLATE)
+        self.assertNotIn('role="tab"', TEMPLATE)
+        self.assertNotIn(' hidden', TEMPLATE)
 
     def test_each_tab_has_its_own_video_and_controls(self):
-        self.assertIn('alt="Live Logitech C270 camera feed from 3TSahur"', TEMPLATE)
+        self.assertIn('alt="Live automatic Logitech USB camera feed from 3TSahur"', TEMPLATE)
         self.assertIn('alt="Live Inland ESP32-CAM feed from LARP Scout A"', TEMPLATE)
         self.assertIn('alt="Live Inland ESP32-CAM feed from LARP Scout B"', TEMPLATE)
         self.assertIn('aria-label="3TSahur drive controls"', TEMPLATE)
         self.assertIn('aria-label="LARP Scout A drive controls"', TEMPLATE)
         self.assertIn('aria-label="LARP Scout B drive controls"', TEMPLATE)
 
-    def test_only_the_selected_tab_keeps_a_camera_stream_open(self):
+    def test_only_the_visible_workspace_keeps_a_camera_stream_open(self):
         self.assertEqual(TEMPLATE.count("data-stream-for="), 3)
         self.assertEqual(TEMPLATE.count("data-stream-src="), 3)
-        self.assertIn("function activateOnlySelectedCamera", SCRIPT)
+        self.assertIn("function activateVisibleCamera", SCRIPT)
         self.assertIn("feed.removeAttribute('src')", SCRIPT)
-        self.assertIn("activateOnlySelectedCamera(id);", SCRIPT)
+        self.assertIn("IntersectionObserver", SCRIPT)
+        self.assertIn("setActiveRobotContext(nearest[0])", SCRIPT)
 
     def test_larp_tabs_show_the_csi_presence_indicator(self):
         self.assertEqual(TEMPLATE.count("CSI presence sensor"), 2)
@@ -61,38 +62,40 @@ class DashboardTabTests(unittest.TestCase):
         self.assertIn("if (anyRobotMoving()) return;", SCRIPT)
         self.assertIn("cameraFeeds.forEach(feed => feed.removeAttribute('src'))", SCRIPT)
 
-    def test_mission_tools_profiles_and_health_are_optional_dashboard_features(self):
-        self.assertIn('id="camera-profile"', TEMPLATE)
+    def test_mission_tools_automatic_camera_and_health_are_dashboard_features(self):
+        self.assertNotIn('id="camera-profile"', TEMPLATE)
+        self.assertIn('class="camera-auto"', TEMPLATE)
+        self.assertIn('id="hub-camera-model"', TEMPLATE)
+        self.assertIn('id="hub-camera-mode"', TEMPLATE)
         self.assertIn('id="health-panel"', TEMPLATE)
         self.assertEqual(TEMPLATE.count('data-snapshot="'), 3)
         self.assertEqual(TEMPLATE.count('data-calibrate="'), 2)
         self.assertIn('id="deadman"', TEMPLATE)
         self.assertIn('id="event-list"', TEMPLATE)
-        self.assertIn("/api/camera/profile", SCRIPT)
+        self.assertNotIn("/api/camera/profile", SCRIPT)
         self.assertIn("/api/snapshots/${source}", SCRIPT)
         self.assertIn("navigator.getGamepads", SCRIPT)
         self.assertIn("lastGamepadSignature", SCRIPT)
         self.assertIn("lastGamepadSentAt", SCRIPT)
         self.assertIn("now - lastGamepadSentAt >= 80", SCRIPT)
 
-    def test_optional_tools_are_collapsible_without_removing_controls(self):
-        self.assertIn('class="mission-drawer"', TEMPLATE)
+    def test_all_tools_are_exposed_without_overlays_or_disclosures(self):
+        self.assertNotIn('<details', TEMPLATE)
+        self.assertEqual(TEMPLATE.count('class="analysis-card"'), 3)
+        self.assertIn('class="mission-tools"', TEMPLATE)
         self.assertIn('id="health-summary"', TEMPLATE)
-        self.assertIn('data-disclosure-key="system-health"', TEMPLATE)
-        self.assertIn('data-disclosure-key="mission-timeline"', TEMPLATE)
-        self.assertEqual(TEMPLATE.count('class="camera-tools"'), 3)
-        self.assertEqual(TEMPLATE.count('class="csi-sensor optional-panel"'), 2)
-        self.assertIn('data-disclosure-key="actuator-tools"', TEMPLATE)
-        self.assertIn("disclosureStorageKey", SCRIPT)
-        self.assertIn("localStorage.setItem", SCRIPT)
+        self.assertEqual(TEMPLATE.count('class="csi-sensor"'), 2)
+        self.assertIn('class="actuator-card"', TEMPLATE)
+        self.assertNotIn("disclosureStorageKey", SCRIPT)
         self.assertIn("healthSummary.value", SCRIPT)
         self.assertIn("event.target.closest?.('input, select, button, summary, a')", SCRIPT)
 
-    def test_tab_switching_is_keyboard_accessible_and_stops_motion(self):
-        self.assertIn('function selectRobotTab', SCRIPT)
-        self.assertIn("if (changingTabs) killAll();", SCRIPT)
-        self.assertIn("event.key === 'ArrowRight'", SCRIPT)
-        self.assertIn("event.key === 'Home'", SCRIPT)
+    def test_scrolling_selects_context_without_hiding_or_stopping_workspaces(self):
+        self.assertIn('function setActiveRobotContext', SCRIPT)
+        self.assertIn("panel.addEventListener('pointerdown', selectPanel)", SCRIPT)
+        self.assertIn("panel.addEventListener('focusin', selectPanel)", SCRIPT)
+        self.assertNotIn("panel.hidden", SCRIPT)
+        self.assertNotIn("changingTabs", SCRIPT)
 
     def test_3tsahur_gimbal_and_ramp_controls_are_isolated_from_drive(self):
         self.assertIn('id="gimbal-mode"', TEMPLATE)
@@ -113,9 +116,10 @@ class DashboardTabTests(unittest.TestCase):
         self.assertIn("controller.abort(), 140", SCRIPT)
 
     def test_video_and_controls_use_separate_grid_columns(self):
-        self.assertIn('grid-template-columns: minmax(0, 1.55fr) minmax(340px, .9fr);', STYLES)
+        self.assertIn('grid-template-columns: minmax(0, 1.55fr) minmax(400px, .9fr);', STYLES)
         self.assertNotIn('.drive-card { position: absolute', STYLES)
         self.assertNotIn('.scout-controls { position: absolute', STYLES)
+        self.assertNotIn('.mission-tools { position: fixed', STYLES)
 
     def test_visual_refresh_remains_static_and_lightweight(self):
         self.assertIn('class="note-live"', TEMPLATE)

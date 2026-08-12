@@ -12,7 +12,7 @@ photos are useful when they include the connector labels and board markings.
   connection if it is not detected.
 - [ ] A photo of both motor drivers and every Pi-to-driver signal connection.
 - [ ] Raised-wheel test results for forward, reverse, strafe, and rotation.
-- [ ] The real command delay observation: which robot, camera profile, number
+- [ ] The real command delay observation: which robot, detected camera mode, number
   of active streams, approximate delay, and whether it repeats after reboot.
 
 ## LARP Scout A and B connectivity

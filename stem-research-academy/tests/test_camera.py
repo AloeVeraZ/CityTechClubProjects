@@ -5,6 +5,12 @@ from robot_server.camera import CameraStream
 
 
 class CameraDiscoveryTests(unittest.TestCase):
+    def test_logitech_model_name_is_derived_from_the_persistent_device_path(self):
+        self.assertEqual(
+            CameraStream._camera_name("/dev/v4l/by-id/usb-046d_Logitech_HD_Pro_Webcam_C930e-video-index0"),
+            "Logitech HD Pro Webcam C930e",
+        )
+
     @patch("robot_server.camera.os.path.realpath", side_effect=lambda path: {
         "/dev/v4l/by-id/usb-046d_Logitech_HD_Webcam_C270-video-index0": "/dev/video2",
     }.get(path, path))

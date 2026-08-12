@@ -269,9 +269,9 @@ per second so drive commands keep priority on the shared network.
    ```
 
    Replace `a` with `b` for Scout B.
-4. Open the matching LARP tab in the 3TSahur dashboard. The selected tab opens
-   that feed automatically; inactive tabs intentionally close their streams to
-   preserve Wi-Fi bandwidth for robot controls.
+4. Scroll to the matching LARP workspace in the 3TSahur dashboard. The camera
+   nearest the viewport opens automatically; the other continuous streams stay
+   closed to preserve Wi-Fi bandwidth for robot controls.
 
 If `.local` names do not resolve, use the IP address printed by the serial
 monitor. On the Pi, set that stream URL in

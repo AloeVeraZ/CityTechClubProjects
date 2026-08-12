@@ -3,15 +3,15 @@
 Date: 2026-08-12
 
 The integration base and the 3TSahur/LARP updates were compiled with Python.
-All 75 hardware-independent target tests passed in an isolated desktop virtual
+All 78 hardware-independent target tests passed in an isolated desktop virtual
 environment. The partner repository was also tested independently from its own
 working directory: all 32 of its tests passed.
 
 | Group | Checks | Result |
 | --- | ---: | --- |
-| `test_dashboard_ui.py` | per-robot tabs, lazy/adaptive MJPEG streams, CSI, vision/landmark controls, evidence, auxiliary-traffic yielding, mission tools, profiles, health panel, and lightweight UI guards | pass |
+| `test_dashboard_ui.py` | three visible camera-left/control-right workspaces, viewport-selected MJPEG, CSI, vision/landmark controls, bottom mission tools, automatic camera display, and lightweight UI guards | pass |
 | `test_motor.py` | mecanum mixing, normalization, reversal dead-time, confirmed GPIO/PWM mapping, and redundant-heartbeat write suppression | pass |
-| `test_camera.py` | C270 V4L2 discovery ordering, automatic reconnect supervision, and active profile restart | pass |
+| `test_camera.py` | Logitech V4L2 discovery ordering/model naming, automatic reconnect supervision, and compatibility profile restart | pass |
 | `test_recon_features.py` | static-scene inference gating, periodic forced inference, evidence JPEG/JSON pairing, and cached health snapshots | pass |
 | `test_firmware.py` | LARP reconnect behavior, CSI status fields, capped camera stream rate, unchanged-output suppression, firmware settings, partner-config migration, hostname rollback, and installer invariants | pass |
 | `test_scouts.py` | heartbeat registry handling | pass |
@@ -41,11 +41,9 @@ latency. The dashboard's one-active-camera policy and the ESP32-CAM 10 FPS cap
 are intended to prevent the prior hotspot video congestion from delaying those
 small command packets.
 
-The latest feature pass also ran a camera-profile update immediately followed
-by a current drive command. The profile response and subsequent drive command
-both passed in the simulated environment. This verifies route separation, not
-the physical C270's reopen time; changing a profile should therefore be done
-while stationary.
+The compatibility API test also ran a camera-profile update immediately
+followed by a current drive command. Both passed in simulation. The operator UI
+does not expose profile choices; it reports one automatic camera mode.
 
 ## Three-robot compatibility and timing check
 
@@ -53,14 +51,15 @@ The current compatibility pass registered both LARPs with distinct simulated
 hotspot addresses, then sent one current 3TSahur mecanum command, one LARP A
 drive command, and one LARP B drive command. Both LARP status routes returned
 successfully and the 3TSahur motor state remained current. This exercises the
-same dashboard API routes that the three tabs use, with scout HTTP calls mocked
+same dashboard API routes that the three workspaces use, with scout HTTP calls mocked
 to remove physical radio variation.
 
 After the reconnaissance-efficiency additions, three runs of 1,000 repeated composite cycles,
 each containing one current 3TSahur command and one command for each LARP,
 averaged **1.529-1.742 ms** per cycle, with **2.284-2.826 ms** 95th-percentile
 times and a **15.949 ms** worst observed maximum on the Windows desktop
-validation host. The
+validation host. The current one-page UI pass produced **2.094 ms** average,
+**3.371 ms** p95, and **15.708 ms** maximum for another 1,000-cycle run. The
 compatibility test also asserts a 50 ms local ceiling across repeated Pi/LARP
 requests, so a new local request queue cannot silently reintroduce multi-second
 delays.

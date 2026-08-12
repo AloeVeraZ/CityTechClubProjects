@@ -7,7 +7,7 @@ until each relevant software check has passed.
 
 - [ ] Pull the latest `agent/integrate-3tsahur-larp` branch and run the normal installer/update procedure on the Pi.
 - [ ] Confirm the dashboard opens at `http://10.42.0.1` and the health panel reports the expected Pi/camera state.
-- [ ] Confirm C270 video in **Control Priority**, then **Balanced**. Do not choose Detail until the first two profiles are stable.
+- [ ] Confirm the dashboard detects the attached Logitech model and reports one automatic resolution/FPS mode.
 - [ ] Confirm LARP A and B heartbeat, drive status, CSI display, and their ESP32-CAM streams one at a time.
 - [ ] Test `Space`, `Esc`, browser disconnect, and dead-man release with all wheels raised. Each must stop motion promptly.
 
@@ -33,9 +33,9 @@ until each relevant software check has passed.
 
 | Condition | Target observation |
 | --- | --- |
-| Control Priority, no YOLO | Immediate response; no recurring delay. |
-| Balanced, one stream | Immediate response; stable camera. |
-| YOLO enabled on selected tab | Controls remain responsive; lower vision FPS if not. |
+| Automatic camera mode, no YOLO | Immediate response; no recurring delay. |
+| Scroll-selected stream | Immediate response; inactive camera connections close. |
+| YOLO enabled on the visible workspace | Controls remain responsive; lower vision FPS if not. |
 | LARP A then LARP B | Each responds independently; inactive feed stays closed. |
 | Dead-man/gamepad | Motion stops immediately when the hold control is released. |
 
