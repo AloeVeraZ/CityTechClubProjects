@@ -87,7 +87,7 @@ class DashboardTabTests(unittest.TestCase):
         self.assertIn('class="mission-tools"', TEMPLATE)
         self.assertIn('id="health-summary"', TEMPLATE)
         self.assertEqual(TEMPLATE.count('class="csi-sensor"'), 2)
-        self.assertIn('class="actuator-card"', TEMPLATE)
+        self.assertIn('class="actuator-card ramp-card"', TEMPLATE)
         self.assertNotIn("disclosureStorageKey", SCRIPT)
         self.assertIn("healthSummary.value", SCRIPT)
         self.assertIn("event.target.closest?.('input, select, button, summary, a')", SCRIPT)
@@ -99,16 +99,16 @@ class DashboardTabTests(unittest.TestCase):
         self.assertNotIn("panel.hidden", SCRIPT)
         self.assertNotIn("changingTabs", SCRIPT)
 
-    def test_3tsahur_gimbal_and_ramp_controls_are_isolated_from_drive(self):
-        self.assertIn('id="gimbal-mode"', TEMPLATE)
+    def test_3tsahur_has_only_two_position_ramp_controls(self):
         self.assertIn('id="ramp-toggle"', TEMPLATE)
-        self.assertIn('data-gimbal="pan-left"', TEMPLATE)
-        self.assertIn("key === 'g'", SCRIPT)
+        self.assertIn('id="ramp-readout"', TEMPLATE)
         self.assertIn("key === 'r'", SCRIPT)
-        self.assertIn("/api/actuators/gimbal", SCRIPT)
         self.assertIn("/api/actuators/ramp", SCRIPT)
-        self.assertIn("Planning only · no servo output", SCRIPT)
+        self.assertIn('state: "closed"', SCRIPT)
+        self.assertIn('state === "open"', SCRIPT)
+        self.assertIn("PCA9685 unavailable", SCRIPT)
         self.assertIn(".actuator-card", STYLES)
+        self.assertIn("grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr) auto;", STYLES)
 
     def test_auxiliary_scout_status_traffic_yields_to_drive_traffic(self):
         self.assertIn("if (scoutPressed[id].size) return;", SCRIPT)

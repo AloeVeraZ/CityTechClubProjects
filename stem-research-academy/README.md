@@ -122,8 +122,8 @@ flowchart LR
 ```
 
 For the next field session, use the step-by-step
-[tomorrow checklist](docs/TOMORROW_CHECKLIST.md). It includes the precise
-gimbal/ramp servo information needed before new actuator code is written.
+[tomorrow checklist](docs/TOMORROW_CHECKLIST.md). It includes the ramp-servo
+information needed for safe mechanical calibration.
 
 ## What changed from the partner integration base
 
@@ -231,7 +231,7 @@ priority can still suspend them if measured command latency degrades.
 The UI uses a restrained dark control-room system inspired by the compact card
 and segmented-navigation patterns catalogued on [21st.dev](https://21st.dev/).
 The camera wall is always in the left column, while every camera-analysis,
-speed, drive, CSI, gimbal, ramp, and stop control stays visible in the right
+speed, drive, CSI, ramp, and stop control stays visible in the right
 column. Nothing floats over a camera or control panel.
 System health, safety settings, and the mission timeline are a separate static
 section at the end of the page.
@@ -284,7 +284,7 @@ Commands are deliberately short-lived. Releasing a key, losing the client connec
 - [ ] Raspberry Pi 4 Model B (4 GB), microSD card, official-grade 5 V / 3 A supply, case/cooling, and a local display or operator phone/tablet.
 - [ ] Logitech C270 USB webcam and four mecanum DC motors with compatible wheels/chassis.
 - [ ] Two dual-channel H-bridge drivers, correctly rated fused motor battery/supply, wiring, common ground, and an accessible physical motor-power switch.
-- [ ] For the planned C270 gimbal and ramp: a verified servo-driver board, a separate servo-rated regulated supply, four servo channels, compatible pan/tilt and ramp servos, and mechanical end-stop testing before the driver is enabled.
+- [ ] For the ramp: a verified PCA9685, a separate servo-rated regulated supply, two compatible ramp servos, and mechanical end-stop testing before movement is enabled.
 - [ ] A 2.4 GHz Wi-Fi-capable operator device. A browser gamepad is optional; no Pi-side gamepad hardware is required.
 
 **Raspberry Pi software checklist**
@@ -314,9 +314,15 @@ The Pi GPIO layout below is intentionally the same layout as the integration bas
 
 Do not power motors from the Pi's 5 V rail. Share a common ground between the Pi and motor-driver logic, verify each motor direction with wheels raised, and keep an accessible physical power switch. Full connection notes are in [docs/WIRING.md](docs/WIRING.md).
 
-### Planned C270 gimbal and ramp
+### PCA9685 two-servo ramp
 
-The dashboard now includes **Gimbal mode** (`G`, then arrow keys) and a **ramp toggle** (`R`) on the 3TSahur tab. This release is intentionally a no-output staging layer: it records bounded requested pan/tilt and ramp positions but contains no servo-driver library, GPIO mapping, I2C address, PWM channel, or physical output. It cannot move servos until the team supplies the driver model, power plan, channels, and calibrated mechanical limits. See [auxiliary-actuator setup requirements](docs/3TSAHUR_AUXILIARY_ACTUATORS.md).
+The fixed camera has no movement controls. The 3TSahur dashboard exposes only
+the ramp's two positions: **Closed** and **Open** (`R`). PCA9685 channels 0 and
+1 initialize at the closed 0-degree position when the service starts. Opening
+the ramp moves them to their separately configurable open angles; closing it
+returns both to 0 degrees. I2C uses Raspberry Pi bus 1 at address `0x40`; the
+installer enables I2C and installs `python3-smbus`. See [ramp setup
+requirements](docs/3TSAHUR_AUXILIARY_ACTUATORS.md).
 
 ## Install on the Raspberry Pi
 
@@ -589,7 +595,7 @@ Then browse to `http://127.0.0.1:8080`. On a non-Pi machine, GPIO behavior is si
 ## Documentation
 
 - [Setup guide](docs/SETUP.md) — end-to-end Pi, network, firmware, and first-drive procedure.
-- [Tomorrow field checklist](docs/TOMORROW_CHECKLIST.md) — physical validation and the servo/gimbal data required for the next development step.
+- [Tomorrow field checklist](docs/TOMORROW_CHECKLIST.md) — physical validation and ramp calibration data.
 - [Field information checklist](docs/FIELD_INFORMATION_CHECKLIST.md) — exact photos, serial logs, network evidence, and hardware data needed for the next integration step.
 - [Latency and connection tuning](docs/LATENCY_TUNING.md) — control-priority safeguards, reconnection behavior, and field-test sequence.
 - [Wiring reference](docs/WIRING.md) — exact 3TSahur motor GPIO mapping and ESP32-CAM notes.

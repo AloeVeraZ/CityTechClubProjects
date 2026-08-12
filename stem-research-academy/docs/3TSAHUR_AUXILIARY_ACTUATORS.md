@@ -1,64 +1,65 @@
-# 3TSahur auxiliary actuator setup requirements
+# 3TSahur PCA9685 two-servo ramp setup
 
-The 3TSahur dashboard includes a staged control surface for the Logitech C270
-pan/tilt gimbal and the two-servo ramp. It is safe to deploy before the servo
-hardware details are known: the current implementation has **no GPIO, I2C,
-PWM, or servo-driver dependency**, so it cannot emit a servo signal.
+The Logitech camera is bolted down and has no actuator controls. The dashboard
+controls only the ramp through an Adafruit PCA9685 on Raspberry Pi I2C bus 1 at
+the default address `0x40`.
 
-## Current controls
+Channels 0 and 1 initialize at the closed position of 0 degrees when the
+dashboard service starts. The ramp has exactly two persistent positions:
 
-| Feature | Dashboard control | Keyboard control | Current behavior |
-| --- | --- | --- | --- |
-| Camera gimbal mode | **Gimbal mode** button | `G`, then arrow keys | Records requested pan/tilt in 10° planning steps. |
-| Camera gimbal buttons | Pan left/right and tilt up/down | — | Records requested direction/position. |
-| Ramp door | **Raise/Lower ramp** button | `R` | Records requested `up` or `down` state. |
+| Position | Channel 0 | Channel 1 |
+| --- | --- | --- |
+| Closed | 0 degrees | 0 degrees |
+| Open | Configured open angle | Configured open angle |
 
-These controls appear only on the **3TSahur** tab. They do not affect LARP
-controls, mecanum drive commands, the motor watchdog, or the emergency stop.
+## Wiring
 
-## Information required before hardware output is enabled
+| Raspberry Pi | PCA9685 |
+| --- | --- |
+| Physical pin 1, 3.3 V | `VCC` logic power |
+| Physical pin 3, GPIO2/SDA1 | `SDA` |
+| Physical pin 5, GPIO3/SCL1 | `SCL` |
+| Physical pin 6, ground | `GND` |
 
-Provide all of the following before adding a driver adapter or pin/channel
-mapping:
+The servo `V+` rail requires a supply matching the servos' rated voltage.
+`VCC` powers only the PCA9685 logic and does not power the servo output rail.
+Pi, PCA9685, and servo-supply grounds must share a common reference.
 
-1. **Exact servo driver model and board photo.** Identify whether it is an I2C
-   PWM board, a direct Pi PWM solution, or another controller.
-2. **Driver communication details.** I2C address/bus or other required
-   interface details. Do not assume a PCA9685-compatible board from appearance.
-3. **Servo channel plan.** The four driver channels for pan, tilt, ramp-left,
-   and ramp-right. The current code deliberately does not assign any.
-4. **Power plan.** Servo supply voltage, current rating, fuse/switch approach,
-   and where the Pi, driver, and servo-supply grounds meet. Never power these
-   servos from a Pi GPIO pin.
-5. **Servo details.** Make/model, operating voltage, travel range, and horn
-   orientation for the standard pan servo, micro tilt servo, and two ramp
-   servos.
-6. **Mechanical calibration.** Safe minimum/maximum pulse or angle for each
-   servo with no binding. For the ramp, state whether the two servos must move
-   in the same or mirrored direction.
-7. **Fail-safe behavior.** Confirm whether ramp movement should stop/hold when
-   Wi-Fi disconnects and whether its default after boot should be fully raised
-   or lowered.
+## Controls
 
-## Safe commissioning order
+Use the **Open ramp** / **Close ramp** dashboard button or press `R` while the
+3TSahur workspace is active. There is no intermediate position and no camera
+movement mode.
 
-1. Keep the mecanum motor supply disconnected and support the robot so neither
-   the wheels nor ramp can contact people or objects.
-2. Test one servo at a time from the driver with an unloaded linkage.
-3. Calibrate and record safe end limits before installing horns/linkages.
-4. Connect the gimbal, verify pan and tilt directions at low travel, then test
-   the ramp without load.
-5. Confirm the ramp-left and ramp-right servos remain mechanically synchronized.
-6. Only then enable dashboard output and perform a low-speed integrated test.
+## Configuration
 
-## Software boundary
+Persistent settings in `/etc/stem-research-academy/config.env` are:
 
-The staged API endpoints are:
+```text
+SERVO_I2C_ADDRESS=0x40
+SERVO_FREQUENCY_HZ=50
+SERVO_MIN_PULSE_US=1000
+SERVO_MAX_PULSE_US=2000
+RAMP_CHANNEL_0_OPEN_ANGLE=30
+RAMP_CHANNEL_1_OPEN_ANGLE=30
+```
 
-- `GET /api/status` → `actuators`
-- `POST /api/actuators/gimbal` with `{ "pan": number, "tilt": number }`
-- `POST /api/actuators/ramp` with `{ "state": "up" | "down" }`
+Change the two open-angle values independently if the linkages require
+different or mirrored travel. Closed always remains 0 degrees.
 
-They validate and retain desired state only. Until a hardware-specific adapter
-is intentionally added, status reports `configured: false` and **no servo
-output is active**.
+The installer enables I2C, installs `i2c-tools` and `python3-smbus`, and adds
+the dashboard user to the `i2c` group. If the board is absent, the server
+continues running and `/api/status` reports the PCA9685 error.
+
+## Safe first test
+
+1. Disconnect drivetrain power and remove ramp linkages.
+2. Verify the servo supply voltage against each servo's data sheet.
+3. Run `i2cdetect -y 1` and verify device `40` appears.
+4. Start the dashboard service and confirm both channels initialize at 0.
+5. Test **Open** with conservative angles before attaching the linkages.
+6. Attach the linkages only after confirming closed and open do not bind.
+
+The API routes are `GET /api/status` and `POST /api/actuators/ramp`. The ramp
+request body is either `{"state":"closed"}` or `{"state":"open"}`. Status
+reports `configured: true` only when the PCA9685 initializes successfully.

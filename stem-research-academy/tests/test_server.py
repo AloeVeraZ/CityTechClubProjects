@@ -109,20 +109,13 @@ class ServerTests(unittest.TestCase):
         self.assertIn(b"LARP Scout B", response.data)
         self.assertIn(b"3TSahur", response.data)
 
-    def test_staged_actuators_accept_targets_without_hardware_or_drive_changes(self):
-        gimbal = self.client.post("/api/actuators/gimbal", json={"pan": 30, "tilt": -20})
-        self.assertEqual(gimbal.status_code, 200)
-        self.assertFalse(gimbal.get_json()["configured"])
-        self.assertEqual(gimbal.get_json()["gimbal"]["pan"], 30)
-        self.assertEqual(gimbal.get_json()["gimbal"]["tilt"], -20)
-        ramp = self.client.post("/api/actuators/ramp", json={"state": "up"})
+    def test_ramp_accepts_two_positions_without_drive_changes(self):
+        ramp = self.client.post("/api/actuators/ramp", json={"state": "open"})
         self.assertEqual(ramp.status_code, 200)
-        self.assertEqual(ramp.get_json()["ramp"]["state"], "up")
+        self.assertEqual(ramp.get_json()["ramp"]["state"], "open")
         self.assertEqual(drive.last_command["forward"], 0)
 
-    def test_staged_actuator_rejects_invalid_values(self):
-        response = self.client.post("/api/actuators/gimbal", json={"pan": "bad", "tilt": 0})
-        self.assertEqual(response.status_code, 400)
+    def test_ramp_rejects_invalid_values(self):
         self.assertEqual(self.client.post("/api/actuators/ramp", json={"state": "sideways"}).status_code, 400)
 
     def test_unknown_vision_source_is_rejected_without_affecting_drive(self):

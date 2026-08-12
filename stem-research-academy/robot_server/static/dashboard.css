@@ -116,13 +116,10 @@ input[type="range"] { width: 100%; margin: 0; accent-color: var(--lime); }
 
 .actuator-card { display: grid; gap: 6px; padding: 9px; border-color: rgba(104,221,255,.2); background: rgba(5,17,20,.32); }
 .auxiliary-heading output { color: var(--cyan); font: 750 9px ui-monospace, monospace; text-align: right; }
-.actuator-actions { display: flex; align-items: stretch; gap: 8px; }
-.actuator-actions button, .gimbal-pad button { border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.06); color: var(--ink); font-size: 10px; font-weight: 800; cursor: pointer; }
-.actuator-actions button { flex: 1; padding: 7px; }
-.actuator-actions button[aria-pressed="true"] { border-color: var(--cyan); background: var(--cyan); color: #07100f; }
-.gimbal-pad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.gimbal-pad button { min-height: 27px; padding: 5px; }
-.actuator-card > output { color: var(--cyan); font: 800 11px ui-monospace, monospace; text-align: center; }
+.ramp-state { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.ramp-state output { color: var(--cyan); font: 800 11px ui-monospace, monospace; letter-spacing: 0; text-transform: none; }
+#ramp-toggle { min-height: 32px; padding: 7px; border: 1px solid rgba(104,221,255,.38); border-radius: 8px; background: rgba(104,221,255,.08); color: #c8f5ff; font-size: 10px; font-weight: 850; cursor: pointer; }
+#ramp-toggle[aria-pressed="true"] { border-color: var(--cyan); background: var(--cyan); color: #07100f; }
 .actuator-card > p { margin: 0; color: var(--muted); font-size: 9px; line-height: 1.35; text-align: center; }
 
 .scout-connection { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; color: var(--muted); }
@@ -212,13 +209,17 @@ input[type="range"] { width: 100%; margin: 0; accent-color: var(--lime); }
   .camera-auto { padding-top: 4px; }
   .camera-auto span, .camera-auto small { font-size: 6px; }
   .camera-auto strong { font-size: 8px; }
-  .primary-controls { display: grid; grid-template-columns: .9fr 1.1fr; grid-template-rows: auto 1fr auto auto; }
+  .primary-controls { display: grid; grid-template-columns: .9fr 1.1fr; grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr) auto; }
   .primary-controls > .panel-header { grid-column: 1 / -1; }
   .primary-controls > .analysis-card { grid-column: 1; grid-row: 2; }
   .primary-controls > .drive-card { grid-column: 2; grid-row: 2 / 4; }
   .primary-controls > .actuator-card { grid-column: 1; grid-row: 3; }
   .primary-controls > .telemetry { grid-column: 1 / -1; }
-  .drive-card { gap: 5px; padding: 6px; }
+  #panel-3tsahur .panel-header { align-items: center; }
+  #panel-3tsahur .panel-header > div { display: grid; gap: 1px; min-width: 0; }
+  #panel-3tsahur .panel-header .eyebrow { margin: 0; line-height: 1.2; }
+  #panel-3tsahur .panel-header h2 { line-height: 1.2; }
+  .drive-card { gap: 4px; padding: 6px; }
   .speed-row { font-size: 8px; }
   .key-grid { gap: 3px; }
   .key { min-height: 28px; font-size: 11px; }
@@ -228,8 +229,25 @@ input[type="range"] { width: 100%; margin: 0; accent-color: var(--lime); }
   .actuator-card { gap: 4px; padding: 6px; }
   .actuator-card .eyebrow { display: none; }
   .auxiliary-heading output { font-size: 7px; }
-  .actuator-actions button, .gimbal-pad button { padding: 4px; min-height: 0; font-size: 7px; }
-  .actuator-card > output { font-size: 8px; }
+  .ramp-state, #ramp-toggle { font-size: 7px; }
+  .ramp-state output { font-size: 8px; }
+  #ramp-toggle { min-height: 0; padding: 4px; }
+  #panel-3tsahur .analysis-card { gap: 2px; padding: 4px; }
+  #panel-3tsahur .analysis-card > header { align-items: center; }
+  #panel-3tsahur .analysis-card strong { font-size: 9px; }
+  #panel-3tsahur .vision-status { font-size: 6px; }
+  #panel-3tsahur .analysis-actions { gap: 2px; }
+  #panel-3tsahur .analysis-actions button { padding: 3px 1px; font-size: 6px; }
+  #panel-3tsahur .camera-auto { padding-top: 2px; }
+  #panel-3tsahur .camera-auto span, #panel-3tsahur .camera-auto small { font-size: 5px; }
+  #panel-3tsahur .camera-auto strong { font-size: 7px; }
+  #panel-3tsahur .actuator-card { grid-template-columns: minmax(0, 1fr) minmax(80px, .72fr); grid-template-rows: auto 1fr; gap: 3px 6px; padding: 5px; }
+  #panel-3tsahur .auxiliary-heading { grid-column: 1 / -1; }
+  #panel-3tsahur .auxiliary-heading { align-items: center; }
+  #panel-3tsahur .actuator-card strong { font-size: 9px; }
+  #panel-3tsahur .auxiliary-heading output { font-size: 6px; }
+  #panel-3tsahur .ramp-state { min-width: 0; }
+  #panel-3tsahur #ramp-toggle { min-width: 0; }
   .scout-control-stage { display: grid; grid-template-columns: .9fr 1.1fr; grid-template-rows: auto 1fr auto; }
   .scout-control-stage > .panel-header { grid-column: 1 / -1; }
   .scout-control-stage > .analysis-card { grid-column: 1; grid-row: 2; }
@@ -298,7 +316,6 @@ input[type="range"] { width: 100%; margin: 0; accent-color: var(--lime); }
   .camera-auto { grid-template-columns: 1fr; }
   .camera-auto span { grid-row: auto; }
   .camera-auto strong, .camera-auto small { text-align: left; }
-  .gimbal-pad { grid-template-columns: 1fr 1fr; }
   .scout-connection { grid-template-columns: auto 1fr; }
   .scout-connection small { grid-column: 2; }
   .scout-controls { grid-template-columns: 1fr; }

@@ -213,16 +213,6 @@ def create_app() -> Flask:
         except ValueError as error:
             return jsonify(error=str(error)), 400
 
-    @app.post("/api/actuators/gimbal")
-    def set_gimbal():
-        payload = request.get_json(silent=True) or {}
-        try:
-            result = actuators.set_gimbal(payload.get("pan"), payload.get("tilt"))
-            record_event("gimbal", "3tsahur", f"Gimbal target pan {result['gimbal']['pan']}°, tilt {result['gimbal']['tilt']}°")
-            return jsonify(ok=True, **result)
-        except ValueError as error:
-            return jsonify(error=str(error)), 400
-
     @app.post("/api/actuators/ramp")
     def set_ramp():
         payload = request.get_json(silent=True) or {}
@@ -495,6 +485,7 @@ def _watchdog() -> None:
 
 def cleanup() -> None:
     shutdown_event.set()
+    actuators.close()
     drive.close()
     camera.close()
     vision.close()

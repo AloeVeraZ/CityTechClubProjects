@@ -75,12 +75,11 @@
           <p class="hint">WASD drive · Q/E rotate · Space stops 3TSahur</p>
           <button class="stop-button" id="stop" type="button">Stop 3TSahur · all 4 motors</button>
         </div>
-        <section class="actuator-card" aria-label="3TSahur auxiliary camera and ramp controls">
-          <header class="auxiliary-heading"><div><p class="eyebrow">Auxiliary systems</p><strong>Gimbal + ramp</strong></div><output id="actuator-status">Awaiting servo configuration</output></header>
-          <div class="actuator-actions"><button id="gimbal-mode" type="button" aria-pressed="false">Gimbal mode · G</button><button id="ramp-toggle" type="button">Raise ramp · R</button></div>
-          <div class="gimbal-pad" aria-label="USB camera gimbal controls"><button type="button" data-gimbal="pan-left">← Pan</button><button type="button" data-gimbal="tilt-up">Tilt ↑</button><button type="button" data-gimbal="tilt-down">Tilt ↓</button><button type="button" data-gimbal="pan-right">Pan →</button></div>
-          <output id="gimbal-readout">Pan 0° · Tilt 0°</output>
-          <p>Press G, then use arrow keys to aim the camera. Press R to toggle the ramp. These controls are staged only until the servo driver is configured.</p>
+        <section class="actuator-card ramp-card" aria-label="3TSahur ramp controls">
+          <header class="auxiliary-heading"><div><p class="eyebrow">Auxiliary system</p><strong>Ramp position</strong></div><output id="actuator-status">Checking PCA9685</output></header>
+          <div class="ramp-state"><span>Current position</span><output id="ramp-readout">Closed · 0°</output></div>
+          <button id="ramp-toggle" type="button" aria-pressed="false">Open ramp · R</button>
+          <p>Two fixed positions: closed at 0° and open at the configured angle.</p>
         </section>
         <footer class="telemetry"><span id="direction">Standing by</span><span id="host">10.42.0.1:8080</span></footer>
       </section>

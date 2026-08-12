@@ -11,15 +11,14 @@ until each relevant software check has passed.
 - [ ] Confirm LARP A and B heartbeat, drive status, CSI display, and their ESP32-CAM streams one at a time.
 - [ ] Test `Space`, `Esc`, browser disconnect, and dead-man release with all wheels raised. Each must stop motion promptly.
 
-## 2. Record the data needed for the new servo work
+## 2. Record the ramp calibration data
 
-- [ ] BCM GPIO pin for gimbal pan, gimbal tilt, ramp servo 1, and ramp servo 2.
-- [ ] Exact servo make/model for all four servos, including standard versus micro servo and any supplied pulse-width range.
-- [ ] Mechanically safe minimum, center, and maximum angles for pan and tilt.
+- [ ] PCA9685 channels for ramp servo 1 and ramp servo 2 (defaults: 0 and 1).
+- [ ] Exact servo make/model for both ramp servos, including standard versus micro servo and any supplied pulse-width range.
 - [ ] Ramp **closed** and **open** angles for both servos, and whether the ramp servos move in the same or opposite directions.
 - [ ] A photo or simple labeled wiring diagram of the servo signal, power, and ground connections.
 - [ ] Servo power-source voltage/current rating and confirmation that it is external—not Pi 5 V—with a common logic ground to the Pi.
-- [ ] Desired UI/keyboard controls, movement speed, and whether the ramp needs an intermediate position.
+- [ ] Confirm the ramp requires only the two dashboard positions: closed and open.
 
 ## 3. Capture deployment facts
 
@@ -41,4 +40,6 @@ until each relevant software check has passed.
 
 ## 5. Send back to continue development
 
-Send the pin/servo details above, photos of physical servo wiring, safety/performance results, any dashboard screenshot/error text, and your preferred gimbal/ramp controls. That is sufficient to add the servo module without guessing wiring or mechanical limits.
+Send the ramp-servo details above, photos of physical servo wiring,
+safety/performance results, and any dashboard screenshot/error text. That is
+sufficient to calibrate the two open angles without guessing mechanical limits.

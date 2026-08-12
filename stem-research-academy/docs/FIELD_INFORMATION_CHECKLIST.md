@@ -27,15 +27,15 @@ photos are useful when they include the connector labels and board markings.
   connected/no drive, or drive timeout.
 - [ ] Confirmation that the retained ECHO motor connections have not changed.
 
-## Planned gimbal and ramp
+## Ramp servos
 
 - [ ] Exact servo-driver board model, board photo, and data sheet/product link.
-- [ ] Driver bus/address details and its four intended channels: pan, tilt,
-  ramp-left, ramp-right.
+- [ ] Driver bus/address details and its two intended channels: ramp-left and
+  ramp-right.
 - [ ] Servo make/model, operating voltage, travel range, and horn orientation.
 - [ ] Servo supply voltage/current rating, fuse/switch plan, and common-ground
   arrangement with the Pi.
-- [ ] Safe mechanical end limits for pan, tilt, and both ramp servos.
+- [ ] Safe mechanical open limits for both ramp servos; closed is 0 degrees.
 - [ ] Whether ramp-left and ramp-right must move in the same or mirrored
   direction, plus the preferred boot/fail-safe ramp position.
 
