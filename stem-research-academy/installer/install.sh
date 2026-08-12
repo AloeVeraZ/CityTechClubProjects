@@ -133,7 +133,6 @@ apt_get install -y \
     ca-certificates \
     curl \
     git \
-    i2c-tools \
     libnss-mdns \
     network-manager \
     nginx-light \
@@ -141,7 +140,6 @@ apt_get install -y \
     python3-flask \
     python3-opencv \
     python3-pip \
-    python3-smbus \
     python3-venv \
     util-linux \
     v4l-utils
@@ -325,12 +323,11 @@ VISION_MODEL=yolo11n_ncnn_model
 VISION_IMAGE_SIZE=320
 VISION_CONFIDENCE=0.45
 VISION_INTERVAL_SECONDS=0.5
-SERVO_I2C_ADDRESS=0x40
-SERVO_FREQUENCY_HZ=50
-SERVO_MIN_PULSE_US=1000
-SERVO_MAX_PULSE_US=2000
-RAMP_CHANNEL_0_OPEN_ANGLE=30
-RAMP_CHANNEL_1_OPEN_ANGLE=30
+RAMP_SERVO_0_GPIO_BCM=12
+RAMP_SERVO_1_GPIO_BCM=18
+RAMP_SERVO_FREQUENCY_HZ=50
+RAMP_SERVO_MIN_PULSE_US=1000
+RAMP_SERVO_MAX_PULSE_US=2000
 EOF
     sudo install -m 0600 "$CONFIG_TEMP" "$CONFIG_FILE"
     rm -f "$CONFIG_TEMP"
@@ -376,12 +373,11 @@ ensure_config_key VISION_MODEL "yolo11n_ncnn_model"
 ensure_config_key VISION_IMAGE_SIZE "320"
 ensure_config_key VISION_CONFIDENCE "0.45"
 ensure_config_key VISION_INTERVAL_SECONDS "0.5"
-ensure_config_key SERVO_I2C_ADDRESS "0x40"
-ensure_config_key SERVO_FREQUENCY_HZ "50"
-ensure_config_key SERVO_MIN_PULSE_US "1000"
-ensure_config_key SERVO_MAX_PULSE_US "2000"
-ensure_config_key RAMP_CHANNEL_0_OPEN_ANGLE "30"
-ensure_config_key RAMP_CHANNEL_1_OPEN_ANGLE "30"
+ensure_config_key RAMP_SERVO_0_GPIO_BCM "12"
+ensure_config_key RAMP_SERVO_1_GPIO_BCM "18"
+ensure_config_key RAMP_SERVO_FREQUENCY_HZ "50"
+ensure_config_key RAMP_SERVO_MIN_PULSE_US "1000"
+ensure_config_key RAMP_SERVO_MAX_PULSE_US "2000"
 
 # Hotspot credentials are installer-managed so firmware and Pi stay in sync.
 sudo sed -i -E \
@@ -441,7 +437,6 @@ sudo install -m 0644 \
 
 getent group gpio >/dev/null && sudo usermod -aG gpio "$APP_USER" || true
 getent group video >/dev/null && sudo usermod -aG video "$APP_USER" || true
-getent group i2c >/dev/null && sudo usermod -aG i2c "$APP_USER" || true
 sudo systemctl enable NetworkManager.service
 sudo systemctl enable avahi-daemon.service
 sudo systemctl set-default graphical.target
@@ -476,7 +471,6 @@ $APP_DIR/installer/kiosk.sh &
 EOF
 
 if command -v raspi-config >/dev/null 2>&1; then
-    sudo raspi-config nonint do_i2c 0 || true
     sudo raspi-config nonint do_boot_behaviour B4 || true
     sudo raspi-config nonint do_blanking 1 || true
 fi

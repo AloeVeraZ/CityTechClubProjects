@@ -402,15 +402,14 @@
     actuatorState = data || actuatorState;
     const ramp = actuatorState.ramp || {state: "closed", closed_angle: 0};
     const isOpen = ramp.state === "open";
-    const openAngles = Object.values(ramp.open_angles || {});
-    const openLabel = openAngles.length ? openAngles.join("° / ") + "°" : "configured angle";
+    const openLabel = Number.isFinite(Number(ramp.open_angle)) ? Number(ramp.open_angle) + "°" : "30°";
     document.querySelector("#ramp-readout").value = isOpen ? "Open · " + openLabel : "Closed · 0°";
     const toggle = document.querySelector("#ramp-toggle");
     toggle.textContent = (isOpen ? "Close" : "Open") + " ramp · R";
     toggle.setAttribute("aria-pressed", String(isOpen));
     document.querySelector("#actuator-status").value = actuatorState.configured
       ? "Ramp servos ready"
-      : (actuatorState.reason || "PCA9685 unavailable");
+      : (actuatorState.reason || "Servo GPIO unavailable");
   }
 
   async function toggleRamp() {

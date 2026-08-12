@@ -106,7 +106,7 @@ class DashboardTabTests(unittest.TestCase):
         self.assertIn("/api/actuators/ramp", SCRIPT)
         self.assertIn('state: "closed"', SCRIPT)
         self.assertIn('state === "open"', SCRIPT)
-        self.assertIn("PCA9685 unavailable", SCRIPT)
+        self.assertIn("Servo GPIO unavailable", SCRIPT)
         self.assertIn(".actuator-card", STYLES)
         self.assertIn("grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr) auto;", STYLES)
 

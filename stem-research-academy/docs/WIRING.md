@@ -19,3 +19,28 @@ Before the first ground test, connect all logic and motor grounds, power motors
 from their rated external supply, add a suitable fuse/power switch, and test
 each direction with all wheels raised. If one wheel is physically reversed,
 reverse only that motor's leads or swap only its `MotorPins` pair in code.
+
+## Direct ramp-servo pinout
+
+The two ramp servos use direct 50 Hz signal output from otherwise-unused Pi
+GPIO pins. The code uses BCM numbering; the wiring table includes physical
+header numbers so the connections are unambiguous.
+
+| Servo | Wire | Raspberry Pi connection |
+| --- | --- | --- |
+| Ramp Servo 1 | Signal (orange/white/yellow) | BCM GPIO12, physical pin 32 |
+| Ramp Servo 1 | +5 V (red) | 5 V, physical pin 2 |
+| Ramp Servo 1 | Ground (brown/black) | Ground, physical pin 6 |
+| Ramp Servo 2 | Signal (orange/white/yellow) | BCM GPIO18, physical pin 12 |
+| Ramp Servo 2 | +5 V (red) | 5 V, physical pin 4 |
+| Ramp Servo 2 | Ground (brown/black) | Ground, physical pin 14 |
+
+GPIO12 and GPIO18 carry 3.3 V control signals; never connect either servo's
+red 5 V wire to a GPIO signal pin. Both servos start at 0 degrees, open to 30
+degrees, and return to 0 degrees when closed.
+
+Powering two servos from the Pi's 5 V header is only suitable if their combined
+startup/stall current fits within the power left over from the Pi's supply.
+Test with drivetrain power disconnected. If the Pi reports undervoltage,
+reboots, or either servo chatters, stop and use a separate regulated 5 V servo
+supply with its ground connected to a Pi ground.

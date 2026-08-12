@@ -13,7 +13,7 @@ until each relevant software check has passed.
 
 ## 2. Record the ramp calibration data
 
-- [ ] PCA9685 channels for ramp servo 1 and ramp servo 2 (defaults: 0 and 1).
+- [ ] Confirm Servo 1 signal on BCM GPIO12 and Servo 2 signal on BCM GPIO18.
 - [ ] Exact servo make/model for both ramp servos, including standard versus micro servo and any supplied pulse-width range.
 - [ ] Ramp **closed** and **open** angles for both servos, and whether the ramp servos move in the same or opposite directions.
 - [ ] A photo or simple labeled wiring diagram of the servo signal, power, and ground connections.

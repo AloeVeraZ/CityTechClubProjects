@@ -284,7 +284,7 @@ Commands are deliberately short-lived. Releasing a key, losing the client connec
 - [ ] Raspberry Pi 4 Model B (4 GB), microSD card, official-grade 5 V / 3 A supply, case/cooling, and a local display or operator phone/tablet.
 - [ ] Logitech C270 USB webcam and four mecanum DC motors with compatible wheels/chassis.
 - [ ] Two dual-channel H-bridge drivers, correctly rated fused motor battery/supply, wiring, common ground, and an accessible physical motor-power switch.
-- [ ] For the ramp: a verified PCA9685, a separate servo-rated regulated supply, two compatible ramp servos, and mechanical end-stop testing before movement is enabled.
+- [ ] For the ramp: two compatible servos, verified 5 V power capacity, and mechanical end-stop testing before movement is enabled.
 - [ ] A 2.4 GHz Wi-Fi-capable operator device. A browser gamepad is optional; no Pi-side gamepad hardware is required.
 
 **Raspberry Pi software checklist**
@@ -314,15 +314,14 @@ The Pi GPIO layout below is intentionally the same layout as the integration bas
 
 Do not power motors from the Pi's 5 V rail. Share a common ground between the Pi and motor-driver logic, verify each motor direction with wheels raised, and keep an accessible physical power switch. Full connection notes are in [docs/WIRING.md](docs/WIRING.md).
 
-### PCA9685 two-servo ramp
+### Direct-GPIO two-servo ramp
 
 The fixed camera has no movement controls. The 3TSahur dashboard exposes only
-the ramp's two positions: **Closed** and **Open** (`R`). PCA9685 channels 0 and
-1 initialize at the closed 0-degree position when the service starts. Opening
-the ramp moves them to their separately configurable open angles; closing it
-returns both to 0 degrees. I2C uses Raspberry Pi bus 1 at address `0x40`; the
-installer enables I2C and installs `python3-smbus`. See [ramp setup
-requirements](docs/3TSAHUR_AUXILIARY_ACTUATORS.md).
+the ramp's two positions: **Closed** and **Open** (`R`). Servo 1 uses BCM GPIO
+12 (physical pin 32), and Servo 2 uses BCM GPIO18 (physical pin 12). Both
+initialize at 0 degrees when the service starts, move to 30 degrees when open,
+and return to 0 degrees when closed. See the [direct servo pinout and safety
+notes](docs/3TSAHUR_AUXILIARY_ACTUATORS.md).
 
 ## Install on the Raspberry Pi
 

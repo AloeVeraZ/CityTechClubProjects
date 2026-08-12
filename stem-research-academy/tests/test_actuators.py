@@ -1,30 +1,59 @@
-import os
 import pathlib
 import unittest
-from unittest.mock import patch
 
-from robot_server.actuators import ActuatorController, PCA9685ServoBoard
+from robot_server.actuators import ActuatorController, DirectGPIOServoBoard
 
 
-class FakeBus:
-    def __init__(self, _bus_number):
-        self.writes = []
-        self.closed = False
+class FakePWM:
+    def __init__(self, pin, frequency):
+        self.pin = pin
+        self.frequency = frequency
+        self.started = []
+        self.duties = []
+        self.stopped = False
 
-    def read_byte_data(self, address, register):
-        self.writes.append(("read", address, register))
-        return 0
+    def start(self, duty):
+        self.started.append(duty)
 
-    def write_byte_data(self, address, register, value):
-        self.writes.append(("write", address, register, value))
+    def ChangeDutyCycle(self, duty):
+        self.duties.append(duty)
 
-    def close(self):
-        self.closed = True
+    def stop(self):
+        self.stopped = True
+
+
+class FakeGPIO:
+    BCM = 11
+    OUT = 1
+    LOW = 0
+
+    def __init__(self):
+        self.mode = None
+        self.setups = []
+        self.pwms = {}
+        self.cleaned = []
+
+    def setwarnings(self, _enabled):
+        pass
+
+    def setmode(self, mode):
+        self.mode = mode
+
+    def setup(self, pin, mode, initial=None):
+        self.setups.append((pin, mode, initial))
+
+    def PWM(self, pin, frequency):
+        pwm = FakePWM(pin, frequency)
+        self.pwms[pin] = pwm
+        return pwm
+
+    def cleanup(self, pins):
+        self.cleaned.append(tuple(pins))
 
 
 class FakeServoBoard:
     def __init__(self):
-        self.address = 0x40
+        self.pins = {0: 12, 1: 18}
         self.hardware = True
         self.error = None
         self.angles = []
@@ -37,47 +66,45 @@ class FakeServoBoard:
 
 
 class ServoActuatorTests(unittest.TestCase):
-    def test_installer_enables_i2c_and_adds_servo_configuration(self):
+    def test_installer_has_direct_gpio_servo_configuration(self):
         installer = (pathlib.Path(__file__).parents[1] / "installer" / "install.sh").read_text(encoding="utf-8")
-        self.assertIn("python3-smbus", installer)
-        self.assertIn("i2c-tools", installer)
-        self.assertIn("raspi-config nonint do_i2c 0", installer)
-        self.assertIn("SERVO_I2C_ADDRESS=0x40", installer)
-        self.assertIn("RAMP_CHANNEL_0_OPEN_ANGLE=30", installer)
-        self.assertIn("RAMP_CHANNEL_1_OPEN_ANGLE=30", installer)
+        self.assertIn("python3-rpi.gpio", installer)
+        self.assertIn("RAMP_SERVO_0_GPIO_BCM=12", installer)
+        self.assertIn("RAMP_SERVO_1_GPIO_BCM=18", installer)
 
-    def test_pca9685_initializes_channels_zero_and_one_at_zero_degrees(self):
-        bus = FakeBus(1)
-        board = PCA9685ServoBoard(bus_factory=lambda _number: bus)
+    def test_direct_gpio_initializes_both_servos_closed_at_zero_degrees(self):
+        gpio = FakeGPIO()
+        board = DirectGPIOServoBoard(gpio_module=gpio)
 
         self.assertTrue(board.hardware)
-        # Channel 0 OFF registers start at 0x08; channel 1 starts at 0x0C.
-        written_registers = [entry[2] for entry in bus.writes if entry[0] == "write"]
-        self.assertIn(0x08, written_registers)
-        self.assertIn(0x0C, written_registers)
+        self.assertEqual(gpio.mode, gpio.BCM)
+        self.assertEqual([item[0] for item in gpio.setups], [12, 18])
+        self.assertAlmostEqual(gpio.pwms[12].started[0], 5.0)
+        self.assertAlmostEqual(gpio.pwms[18].started[0], 5.0)
 
-    def test_open_moves_both_ramp_channels_to_their_set_positions(self):
+    def test_open_moves_both_ramp_servos_to_30_degrees(self):
         board = FakeServoBoard()
-        with patch.dict(os.environ, {
-            "RAMP_CHANNEL_0_OPEN_ANGLE": "30",
-            "RAMP_CHANNEL_1_OPEN_ANGLE": "40",
-        }):
-            controller = ActuatorController(board=board)
+        controller = ActuatorController(board=board)
         result = controller.set_ramp("open")
 
-        self.assertEqual(board.angles, [(0, 30.0), (1, 40.0)])
+        self.assertEqual(board.angles, [(0, 30.0), (1, 30.0)])
         self.assertEqual(result["ramp"]["state"], "open")
-        self.assertEqual(result["channels"], {"0": 30.0, "1": 40.0})
+        self.assertEqual(result["channels"], {"0": 30.0, "1": 30.0})
 
-    def test_closed_returns_both_ramp_channels_to_zero(self):
+    def test_closed_returns_both_ramp_servos_to_zero(self):
         board = FakeServoBoard()
         controller = ActuatorController(board=board)
         controller.set_ramp("open")
         result = controller.set_ramp("closed")
 
-        self.assertEqual(board.angles[-2:], [(0, 0), (1, 0)])
+        self.assertEqual(board.angles[-2:], [(0, 0.0), (1, 0.0)])
         self.assertEqual(result["ramp"]["state"], "closed")
-        self.assertEqual(result["channels"], {"0": 0, "1": 0})
+        self.assertEqual(result["channels"], {"0": 0.0, "1": 0.0})
+
+    def test_invalid_ramp_state_is_rejected(self):
+        controller = ActuatorController(board=FakeServoBoard())
+        with self.assertRaisesRegex(ValueError, "open.*closed"):
+            controller.set_ramp("halfway")
 
 
 if __name__ == "__main__":

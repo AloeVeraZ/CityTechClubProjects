@@ -29,7 +29,7 @@ drivetrain design.
 | Discovery | Scout heartbeat/HTTP registration | Same, with LARP labels and camera URLs | Dynamic heartbeat IP still overrides an mDNS fallback. |
 | CSI | Scout status forwarding | CSI indicator and calibration UI | CSI remains advisory; it cannot block drive control. |
 | Vision/tools | No optional inference toolchain | Optional per-feed YOLO, snapshots, health, timeline, gamepad, dead-man mode | Each is optional and failure-isolated from drive/stop paths. |
-| Two-servo ramp | Not present | Closed/open ramp UI and API through PCA9685 channels 0/1 | Both channels initialize closed at 0 degrees; open angles remain independently configurable. |
+| Two-servo ramp | Not present | Closed/open ramp UI and API through direct GPIO12/GPIO18 servo signals | Both servos initialize closed at 0 degrees and open to 30 degrees. |
 | Persistent config migration | Partner keys `SCOUT_A/B_HOST` and `ESP32_ONE/TWO_STREAM_URL` | Values migrate to the corresponding `LARP_*` keys; runtime also accepts the old names | Existing customized addresses remain active after an in-place upgrade. |
 | Pi hostname resolution | Hostname changes to `3tsahur` without synchronizing `/etc/hosts` | Preserves a backup and changes only the `127.0.1.1` hostname mapping | Prevents the local `sudo: unable to resolve host` mismatch while retaining unrelated host aliases. |
 

@@ -1,33 +1,27 @@
-# 3TSahur PCA9685 two-servo ramp setup
+# 3TSahur direct-GPIO ramp servos
 
-The Logitech camera is bolted down and has no actuator controls. The dashboard
-controls only the ramp through an Adafruit PCA9685 on Raspberry Pi I2C bus 1 at
-the default address `0x40`.
+The Logitech camera is bolted down and has no actuator controls. Two hobby
+servos operate the ramp directly from Raspberry Pi GPIO signals.
 
-Channels 0 and 1 initialize at the closed position of 0 degrees when the
-dashboard service starts. The ramp has exactly two persistent positions:
+## Pinout
 
-| Position | Channel 0 | Channel 1 |
-| --- | --- | --- |
-| Closed | 0 degrees | 0 degrees |
-| Open | Configured open angle | Configured open angle |
+| Servo | Signal | Power | Ground |
+| --- | --- | --- | --- |
+| Ramp Servo 1 | BCM GPIO12, physical pin 32 | 5 V, physical pin 2 | Physical pin 6 |
+| Ramp Servo 2 | BCM GPIO18, physical pin 12 | 5 V, physical pin 4 | Physical pin 14 |
 
-## Wiring
+Typical servo colors are red for power, brown/black for ground, and
+orange/white/yellow for signal. Verify the colors for the exact servo before
+applying power. Do not put 5 V onto GPIO12 or GPIO18; Pi GPIO signals are 3.3 V.
 
-| Raspberry Pi | PCA9685 |
-| --- | --- |
-| Physical pin 1, 3.3 V | `VCC` logic power |
-| Physical pin 3, GPIO2/SDA1 | `SDA` |
-| Physical pin 5, GPIO3/SCL1 | `SCL` |
-| Physical pin 6, ground | `GND` |
+## Positions and controls
 
-The servo `V+` rail requires a supply matching the servos' rated voltage.
-`VCC` powers only the PCA9685 logic and does not power the servo output rail.
-Pi, PCA9685, and servo-supply grounds must share a common reference.
+| Position | Servo 1 | Servo 2 |
+| --- | ---: | ---: |
+| Closed/startup | 0 degrees | 0 degrees |
+| Open | 30 degrees | 30 degrees |
 
-## Controls
-
-Use the **Open ramp** / **Close ramp** dashboard button or press `R` while the
+Use **Open ramp** / **Close ramp** in the dashboard or press `R` while the
 3TSahur workspace is active. There is no intermediate position and no camera
 movement mode.
 
@@ -36,30 +30,28 @@ movement mode.
 Persistent settings in `/etc/stem-research-academy/config.env` are:
 
 ```text
-SERVO_I2C_ADDRESS=0x40
-SERVO_FREQUENCY_HZ=50
-SERVO_MIN_PULSE_US=1000
-SERVO_MAX_PULSE_US=2000
-RAMP_CHANNEL_0_OPEN_ANGLE=30
-RAMP_CHANNEL_1_OPEN_ANGLE=30
+RAMP_SERVO_0_GPIO_BCM=12
+RAMP_SERVO_1_GPIO_BCM=18
+RAMP_SERVO_FREQUENCY_HZ=50
+RAMP_SERVO_MIN_PULSE_US=1000
+RAMP_SERVO_MAX_PULSE_US=2000
 ```
 
-Change the two open-angle values independently if the linkages require
-different or mirrored travel. Closed always remains 0 degrees.
+The installer provides `python3-rpi.gpio`. The application starts both PWM
+signals at the 0-degree duty cycle and keeps the selected position active.
 
-The installer enables I2C, installs `i2c-tools` and `python3-smbus`, and adds
-the dashboard user to the `i2c` group. If the board is absent, the server
-continues running and `/api/status` reports the PCA9685 error.
+## Power warning
 
-## Safe first test
+The two 5 V header pins share the Pi's main 5 V rail; they are not two separate
+power supplies. Direct header power is only safe when the Pi power supply has
+enough remaining capacity for both servos, including startup and stall current.
+Servo current spikes can cause undervoltage, resets, or permanent damage.
 
-1. Disconnect drivetrain power and remove ramp linkages.
-2. Verify the servo supply voltage against each servo's data sheet.
-3. Run `i2cdetect -y 1` and verify device `40` appears.
-4. Start the dashboard service and confirm both channels initialize at 0.
-5. Test **Open** with conservative angles before attaching the linkages.
-6. Attach the linkages only after confirming closed and open do not bind.
+For the first test, disconnect drivetrain power and remove the ramp linkages.
+If the Pi reports undervoltage, resets, or the servos chatter, disconnect the
+servo red wires and use a separate regulated 5 V supply. With an external
+supply, connect its ground to Pi ground so the GPIO signals have a common
+reference.
 
-The API routes are `GET /api/status` and `POST /api/actuators/ramp`. The ramp
-request body is either `{"state":"closed"}` or `{"state":"open"}`. Status
-reports `configured: true` only when the PCA9685 initializes successfully.
+The API routes are `GET /api/status` and `POST /api/actuators/ramp`. The request
+body is either `{"state":"closed"}` or `{"state":"open"}`.
