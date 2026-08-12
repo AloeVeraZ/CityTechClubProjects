@@ -252,18 +252,20 @@ Open `http://10.42.0.1` after connecting to the 3TSahur hotspot. On a device tha
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-All three robot workspaces remain on the page. The workspace nearest the
-viewport keeps its MJPEG feed open while the other two image connections stay
-closed. This preserves hotspot bandwidth for low-latency robot commands
-without making the operator click through tabs.
+All three control workspaces remain on the page. The three selectors at the top
+independently toggle camera feeds: one feed fills the camera wall, two divide it
+evenly, and three use three stacked slots. Deselecting the last feed restores
+3TSahur automatically, so the operator can never end up with an empty camera
+wall. Opening multiple feeds uses more hotspot bandwidth; adaptive control
+priority can still suspend them if measured command latency degrades.
 
 ### Current dashboard visual system
 
 The UI uses a restrained dark control-room system inspired by the compact card
 and segmented-navigation patterns catalogued on [21st.dev](https://21st.dev/).
-Each robot is a complete horizontal workspace: its camera is always in the
-left column and every camera-analysis, speed, drive, CSI, gimbal, ramp, and stop
-control is in the right column. Nothing floats over a camera or control panel.
+The camera wall is always in the left column, while every camera-analysis,
+speed, drive, CSI, gimbal, ramp, and stop control stays visible in the right
+column. Nothing floats over a camera or control panel.
 System health, safety settings, and the mission timeline are a separate static
 section at the end of the page.
 

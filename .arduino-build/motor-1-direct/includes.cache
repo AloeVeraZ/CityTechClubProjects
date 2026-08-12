@@ -1,0 +1,63 @@
+[
+  {
+    "added_include_path": "C:\\Users\\angel\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\cores\\esp32"
+  },
+  {
+    "added_include_path": "C:\\Users\\angel\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\variants\\esp32s3"
+  },
+  {
+    "compile": {
+      "source_path": "C:\\CityTechClubProjects\\.arduino-build\\motor-1-direct\\sketch\\motor-1-slow-test.ino.cpp",
+      "object_path": "C:\\CityTechClubProjects\\.arduino-build\\motor-1-direct\\sketch\\motor-1-slow-test.ino.cpp.o",
+      "depfile_path": "C:\\CityTechClubProjects\\.arduino-build\\motor-1-direct\\sketch\\motor-1-slow-test.ino.cpp.d"
+    },
+    "compile_task": {
+      "args": [
+        "C:\\Users\\angel\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp-x32\\2601/bin/xtensa-esp32s3-elf-g++",
+        "-c",
+        "@C:\\Users\\angel\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32s3-libs\\3.3.8/flags/cpp_flags",
+        "-w",
+        "-Os",
+        "-Werror=return-type",
+        "-w",
+        "-x",
+        "c++",
+        "-E",
+        "-CC",
+        "-DF_CPU=240000000L",
+        "-DARDUINO=10607",
+        "-DARDUINO_ESP32S3_DEV",
+        "-DARDUINO_ARCH_ESP32",
+        "-DARDUINO_BOARD=\"ESP32S3_DEV\"",
+        "-DARDUINO_VARIANT=\"esp32s3\"",
+        "-DARDUINO_PARTITION_default",
+        "-DARDUINO_HOST_OS=\"windows\"",
+        "-DARDUINO_FQBN=\"esp32:esp32:esp32s3:UploadSpeed=115200,USBMode=default,CDCOnBoot=cdc,MSCOnBoot=default,DFUOnBoot=default,UploadMode=cdc,CPUFreq=240,FlashMode=qio,FlashSize=16M,PartitionScheme=default,DebugLevel=none,PSRAM=disabled,LoopCore=1,EventsCore=1,EraseFlash=all,JTAGAdapter=default,ZigbeeMode=default\"",
+        "-DESP32=ESP32",
+        "-DCORE_DEBUG_LEVEL=0",
+        "-DARDUINO_RUNNING_CORE=1",
+        "-DARDUINO_EVENT_RUNNING_CORE=1",
+        "-DARDUINO_USB_MODE=0",
+        "-DARDUINO_USB_CDC_ON_BOOT=1",
+        "-DARDUINO_USB_MSC_ON_BOOT=0",
+        "-DARDUINO_USB_DFU_ON_BOOT=0",
+        "@C:\\Users\\angel\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32s3-libs\\3.3.8/flags/defines",
+        "-IC:\\CityTechClubProjects\\stem-research-academy\\firmware\\larp-scout\\motor-1-slow-test",
+        "-iprefix",
+        "C:\\Users\\angel\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32s3-libs\\3.3.8/include/",
+        "@C:\\Users\\angel\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32s3-libs\\3.3.8/flags/includes",
+        "-IC:\\Users\\angel\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esp32s3-libs\\3.3.8/qio_qspi/include",
+        "-IC:\\Users\\angel\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\cores\\esp32",
+        "-IC:\\Users\\angel\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\3.3.8\\variants\\esp32s3",
+        "@C:\\CityTechClubProjects\\.arduino-build\\motor-1-direct/build_opt.h",
+        "@C:\\CityTechClubProjects\\.arduino-build\\motor-1-direct/file_opts",
+        "C:\\CityTechClubProjects\\.arduino-build\\motor-1-direct\\sketch\\motor-1-slow-test.ino.cpp",
+        "-o",
+        "nul"
+      ]
+    }
+  },
+  {
+    "missing_include_h": ""
+  }
+]

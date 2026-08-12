@@ -1,41 +1,78 @@
 /*
-  ECHO Motor 1 Slow Test
-  ======================
+  ECHO Motor 1 Slow Test -- no EchoLib required
+  =================================================
 
-  Hardware: 3DBuffalo ECHO (ESP32-S3)
-  Motor:    Port 1 only
+  Pin map extracted from the official 3DBuffalo EchoLib motor source:
+    Motor 1: GPIO 47 / 48   MCPWM unit 0, timer 0
+    Motor 2: GPIO 38 / 21   MCPWM unit 0, timer 1
+    Motor 3: GPIO  1 /  2   MCPWM unit 0, timer 2
+    Motor 4: GPIO  4 /  5   MCPWM unit 1, timer 0
+    Motor 5: GPIO  7 /  6   MCPWM unit 1, timer 1
+    Motor 6: GPIO 16 / 15   MCPWM unit 1, timer 2
 
-  With the robot's wheels raised, this sketch runs Motor 1 at 10% power for
-  two seconds, stops it for three seconds, and repeats. All motor ports are
-  explicitly stopped before the first test begins.
+  This sketch initializes only Motor 1. With the wheel raised, it runs at
+  10% for two seconds, stops for three seconds, and repeats.
 */
 
-#include <EchoLib.h>
+#include <Arduino.h>
+#include "driver/mcpwm.h"
 
-MotorControllers motors;
-
-constexpr int MOTOR_PORT = 1;
+constexpr int MOTOR_1_PIN_A = 47;
+constexpr int MOTOR_1_PIN_B = 48;
 constexpr float MOTOR_SPEED_PERCENT = 10.0f;
 constexpr unsigned long RUN_TIME_MS = 2000;
 constexpr unsigned long REST_TIME_MS = 3000;
 
+void stopMotor1() {
+  // EchoLib's brake/zero behavior: both DRV8874 control inputs held low.
+  mcpwm_set_signal_low(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A);
+  mcpwm_set_signal_low(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B);
+}
+
+void setMotor1(float percent) {
+  percent = constrain(percent, -100.0f, 100.0f);
+
+  if (percent == 0.0f) {
+    stopMotor1();
+  } else if (percent > 0.0f) {
+    mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, percent);
+    mcpwm_set_duty_type(MCPWM_UNIT_0, MCPWM_TIMER_0,
+                        MCPWM_OPR_A, MCPWM_DUTY_MODE_0);
+    mcpwm_set_signal_low(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B);
+  } else {
+    mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B, -percent);
+    mcpwm_set_duty_type(MCPWM_UNIT_0, MCPWM_TIMER_0,
+                        MCPWM_OPR_B, MCPWM_DUTY_MODE_0);
+    mcpwm_set_signal_low(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A);
+  }
+}
+
 void setup() {
   Serial.begin(115200);
-  delay(1500);
+  delay(1000);
 
-  motors.setBrake();
-  motors.stopAll();
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, MOTOR_1_PIN_A);
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0B, MOTOR_1_PIN_B);
 
-  Serial.println("ECHO Motor 1 slow test ready.");
-  Serial.println("Motor 1 will run at 10% for 2 seconds, then stop for 3 seconds.");
+  mcpwm_config_t config = {};
+  config.frequency = 1000;
+  config.cmpr_a = 0;
+  config.cmpr_b = 0;
+  config.duty_mode = MCPWM_DUTY_MODE_0;
+  config.counter_mode = MCPWM_UP_COUNTER;
+  mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &config);
+  mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
+
+  stopMotor1();
+  Serial.println("Direct ECHO Motor 1 test ready (no EchoLib). ");
 }
 
 void loop() {
-  Serial.println("Motor 1: slow forward");
-  motors.set(MOTOR_PORT, MOTOR_SPEED_PERCENT);
+  Serial.println("Motor 1: 10% forward for 2 seconds");
+  setMotor1(MOTOR_SPEED_PERCENT);
   delay(RUN_TIME_MS);
 
-  motors.set(MOTOR_PORT, 0.0f);
-  Serial.println("Motor 1: stopped");
+  stopMotor1();
+  Serial.println("Motor 1: stopped for 3 seconds");
   delay(REST_TIME_MS);
 }

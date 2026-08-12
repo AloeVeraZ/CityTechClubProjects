@@ -15,7 +15,7 @@ update, snapshot, camera detection update, or vision result.
 | Auxiliary browser traffic | Status, CSI, timeline, analysis, snapshots, and evidence yield while any robot moves | Makes reconnaissance tools best-effort rather than competing with drive packets. |
 | Adaptive control priority | Browser keeps 20 command samples and pauses the selected MJPEG stream for 10 s only after a failure or p95 ≥100 ms | Reacts to real congestion without reducing normal video quality. |
 | LARP Wi-Fi recovery | Staggered 1.8/2.2 s controller retry and 2.0/2.4 s camera retry | Reduces worst-case reconnect delay and avoids synchronized retry bursts. |
-| Video | One viewport-selected feed only; ESP32-CAM capped at 10 FPS | Preserves airtime for controls while all workspaces stay visible. |
+| Video | Operator selects one, two, or three feeds; empty selection falls back to 3TSahur; ESP32-CAM capped at 10 FPS | Gives the operator a flexible camera wall while adaptive priority can suspend video after measured congestion. |
 | Optional analysis | One daemon worker, static-scene motion gate, periodic forced refresh, and control-heartbeat pause | Keeps YOLO/ArUco work outside request and drive timing. |
 | USB camera | Automatic V4L2 model/mode reporting plus stale-frame detection and bounded reconnect backoff | Accepts compatible Logitech models and recovers from disconnects without restarting motor control. |
 | Health/evidence | Slow host checks are cached; bounded JPEG/JSON writes use a background queue | Keeps subprocess and disk work out of Flask control routes. |

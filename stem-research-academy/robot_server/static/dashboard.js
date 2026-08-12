@@ -121,7 +121,7 @@
     if (cameraTrafficPaused) {
       cameraTrafficPaused = false;
       delete document.body.dataset.controlPriority;
-      activateVisibleCamera(activeRobotTab);
+      activateSelectedCameras();
     }
   }
 
@@ -233,19 +233,17 @@
     if (show) showToast('ALL ROBOTS STOPPED');
   }
 
-  const robotJumps = [...document.querySelectorAll('[data-robot-jump]')];
+  const cameraSelectors = [...document.querySelectorAll('[data-camera-select]')];
   const robotPanels = [...document.querySelectorAll('[data-robot-panel]')];
+  const selectedCameras = new Set(['3tsahur']);
 
-  function activateVisibleCamera(id) {
-    activeRobotTab = id;
-    // MJPEG feeds are continuous network traffic. Keep exactly one feed open
-    // while all three camera workspaces remain visible on this one-page UI.
+  function activateSelectedCameras() {
     cameraFeeds.forEach(feed => {
       if (cameraTrafficPaused) {
         feed.removeAttribute('src');
         return;
       }
-      if (feed.dataset.streamFor === id) {
+      if (selectedCameras.has(feed.dataset.streamFor)) {
         if (!feed.getAttribute('src')) feed.src = feed.dataset.streamSrc;
       } else {
         feed.removeAttribute('src');
@@ -255,32 +253,46 @@
 
   function setActiveRobotContext(id) {
     if (!robotPanels.some(panel => panel.dataset.robotPanel === id)) return;
-    robotJumps.forEach(link => link.classList.toggle('active', link.dataset.robotJump === id));
     robotPanels.forEach(panel => {
       panel.classList.toggle('active', panel.dataset.robotPanel === id);
     });
-    activateVisibleCamera(id);
+    activeRobotTab = id;
     if (id !== "3tsahur" && gimbalMode) setGimbalMode(false, false);
   }
 
-  // The page never hides a robot. Scrolling or interacting with a workspace
-  // only selects which continuous MJPEG stream receives hotspot bandwidth and
-  // which camera the C/L analysis shortcuts address.
-  const panelVisibility = new Map(robotPanels.map(panel => [panel.dataset.robotPanel, 0]));
-  if ('IntersectionObserver' in window) {
-    const panelObserver = new IntersectionObserver(entries => {
-      entries.forEach(entry => panelVisibility.set(entry.target.dataset.robotPanel, entry.intersectionRatio));
-      const nearest = [...panelVisibility.entries()].sort((a, b) => b[1] - a[1])[0];
-      if (nearest && nearest[1] > 0 && nearest[0] !== activeRobotTab) setActiveRobotContext(nearest[0]);
-    }, {threshold: [0, .15, .3, .5, .7, 1]});
-    robotPanels.forEach(panel => panelObserver.observe(panel));
+  function renderCameraSelection() {
+    if (!selectedCameras.size) selectedCameras.add('3tsahur');
+    const selected = cameraFeeds.filter(feed => selectedCameras.has(feed.dataset.streamFor));
+    const rowSpan = 6 / selected.length;
+    cameraFeeds.forEach(feed => {
+      const visibleIndex = selected.indexOf(feed);
+      const stage = feed.closest('.video-stage');
+      const visible = visibleIndex >= 0;
+      stage.classList.toggle('camera-hidden', !visible);
+      stage.style.gridRow = visible ? `${(visibleIndex * rowSpan) + 1} / span ${rowSpan}` : '';
+      stage.style.gridColumn = visible ? '1' : '';
+    });
+    cameraSelectors.forEach(button => {
+      const selected = selectedCameras.has(button.dataset.cameraSelect);
+      button.classList.toggle('active', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    });
+    if (!selectedCameras.has(activeRobotTab)) setActiveRobotContext([...selectedCameras][0]);
+    activateSelectedCameras();
   }
+
   robotPanels.forEach(panel => {
     const selectPanel = () => setActiveRobotContext(panel.dataset.robotPanel);
     panel.addEventListener('pointerdown', selectPanel);
     panel.addEventListener('focusin', selectPanel);
   });
-  robotJumps.forEach(link => link.addEventListener('click', () => setActiveRobotContext(link.dataset.robotJump)));
+  cameraSelectors.forEach(button => button.addEventListener('click', () => {
+    const source = button.dataset.cameraSelect;
+    if (selectedCameras.has(source)) selectedCameras.delete(source);
+    else selectedCameras.add(source);
+    setActiveRobotContext(source);
+    renderCameraSelection();
+  }));
 
   function clearVisionOverlay(source) {
     const canvas = document.querySelector(`[data-vision-overlay="${source}"]`);
@@ -609,7 +621,7 @@
         : data.camera_device ? `Opening ${cameraName}…` : 'Looking for a Logitech USB camera…';
       if (!data.camera_available && data.camera_error && Date.now() - lastCameraRetryAt > 5000) {
         lastCameraRetryAt = Date.now();
-        if (activeRobotTab === '3tsahur') cameraImage.src = `${cameraImage.dataset.streamSrc}?retry=${lastCameraRetryAt}`;
+        if (selectedCameras.has('3tsahur')) cameraImage.src = `${cameraImage.dataset.streamSrc}?retry=${lastCameraRetryAt}`;
       }
     } catch (_) {
       status.classList.add('offline');
@@ -687,7 +699,7 @@
     const id = activeRobotTab === 'larp-a' ? 'a' : activeRobotTab === 'larp-b' ? 'b' : null;
     if (id) refreshScout(id);
   }, 1200);
-  window.setInterval(() => refreshVision(activeRobotTab), 500);
+  window.setInterval(() => selectedCameras.forEach(refreshVision), 500);
   const deadman = document.querySelector('#deadman');
   let lastGamepadSignature = '';
   let lastGamepadSentAt = 0;
@@ -708,7 +720,7 @@
   window.setInterval(refreshEvents, 2000);
   window.setInterval(applyControlPriority, 250);
   window.setInterval(() => { const pad = navigator.getGamepads?.()[0]; if (!pad) return; const held = Boolean(pad.buttons[0]?.pressed); if (deadman.checked && !held) { delete document.body.dataset.deadman; if (gamepadWasMoving) killBig(); gamepadWasMoving = false; lastGamepadSignature = ''; return; } if (deadman.checked) document.body.dataset.deadman = 'held'; const forward = Math.abs(pad.axes[1] || 0) > .18 ? -(pad.axes[1] || 0) : 0; const strafe = Math.abs(pad.axes[0] || 0) > .18 ? pad.axes[0] : 0; const rotate = Math.abs(pad.axes[2] || 0) > .18 ? pad.axes[2] : 0; const moving = Boolean(forward || strafe || rotate); const command = {forward, strafe, rotate, speed: Number(speed.value) / 100}; const signature = JSON.stringify(command); const now = performance.now(); if (moving && (signature !== lastGamepadSignature || now - lastGamepadSentAt >= 80)) { sendBig(true, command); lastGamepadSignature = signature; lastGamepadSentAt = now; } else if (!moving && gamepadWasMoving) { sendBig(true, {forward: 0, strafe: 0, rotate: 0, speed: 0}, true); lastGamepadSignature = ''; } gamepadWasMoving = moving; }, 100);
-  activateVisibleCamera(activeRobotTab);
+  renderCameraSelection();
   refreshStatus();
   refreshScout('a');
   refreshScout('b');

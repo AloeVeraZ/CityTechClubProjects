@@ -98,7 +98,7 @@ class ServerTests(unittest.TestCase):
 
     def test_dashboard_renders_all_three_robots(self):
         response = self.client.get("/")
-        self.assertIn(b"Jump to a robot workspace", response.data)
+        self.assertIn(b"Choose camera feeds", response.data)
         self.assertIn(b'data-robot-panel="3tsahur"', response.data)
         self.assertIn(b'data-robot-panel="larp-a"', response.data)
         self.assertIn(b'data-robot-panel="larp-b"', response.data)

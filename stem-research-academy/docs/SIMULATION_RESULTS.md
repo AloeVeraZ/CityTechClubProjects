@@ -9,7 +9,7 @@ working directory: all 32 of its tests passed.
 
 | Group | Checks | Result |
 | --- | ---: | --- |
-| `test_dashboard_ui.py` | three visible camera-left/control-right workspaces, viewport-selected MJPEG, CSI, vision/landmark controls, bottom mission tools, automatic camera display, and lightweight UI guards | pass |
+| `test_dashboard_ui.py` | three visible camera-left/control-right workspaces, one/two/three-feed camera selection with safe fallback, CSI, vision/landmark controls, bottom mission tools, automatic camera display, and lightweight UI guards | pass |
 | `test_motor.py` | mecanum mixing, normalization, reversal dead-time, confirmed GPIO/PWM mapping, and redundant-heartbeat write suppression | pass |
 | `test_camera.py` | Logitech V4L2 discovery ordering/model naming, automatic reconnect supervision, and compatibility profile restart | pass |
 | `test_recon_features.py` | static-scene inference gating, periodic forced inference, evidence JPEG/JSON pairing, and cached health snapshots | pass |

@@ -17,23 +17,23 @@
       <div class="dashboard-actions">
         <div class="dashboard-note" aria-label="Dashboard operating safeguards">
           <span class="note-live"><i></i> Local control</span>
-          <span>One active camera stream</span>
+          <span>Selectable camera wall</span>
           <span>Watchdog-protected controls</span>
         </div>
         <button class="kill-all" id="kill-all" type="button">Stop all robots · Esc</button>
       </div>
     </header>
 
-    <nav class="robot-tabs" aria-label="Jump to a robot workspace">
-      <a id="jump-3tsahur" class="robot-tab active" href="#panel-3tsahur" data-robot-jump="3tsahur">
+    <nav class="robot-tabs" aria-label="Choose camera feeds">
+      <button id="jump-3tsahur" class="robot-tab active" type="button" aria-pressed="true" data-camera-select="3tsahur">
         <span class="tab-number">01</span><span>3TSahur</span><small>Mecanum hub</small>
-      </a>
-      <a id="jump-larp-a" class="robot-tab" href="#panel-larp-a" data-robot-jump="larp-a">
+      </button>
+      <button id="jump-larp-a" class="robot-tab" type="button" aria-pressed="false" data-camera-select="larp-a">
         <span class="tab-number">02</span><span>LARP Scout A</span><small>Camera scout</small>
-      </a>
-      <a id="jump-larp-b" class="robot-tab" href="#panel-larp-b" data-robot-jump="larp-b">
+      </button>
+      <button id="jump-larp-b" class="robot-tab" type="button" aria-pressed="false" data-camera-select="larp-b">
         <span class="tab-number">03</span><span>LARP Scout B</span><small>Camera scout</small>
-      </a>
+      </button>
     </nav>
 
     <div class="robot-deck" aria-label="Three-robot command deck">
@@ -143,6 +143,6 @@
     </section>
   </main>
   <div class="toast" id="toast" role="status">Controls disconnected — motors stopped</div>
-  <script src="{{ url_for('static', filename='dashboard.js', v=9) }}"></script>
+  <script src="{{ url_for('static', filename='dashboard.js', v=10) }}"></script>
 </body>
 </html>

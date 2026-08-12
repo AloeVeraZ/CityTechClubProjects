@@ -45,13 +45,15 @@ button { touch-action: manipulation; }
 .eyebrow { margin: 0 0 6px; color: #a9a0ff; font-size: 10px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
 
 .robot-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; padding: 5px; border: 1px solid var(--line); border-radius: 14px; background: rgba(14,15,18,.88); }
-.robot-tab { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: center; min-width: 0; padding: 11px 14px; border: 1px solid transparent; border-radius: 11px; background: transparent; color: var(--ink); text-align: left; text-decoration: none; transition: border-color .16s ease, background .16s ease; }
+.robot-tab { display: grid; grid-template-columns: auto 1fr auto; column-gap: 10px; align-items: center; min-width: 0; padding: 11px 14px; border: 1px solid transparent; border-radius: 11px; background: transparent; color: var(--ink); text-align: left; text-decoration: none; cursor: pointer; transition: border-color .16s ease, background .16s ease; }
 .robot-tab > span:not(.tab-number) { overflow: hidden; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
 .robot-tab small { grid-column: 2; color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+.robot-tab::after { grid-column: 3; grid-row: 1 / span 2; }
 .tab-number { display: grid; grid-row: 1 / span 2; place-items: center; width: 29px; height: 29px; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 10px; font-weight: 800; }
 .robot-tab:hover, .robot-tab:focus-visible { border-color: var(--line-bright); outline: none; background: rgba(255,255,255,.035); }
 .robot-tab.active { border-color: rgba(118,103,255,.58); background: linear-gradient(110deg, rgba(118,103,255,.17), rgba(24,25,31,.92) 72%); }
 .robot-tab.active .tab-number { border-color: var(--violet); background: var(--violet); color: white; }
+.robot-tab[aria-pressed="true"]::after { justify-self: end; color: var(--lime); font-size: 9px; font-weight: 900; content: "VIEWING"; }
 
 .robot-deck { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
 .robot-panel { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; scroll-margin-top: 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: 0 20px 55px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.035); }
@@ -194,6 +196,7 @@ input[type="range"] { width: 100%; margin: 0; accent-color: var(--lime); }
   #panel-larp-a .control-stage { grid-area: 2 / 2; }
   #panel-larp-b .video-stage { grid-area: 3 / 1; }
   #panel-larp-b .control-stage { grid-area: 3 / 2; }
+  .video-stage.camera-hidden { display: none; }
   .video-stage { min-height: 0; height: auto; border-bottom: 1px solid var(--line); }
   .video-label { left: 14px; bottom: 11px; font-size: 9px; }
   .control-stage { gap: 5px; padding: 8px 10px; font-size: 9px; }
@@ -269,6 +272,8 @@ input[type="range"] { width: 100%; margin: 0; accent-color: var(--lime); }
   .robot-deck { grid-template-columns: 1fr; }
   .robot-panel { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(380px, .9fr); }
   .video-stage { height: auto; min-height: 420px; border-right: 1px solid var(--line); border-bottom: 0; }
+  .video-stage { grid-row: auto !important; grid-column: auto !important; }
+  .video-stage.camera-hidden { display: none; }
   .control-stage { min-height: 0; }
   .mission-content { grid-template-columns: 1fr 1fr; }
   .mission-section:last-child { grid-column: 1 / -1; }

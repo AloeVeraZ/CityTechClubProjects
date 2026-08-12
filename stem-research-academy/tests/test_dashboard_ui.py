@@ -11,7 +11,7 @@ SCRIPT = (PROJECT_ROOT / "robot_server" / "static" / "dashboard.js").read_text(e
 class DashboardTabTests(unittest.TestCase):
     def test_all_three_robot_workspaces_are_visible_on_one_page(self):
         for robot in ("3tsahur", "larp-a", "larp-b"):
-            self.assertIn(f'data-robot-jump="{robot}"', TEMPLATE)
+            self.assertIn(f'data-camera-select="{robot}"', TEMPLATE)
             self.assertIn(f'data-robot-panel="{robot}"', TEMPLATE)
         self.assertNotIn('role="tab"', TEMPLATE)
         self.assertNotIn(' hidden', TEMPLATE)
@@ -24,13 +24,15 @@ class DashboardTabTests(unittest.TestCase):
         self.assertIn('aria-label="LARP Scout A drive controls"', TEMPLATE)
         self.assertIn('aria-label="LARP Scout B drive controls"', TEMPLATE)
 
-    def test_only_the_visible_workspace_keeps_a_camera_stream_open(self):
+    def test_camera_wall_supports_one_two_or_three_selected_streams(self):
         self.assertEqual(TEMPLATE.count("data-stream-for="), 3)
         self.assertEqual(TEMPLATE.count("data-stream-src="), 3)
-        self.assertIn("function activateVisibleCamera", SCRIPT)
+        self.assertIn("function activateSelectedCameras", SCRIPT)
+        self.assertIn("const selectedCameras = new Set(['3tsahur'])", SCRIPT)
+        self.assertIn("const rowSpan = 6 / selected.length", SCRIPT)
+        self.assertIn("if (!selectedCameras.size) selectedCameras.add('3tsahur')", SCRIPT)
         self.assertIn("feed.removeAttribute('src')", SCRIPT)
-        self.assertIn("IntersectionObserver", SCRIPT)
-        self.assertIn("setActiveRobotContext(nearest[0])", SCRIPT)
+        self.assertNotIn("IntersectionObserver", SCRIPT)
 
     def test_larp_tabs_show_the_csi_presence_indicator(self):
         self.assertEqual(TEMPLATE.count("CSI presence sensor"), 2)
@@ -90,7 +92,7 @@ class DashboardTabTests(unittest.TestCase):
         self.assertIn("healthSummary.value", SCRIPT)
         self.assertIn("event.target.closest?.('input, select, button, summary, a')", SCRIPT)
 
-    def test_scrolling_selects_context_without_hiding_or_stopping_workspaces(self):
+    def test_control_interaction_selects_keyboard_context_without_hiding_controls(self):
         self.assertIn('function setActiveRobotContext', SCRIPT)
         self.assertIn("panel.addEventListener('pointerdown', selectPanel)", SCRIPT)
         self.assertIn("panel.addEventListener('focusin', selectPanel)", SCRIPT)
