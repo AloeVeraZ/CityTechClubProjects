@@ -77,12 +77,11 @@ evidence writes run on bounded background workers; the browser drops auxiliary
 polls while driving and suspends video only after measured degradation.
 
 This confirms software compatibility and the absence of a local API backlog;
-it does **not** measure the Pi's hotspot airtime, 2.4 GHz interference, ESP32
+it does **not** measure the Pi's hotspot airtime, 2.4 GHz interference, camera
 processing, servo behavior, battery voltage drop, or actual motor response.
 Use [the field information checklist](FIELD_INFORMATION_CHECKLIST.md) and the
 raised-wheel connection test before declaring the system field-ready.
 
 Not simulated: physical motor direction/current, C270 USB capture, real Wi-Fi
-radio behavior, ECHO motor IDs, Inland ESP32-CAM pin map, and Arduino upload.
-Those require the actual hardware and must be performed using the raised-wheel
-procedure in the setup guide.
+radio behavior, or external camera hardware. Those require the actual hardware
+and must be performed using the raised-wheel procedure in the setup guide.

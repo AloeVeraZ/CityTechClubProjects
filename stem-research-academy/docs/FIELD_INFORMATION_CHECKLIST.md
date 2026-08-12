@@ -27,16 +27,6 @@ photos are useful when they include the connector labels and board markings.
   connected/no drive, or drive timeout.
 - [ ] Confirmation that the retained ECHO motor connections have not changed.
 
-## Inland ESP32-CAM A and B
-
-- [ ] A readable photo of both sides of each camera board and the camera-ribbon
-  connector.
-- [ ] Whether the board has a built-in USB uploader or requires a serial bridge.
-- [ ] The selected Arduino board profile and upload log for each camera.
-- [ ] `CAMERA_ID` and the stream URL/IP for each camera.
-- [ ] A direct browser test of each camera's `/status` and `/stream` endpoint.
-- [ ] The regulated 5 V camera-power source, current rating, and wiring photo.
-
 ## Planned gimbal and ramp
 
 - [ ] Exact servo-driver board model, board photo, and data sheet/product link.
@@ -54,4 +44,4 @@ photos are useful when they include the connector labels and board markings.
 - [ ] A short video of raised-wheel drive tests.
 - [ ] One screenshot per dashboard tab showing 3TSahur, LARP A, and LARP B.
 - [ ] A timestamped note of latency with camera/YOLO/dead-man settings.
-- [ ] Any terminal or Arduino error text copied exactly, not paraphrased.
+- [ ] Any terminal or application error text copied exactly, not paraphrased.

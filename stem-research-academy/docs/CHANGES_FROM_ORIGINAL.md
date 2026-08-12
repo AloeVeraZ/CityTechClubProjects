@@ -14,18 +14,10 @@ single-file prototype.
 - Changed default network and mDNS names to `3TSahur-Swarm`, `3tsahur.local`,
   `larp-a.local`, and `larp-b.local`.
 - Added direct LARP camera panels to the existing dashboard.
-- Moved/renamed the ECHO drive sketch to `firmware/larp-scout` and updated its
-  station hostname and labels.
-- Added a dedicated Inland ESP32-CAM firmware package with mDNS MJPEG streams.
 - Reworked the dashboard into one tab per robot and keep only the selected
   camera stream open, preventing three simultaneous MJPEG feeds from consuming
   the Pi hotspot's control bandwidth.
-- Made the LARP controller and camera Wi-Fi startup non-blocking, so either
-  board can boot before the Pi hotspot and reconnect automatically. ESP32-CAM
-  streams are capped at 10 FPS to reserve wireless capacity for controls.
-- Added a LARP-tab CSI presence panel that visualizes the existing ECHO
-  firmware's disturbance value while clearly requiring camera verification;
-  added an Inland ESP32-CAM flashing and troubleshooting guide.
+- Added a LARP-tab CSI presence panel for camera-based verification.
 
 ## Mecanum motor mapping
 

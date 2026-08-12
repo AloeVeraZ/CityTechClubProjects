@@ -18,8 +18,6 @@ drivetrain design.
 | Motor software safety | Locked drive path and 200 ms Pi watchdog | Same drive API and watchdog | A stale browser command stops rather than replays. |
 | Browser command strategy | Latest-command-only channel, 300 ms expiry, sequence checks, urgent stop abort | Retained | This is the partner method that prevents command backlog. |
 | LARP transport | Per-scout command lock, HTTP drive/stop/status proxy, heartbeat registration | Retained and renamed for LARP A/B | Existing ECHO controller architecture remains in use. |
-| LARP drive safety | Retained ECHO motor IDs left `1`, right `6`; 500 ms controller watchdog | Same | No ECHO motor mapping change. |
-| Wi-Fi station behavior | `WiFi.setAutoReconnect(true)` and `WiFi.setSleep(false)` | Same | Avoids ESP32 power-save latency while connected. |
 
 ## Additions and intentional changes
 
