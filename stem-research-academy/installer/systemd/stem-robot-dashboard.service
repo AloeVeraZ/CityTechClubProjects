@@ -1,5 +1,5 @@
 [Unit]
-Description=STEM Research Academy robot dashboard
+Description=3TSahur mecanum hub and LARP scout dashboard
 After=network.target
 
 [Service]
@@ -15,4 +15,3 @@ TimeoutStopSec=5
 
 [Install]
 WantedBy=multi-user.target
-

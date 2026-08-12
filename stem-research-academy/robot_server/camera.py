@@ -15,11 +15,15 @@ class CameraStream:
         self.height = height
         self.fps = fps
         self._condition = threading.Condition()
+        self._lifecycle_lock = threading.RLock()
         self._frame: bytes | None = None
         self._running = False
         self._thread: threading.Thread | None = None
+        self._generation = 0
         self.error: str | None = None
         self.selected_device: str | None = None
+        self.last_frame_at: float | None = None
+        self.restart_count = 0
 
     def _candidate_devices(self) -> list[str]:
         """Return capture candidates with Logitech/by-id devices first."""
@@ -42,14 +46,45 @@ class CameraStream:
         return unique
 
     def start(self) -> None:
-        with self._condition:
-            if self._running:
-                return
-            self._running = True
-            self._thread = threading.Thread(target=self._capture, name="usb-camera", daemon=True)
-            self._thread.start()
+        with self._lifecycle_lock:
+            with self._condition:
+                if self._running:
+                    return
+                self._running = True
+                self._generation += 1
+                generation = self._generation
+                self._thread = threading.Thread(
+                    target=self._capture, args=(generation,), name="usb-camera", daemon=True
+                )
+                self._thread.start()
 
-    def _capture(self) -> None:
+    def _active(self, generation: int) -> bool:
+        return self._running and generation == self._generation
+
+    def _capture(self, generation: int | None = None) -> None:
+        """Supervise capture so a USB disconnect recovers without a restart."""
+        generation = self._generation if generation is None else generation
+        retry_delay = 1.0
+        while self._active(generation):
+            try:
+                self._capture_once(generation)
+                retry_delay = 1.0
+            except Exception as error:  # Camera errors must not take down motor control.
+                if not self._active(generation):
+                    break
+                with self._condition:
+                    self.error = str(error)
+                    self.restart_count += 1
+                    self._condition.notify_all()
+                if not self._active(generation):
+                    break
+                # An interruptible wait keeps shutdown and profile changes quick.
+                with self._condition:
+                    self._condition.wait(timeout=retry_delay)
+                retry_delay = min(5.0, retry_delay * 2)
+
+    def _capture_once(self, generation: int) -> None:
+        """Open a usable V4L2 node and capture until it fails or is stopped."""
         camera = None
         try:
             import cv2  # type: ignore
@@ -57,6 +92,8 @@ class CameraStream:
             first_frame = None
             attempted: list[str] = []
             for device in self._candidate_devices():
+                if not self._active(generation):
+                    return
                 attempted.append(device)
                 source = int(device) if device.isdigit() else device
                 candidate = cv2.VideoCapture(source, cv2.CAP_V4L2)
@@ -71,8 +108,12 @@ class CameraStream:
                 # V4L2 node can open successfully but will never return a frame,
                 # so prove capture before selecting the node.
                 for _ in range(15):
+                    if not self._active(generation):
+                        break
                     ok, image = candidate.read()
                     if ok and image is not None:
+                        if not self._active(generation):
+                            break
                         camera = candidate
                         first_frame = image
                         self.selected_device = os.path.realpath(device)
@@ -83,13 +124,15 @@ class CameraStream:
                 candidate.release()
 
             if camera is None:
+                if not self._active(generation):
+                    return
                 tried = ", ".join(attempted) if attempted else "no /dev/video devices found"
                 raise RuntimeError(f"Could not capture from Logitech webcam ({tried})")
 
             frame_interval = 1 / max(1, self.fps)
             next_frame_at = time.monotonic()
             failed_reads = 0
-            while self._running:
+            while self._active(generation):
                 if first_frame is not None:
                     ok, image = True, first_frame
                     first_frame = None
@@ -103,11 +146,16 @@ class CameraStream:
                     time.sleep(0.2)
                     continue
                 failed_reads = 0
+                if not self._active(generation):
+                    break
                 ok, encoded = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, 65])
                 if ok:
                     with self._condition:
+                        if not self._active(generation):
+                            break
                         self._frame = encoded.tobytes()
                         self.error = None
+                        self.last_frame_at = time.monotonic()
                         self._condition.notify_all()
                 next_frame_at += frame_interval
                 delay = next_frame_at - time.monotonic()
@@ -115,12 +163,9 @@ class CameraStream:
                     time.sleep(delay)
                 else:
                     next_frame_at = time.monotonic()
-        except Exception as error:  # Camera errors must not take down motor control.
-            self.error = str(error)
         finally:
             if camera is not None:
                 camera.release()
-            self._running = False
 
     def frames(self):
         self.start()
@@ -136,11 +181,40 @@ class CameraStream:
 
     @property
     def available(self) -> bool:
-        return self._frame is not None and self.error is None
+        return self._frame is not None and self.error is None and self.frame_age_seconds < 3.0
+
+    @property
+    def frame_age_seconds(self) -> float:
+        if self.last_frame_at is None:
+            return float("inf")
+        return max(0.0, time.monotonic() - self.last_frame_at)
+
+    def latest_jpeg(self) -> bytes | None:
+        """Return the newest captured frame without opening a second webcam."""
+        with self._condition:
+            return self._frame
+
+    def configure(self, width: int, height: int, fps: int) -> None:
+        """Apply a profile by restarting only the camera capture worker."""
+        if not (160 <= width <= 1920 and 120 <= height <= 1080 and 1 <= fps <= 30):
+            raise ValueError("Unsupported camera profile")
+        with self._lifecycle_lock:
+            was_running = self._running
+            self.close()
+            with self._condition:
+                self.width, self.height, self.fps = width, height, fps
+                self._frame = None
+                self.last_frame_at = None
+                self.error = None
+                self.selected_device = None
+            if was_running:
+                self.start()
 
     def close(self) -> None:
-        self._running = False
-        with self._condition:
-            self._condition.notify_all()
-        if self._thread and self._thread.is_alive():
-            self._thread.join(timeout=2)
+        with self._lifecycle_lock:
+            with self._condition:
+                self._running = False
+                self._generation += 1
+                self._condition.notify_all()
+            if self._thread and self._thread.is_alive():
+                self._thread.join(timeout=2)

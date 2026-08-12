@@ -1,5 +1,5 @@
 [Unit]
-Description=STEM Research Academy Wi-Fi hotspot
+Description=3TSahur Wi-Fi hotspot
 Wants=NetworkManager.service
 After=NetworkManager.service
 
@@ -11,4 +11,3 @@ RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
-

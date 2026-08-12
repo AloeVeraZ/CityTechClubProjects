@@ -1,229 +1,767 @@
-<div align="center">
+# 3TSahur + LARP Reconnaissance Swarm
 
-# STEM Research Academy
+<p align="center">
+  <img alt="Python" src="https://img.shields.io/badge/control-Python_3.11%2B-3776AB?logo=python&logoColor=white">
+  <img alt="Raspberry Pi" src="https://img.shields.io/badge/hub-Raspberry_Pi_4-C51A4A?logo=raspberrypi&logoColor=white">
+  <img alt="ESP32" src="https://img.shields.io/badge/scouts-ECHO_%2B_ESP32--CAM-111111?logo=espressif&logoColor=white">
+  <img alt="License" src="https://img.shields.io/github/license/AloeVeraZ/CityTechClubProjects">
+</p>
 
-### One Raspberry Pi mecanum robot, two ECHO differential-drive scouts, and one shared control station
+> One rugged Raspberry Pi mecanum hub, two mobile camera scouts, and one browser dashboard for safe local reconnaissance experiments.
 
-![Raspberry Pi](https://img.shields.io/badge/controller-Raspberry%20Pi-C51A4A?logo=raspberrypi&logoColor=white)
-![Python](https://img.shields.io/badge/server-Python-3776AB?logo=python&logoColor=white)
-![ESP32](https://img.shields.io/badge/scouts-2%20ESP32s-00979D)
-![Status](https://img.shields.io/badge/status-mecanum%20control%20ready-b9ff38)
+**3TSahur** is a Raspberry Pi 4 Model B (4 GB) mecanum-drive control hub with a Logitech C270 USB camera. It coordinates two ECHO differential-drive scout robots—**LARP Scout A** and **LARP Scout B**—each paired with an Inland ESP32-CAM video node. The project creates a self-contained local Wi-Fi control network: no internet connection is required during normal operation.
 
-</div>
+## What it can do
 
-This research platform gives a team one browser dashboard for three robots. The Raspberry Pi creates its own Wi-Fi hotspot, hosts the website, streams a Logitech C270 webcam, and drives a four-wheel mecanum chassis. Two identical ECHO-board differential-drive robots join the same hotspot and are controlled through the upper-right and lower-right HUD panels.
+| System | Capability |
+| --- | --- |
+| 3TSahur hub | Drive forward, reverse, strafe, and rotate with four independently controlled mecanum wheels. |
+| Live vision | Show the Logitech C270 feed plus two LARP ESP32-CAM MJPEG streams in one dashboard. |
+| Scout control | Send direction commands to LARP Scout A and B independently over Wi-Fi. |
+| Safety | Stop stale commands automatically; includes sequence checks, watchdogs, and a kill-all control. |
+| Deployment | Configure a Pi hotspot, dashboard service, local touchscreen/display kiosk, and mDNS address. |
+| Optional AI vision | Prepare pretrained YOLO11 Nano person detection for the selected C270 or LARP camera feed. |
+| Efficient reconnaissance | Motion-gate person inference, recognize optional ArUco landmarks, and save JPEG-plus-telemetry evidence bundles. |
+| Mission tools | Keep a bounded event timeline, monitor Pi health/camera recovery, save per-camera snapshots, calibrate LARP CSI baselines, and use browser gamepads/dead-man control. |
+| Control protection | Yield analysis and auxiliary polling while moving; pause video automatically only if measured command latency degrades. |
 
-## Research team
+## System overview
 
-The project is organized for **three mentors** and **two students**. Names can be added when the final roster is confirmed instead of putting guessed names in the repository.
+```mermaid
+flowchart LR
+    O["Operator<br/>phone, tablet, or Pi display"] <-->|"Browser controls / video"| D["3TSahur dashboard<br/>Raspberry Pi 4"]
+    D -->|"USB"| C270["Logitech C270<br/>hub camera"]
+    D -->|"GPIO"| H1["Front H-bridge<br/>motor driver"]
+    D -->|"GPIO"| H2["Rear H-bridge<br/>motor driver"]
+    H1 --> W["4 mecanum wheels"]
+    H2 --> W
+    D <-. "3TSahur-Swarm Wi-Fi" .-> LA["LARP Scout A<br/>ECHO controller"]
+    D <-. "3TSahur-Swarm Wi-Fi" .-> LB["LARP Scout B<br/>ECHO controller"]
+    CA["Inland ESP32-CAM A"] -->|"MJPEG stream"| D
+    CB["Inland ESP32-CAM B"] -->|"MJPEG stream"| D
+    LA --- CA
+    LB --- CB
+```
 
-| Role | Position | Focus |
-|---|---|---|
-| Mentor | Mentor 1 | Project guidance and research planning |
-| Mentor | Mentor 2 | Mechanical and electrical systems |
-| Mentor | Mentor 3 | Software, networking, and safety review |
-| Student | Student 1 | Mecanum robot integration and testing |
-| Student | Student 2 | ESP32 scout robots and camera integration |
+## Setup roadmap
 
-## Current capabilities
+Follow this order from an empty workbench to a safe first drive. Each stage
+has a clear stop point, so a problem stays isolated to one subsystem.
 
-- Creates the secured 2.4 GHz `EchoSwarm` hotspot with NetworkManager.
-- Serves the dashboard at `http://10.42.0.1`, `http://echoswarm.local`, and the fallback `http://10.42.0.1:8080`.
-- Opens it automatically in a self-restarting, resizable Chromium application window on the Pi display.
-- Auto-sizes the dashboard for the attached display, phones, tablets, and laptops.
-- Automatically finds the Logitech C270's capture-capable V4L2 node and streams it in the large robot panel.
-- Drives forward/backward with W/S, strafes with A/D, and rotates with Q/E.
-- Stops immediately when drive keys are released, the browser loses focus, or a kill switch is pressed.
-- Uses a latest-command-only channel, 300 ms command expiration, sequence checks, and a 200 ms server watchdog. Delayed commands are discarded instead of replayed.
-- Proxies status, CSI disturbance data, and fail-safe drive commands to both ECHO scouts.
-- Starts the hotspot and control server automatically after boot.
-- Uses a clean, rerunnable installer based on the TrainUI installation workflow.
+```mermaid
+flowchart TB
+    S1["1. Gather and inspect<br/>Pi · motor hardware · two ECHOs · two Inland ESP32-CAMs"] --> S2["2. Build the Pi hub<br/>Raspberry Pi OS → installer → 3TSahur-Swarm hotspot"]
+    S2 --> S3["3. Flash Scout A<br/>ECHO controller A + ESP32-CAM A"]
+    S3 --> S4["4. Flash Scout B<br/>ECHO controller B + ESP32-CAM B"]
+    S4 --> S5["5. Verify without motion<br/>dashboard · C270 · camera feeds · heartbeats"]
+    S5 --> S6["6. Safety test raised wheels<br/>direction · Space · Esc · disconnect stop"]
+    S6 --> S7["7. Low-speed ground test<br/>one active camera stream"]
+    S7 --> S8["Optional last<br/>CSI calibration · YOLO · gamepad"]
+```
 
-## Dashboard layout
+| Stage | You need | Success looks like | Detailed instructions |
+| --- | --- | --- | --- |
+| 1. Hub | Pi 4, microSD, C270, motor drivers, safe external motor power | Everything is wired with motor power disconnected | [Wiring reference](docs/WIRING.md) |
+| 2. Pi software | Internet for initial Pi setup | Pi creates `3TSahur-Swarm`; dashboard opens at `http://10.42.0.1` | [Pi installation](#install-on-the-raspberry-pi) |
+| 3–4. Scouts | Each ECHO, each Inland ESP32-CAM, and a serial adapter | A and B use matching IDs and join the hotspot | [Flash firmware](#flash-the-larp-firmware) |
+| 5. Network + video | Phone, tablet, or Pi display on the hotspot | C270 and the selected LARP stream display | [ESP32-CAM verification](docs/ESP32_CAM_SETUP.md#verify-the-feed) |
+| 6–7. Motion | Wheels off the floor first | Controls, emergency stop, and watchdog stop work | [Safety checklist](#safety-checklist) |
+
+> **Safety gate:** Do not connect motor power or attempt a floor drive until
+> the dashboard, cameras, emergency stop, and raised-wheel direction tests all pass.
+
+## Reproduction methodology
+
+This project is designed as a local-first system: the Pi hosts the Wi-Fi
+network, dashboard, motor control, C270 camera feed, and optional vision
+worker. The two LARPs join that same network, register a heartbeat, receive
+short-lived drive commands, and expose their own camera feeds. Nothing in
+normal operation requires cloud access.
+
+1. **Build safely.** Assemble and wire the parts in the rebuild checklist,
+   leaving motor power disconnected until software checks pass.
+2. **Install the Pi hub.** Flash Raspberry Pi OS, clone this repository, run
+   the installer, and join the resulting `3TSahur-Swarm` hotspot.
+3. **Flash the four scout boards.** Configure A/B identifiers and matching
+   hotspot credentials in both LARP drive boards and both ESP32-CAM boards.
+4. **Validate one subsystem at a time.** Confirm the Pi dashboard, C270, each
+   camera stream, each LARP heartbeat, then raised-wheel drive directions.
+5. **Operate with control priority.** Keep one dashboard camera stream open,
+   start in the Control Priority camera profile if radio capacity is limited,
+   and test `Space`/`Esc` before floor operation.
+6. **Enable optional analysis last.** Use CSI calibration with the scene clear,
+   then enable YOLO only for the selected camera when its performance is
+   acceptable.
+
+### What happens when the system runs
+
+- The browser sends only current, expiring commands; stale/reordered input is
+  rejected and the Pi watchdog stops 3TSahur if refreshes cease.
+- Switching robot tabs stops all robots and closes inactive MJPEG streams to
+  protect control bandwidth.
+- LARP drive status, CSI, timeline, health, vision, snapshots, and camera
+  profiles are auxiliary features. Their failure must display a status only;
+  it cannot disable the core stop/watchdog/control paths.
+- The mission timeline is capped at 120 in-memory events. Snapshots are saved
+  locally by the Pi; copy any images you need before rebooting or updating.
+
+### Quick field-validation flow
+
+```mermaid
+flowchart LR
+    A["Boot Pi hub"] --> B["Join local hotspot"] --> C["Verify C270 and one LARP stream"]
+    C --> D["Raised-wheel stop and direction test"] --> E["Calibrate CSI"]
+    E --> F["Enable optional YOLO / gamepad"] --> G["Ground test at low speed"]
+```
+
+For the next field session, use the step-by-step
+[tomorrow checklist](docs/TOMORROW_CHECKLIST.md). It includes the precise
+gimbal/ramp servo information needed before new actuator code is written.
+
+## What changed from the partner integration base
+
+The partner repository remains the software foundation. We retained the Python
+server/package structure, motor-control pattern, hotspot installer, systemd
+deployment, and original Pi mecanum GPIO mapping; the work here adapts and
+extends that base for the 3TSahur/LARP swarm.
+
+| Area | Partner-base behavior retained | 3TSahur/LARP changes |
+| --- | --- | --- |
+| Drivetrain | Python mecanum drive and GPIO architecture | Names changed only; exact BCM mapping remains `5/6`, `16/19`, `20/21`, `13/26`. |
+| Deployment | Hotspot, service, kiosk, installer/update rollback | 3TSahur names, local operator workflow, beginner setup/checklists. |
+| Dashboard | Responsive browser controls | Three robot tabs, single active stream, health panel, profiles, timeline, gamepad/dead-man controls. |
+| Scouts | ECHO drive/control foundations | LARP A/B identities, Wi-Fi recovery, heartbeats, CSI display/calibration, separate camera feeds. |
+| Vision | No optional hub inference workflow | Per-feed YOLO11 Nano toggles, overlays, snapshots, and failure isolation. |
+| Validation | Original functional test foundation | Expanded simulation coverage, API expiry/sequence checks, feature-isolation checks, and timing results. |
+
+```mermaid
+flowchart TB
+    Base["Partner integration base\nserver · GPIO architecture · hotspot · installer"] --> Retained["Retained without drivetrain-pin changes"]
+    Retained --> Hub["3TSahur hub\nC270 · mecanum · camera profiles"]
+    Retained --> Scouts["LARP Scout A / B\nECHO · ESP32-CAM · CSI"]
+    Hub --> Dashboard["Tabbed operator dashboard\ncontrols · health · timeline"]
+    Scouts --> Dashboard
+    Dashboard --> Optional["Optional YOLO · snapshots · gamepad · dead-man"]
+```
+
+Read [docs/CHANGES_FROM_ORIGINAL.md](docs/CHANGES_FROM_ORIGINAL.md) for the
+full file-level integration record.
+
+### Current partner compatibility audit
+
+This branch was re-audited against partner repository
+`AloeVeraZ/CityTechClubProjects`, subdirectory `stem-research-academy`, at
+commit `404c7e8`. The target audit started at `b16a505`. The comparison treats
+the partner build as the source of truth for the already-tested Pi drivetrain,
+control protocol, install locations, services, and ECHO motor interface; LARP
+camera/mission features remain extensions.
+
+| Compatibility surface | Partner baseline | Current 3TSahur/LARP result |
+| --- | --- | --- |
+| Pi model/runtime | Raspberry Pi OS, Python system packages, system-site venv | Same package strategy; adds nginx and optional isolated vision tooling. |
+| Application/config paths | `~/STEMResearchAcademy`; `/etc/stem-research-academy/config.env` | Same paths; staged replacement uses the existing service rather than running a second app. |
+| systemd services | `stem-robot-dashboard`, `stem-robot-hotspot` | Same unit names and executable paths; target replaces their definitions and health-checks port 8080. |
+| Mecanum GPIO/PWM | BCM `5/6`, `16/19`, `20/21`, `13/26`; 1 kHz | Exact mapping/frequency retained; mixer and 15 ms shared reversal dead-time retained. |
+| Browser/Pi safety | 300 ms command expiry, sequence rejection, 200 ms watchdog | Retained; unchanged PWM heartbeats are skipped without skipping watchdog refresh. |
+| ECHO drivetrain | EchoLib `TankDrive`, left motor `1`, right motor `6`, brake, 500 ms watchdog | Retained; LARP naming and non-blocking reconnect behavior are added. |
+| Scout API/discovery | `/drive`, `/stop`, `/status`, HTTP registration and UDP heartbeat | Endpoints and discovery payloads retained; timeout is reduced from 200 ms to configurable 120 ms. |
+| Partner persistent keys | `SCOUT_A/B_HOST`, `ESP32_ONE/TWO_STREAM_URL` | Accepted at runtime and migrated into `LARP_A/B_HOST` and `LARP_A/B_CAMERA_URL` on install. |
+| Network identity | `EchoSwarm`, `echoswarm`, `echo-scout-*` | Intentionally changes to `3TSahur-Swarm`, `3tsahur`, `larp-*`; both LARP controllers and cameras must be reflashed. |
+| Pi hostname resolution | Partner installer changed hostname without updating `/etc/hosts` | Installer now backs up and updates only the `127.0.1.1` mapping while preserving unrelated aliases. |
+| Cameras | C270 plus two configured ESP32 stream URLs | C270 retained; adds dedicated AI Thinker-compatible LARP A/B camera firmware and one-active-stream policy. |
+
+```mermaid
+flowchart LR
+    P["Partner installation<br/>same Pi, app path, config, services"] --> B["README backup<br/>app + config"]
+    B --> S["Build replacement in<br/>STEMResearchAcademy.installing.*"]
+    S --> V["Compile + import validation"]
+    V --> X["Stop existing dashboard<br/>atomic same-path swap"]
+    X --> M["Migrate partner config aliases<br/>update hostname mapping"]
+    M --> H["Restart same service<br/>require /healthz"]
+    H --> R["Reboot into 3TSahur-Swarm"]
+    V -. "failure before swap" .-> P
+    H -. "failed health check" .-> P
+```
+
+The software audit cannot validate motor polarity/current, H-bridge ratings,
+actual ECHO motor IDs, camera-board variants, C270 USB power, or 2.4 GHz radio
+conditions. After upgrading, reflash all LARP Wi-Fi devices, then perform the
+[raised-wheel and no-motion checks](docs/TOMORROW_CHECKLIST.md) before a floor
+test.
+
+### Verified compatibility with the partner baseline
+
+The current project retains the partner team's tested mecanum GPIO mapping,
+mixer, shared 15 ms reversal dead-time, latest-command-only control channel,
+300 ms command expiry, 200 ms Pi watchdog, ECHO motor IDs (`1`/`6`), and
+ESP32 Wi-Fi sleep-disable behavior. The 3TSahur/LARP work adds tabs, camera
+isolation, optional mission tools, and control-priority tuning around that
+foundation; it does not replace the motor architecture. See the detailed
+[partner baseline comparison](docs/PARTNER_BASELINE_COMPARISON.md) for every
+retained behavior, added feature, latency difference, and test limitation.
+
+## Dashboard
+
+Open `http://10.42.0.1` after connecting to the 3TSahur hotspot. On a device that supports mDNS, `http://3tsahur.local` also works. The Pi's attached display opens the same dashboard automatically after installation.
 
 ```text
-┌──────────────────────────────┬──────────────────────────────┐
-│                              │ ECHO Scout A                 │
-│  Mecanum robot               │ Camera + drive controls      │
-│  C270 feed + WASD controls   ├──────────────────────────────┤
-│                              │ ECHO Scout B                 │
-│                              │ Camera + drive controls      │
-└──────────────────────────────┴──────────────────────────────┘
-             50%                           25% + 25%
+┌─────────────────────────────────────────────────────────────────────┐
+│  [ 3TSahur ]  [ LARP Scout A ]  [ LARP Scout B ]     ● Online       │
+├───────────────────────────────────┬─────────────────────────────────┤
+│  Selected robot's live camera     │  Selected robot's controls      │
+│  (one stream active at a time)    │  status, speed, and stop        │
+├───────────────────────────────────┴─────────────────────────────────┤
+│  Emergency STOP ALL · responsive phone/tablet/desktop layout         │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-## Raspberry Pi installation
+Only the selected tab keeps its MJPEG feed open. This preserves hotspot
+bandwidth for low-latency robot commands instead of competing with three video
+streams at once.
 
-Start with the current Raspberry Pi OS, connect the Pi to the internet, enable SSH, and attach the C270 webcam. Run the installer as the normal Pi user—not with `sudo`:
+### Current dashboard visual system
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/install.sh | bash
-```
-
-The installer requests `sudo` only for packages, networking, user groups, and system services. It then reboots. Connect a phone or computer to:
+The UI uses a static control-room visual system: an editorial status header,
+compact safety pills, a three-robot navigation dock, and layered control cards.
+It is a presentation-only refresh: the tabs, controls, keyboard bindings,
+single-stream policy, safety stops, optional vision, CSI, mission tools, and
+actuator staging all retain their existing behavior.
 
 ```text
-Wi-Fi network name (SSID): EchoSwarm
-Wi-Fi password:            roboswarm1
-Pi hostname:               echoswarm
-Website:                   http://10.42.0.1
-Named address:             http://echoswarm.local
-Direct fallback:           http://10.42.0.1:8080
++-----------------------------------------------------------------------+
+|  3TSAHUR-SWARM LOCAL COMMAND CENTER              [ LOCAL CONTROL ]   |
+|  Reconnaissance dashboard     [ one camera ] [ watchdog protected ]  |
++-----------------------------------------------------------------------+
+| [01 3TSahur]       [02 LARP Scout A]       [03 LARP Scout B]         |
++--------------------------------------+--------------------------------+
+| Selected live camera                 | Selected robot controls        |
+| vision + snapshot overlay            | status, speed, drive, stop     |
+|                                      | CSI / gimbal / ramp as needed  |
++--------------------------------------+--------------------------------+
+| STOP ALL (Esc)       Mission timeline, health, dead-man controls      |
++-----------------------------------------------------------------------+
 ```
 
-Wi-Fi uses a network name (SSID), not a username. The actual Raspberry Pi Linux login remains the normal account created in Raspberry Pi Imager; the installer does not rename that account because doing so can break its home directory, services, and SSH access.
+The visual layer adds no JavaScript, packages, API calls, polling, video
+streams, model work, or motor-control code. It also removes the former
+camera CSS filter and mission-panel backdrop filter to avoid extra compositor
+work on the Raspberry Pi.
 
-Change the default password before demonstrations involving untrusted visitors.
+The dashboard works with mouse/touch controls and the following keyboard shortcuts when the page is focused:
 
-### Rerunning and updating
+| Robot | Keys | Action |
+| --- | --- | --- |
+| 3TSahur | `W` / `S` | Forward / reverse |
+| 3TSahur | `A` / `D` | Strafe left / right |
+| 3TSahur | `Q` / `E` | Rotate left / right |
+| 3TSahur | `Space` | Stop the hub drivetrain |
+| LARP Scout A | Arrow keys | Forward, reverse, left, right |
+| LARP Scout B | `I` / `K` / `J` / `L` | Forward, reverse, left, right |
+| Selected 3TSahur/LARP camera | `C` | Toggle motion-gated person detection |
+| Selected 3TSahur or LARP A camera | `L` | Toggle ArUco landmark recognition; use the button on LARP B because `L` steers it |
+| All robots | `Esc` | Emergency kill-all |
 
-Run the same `curl` command whenever the project should be updated. Every run:
+Commands are deliberately short-lived. Releasing a key, losing the client connection, or letting the watchdog expire stops the affected robot.
 
-1. Runs a complete Raspberry Pi OS upgrade, then installs current required packages.
-2. Downloads a clean copy of the latest `main` branch.
-3. Removes stale installer backups, cleans the APT cache, and checks free space.
-4. Builds and validates the replacement beside the working application before stopping the dashboard.
-5. Uses Raspberry Pi OS's tested Flask and OpenCV packages without a duplicate pip download.
-6. Atomically swaps in the validated application and restores the previous copy if a later step fails.
-7. Reinstalls and enables the hotspot and dashboard services.
-8. Installs or updates the compatible Chromium and Raspberry Pi desktop packages.
-9. Recreates both current Wayland/labwc and older X11 dashboard autostart entries.
-10. Reapplies auto-login, resizable-window, anti-blanking, and anti-sleep settings.
-11. Verifies the live dashboard health endpoint before reporting success and rebooting.
+## Hardware and wiring
 
-Persistent hardware and camera settings live outside the replaced folder at `/etc/stem-research-academy/config.env`. The installer deliberately reapplies the documented `EchoSwarm` credentials on every update so the Pi and both flashed scouts cannot drift onto different network settings.
+### Rebuild checklist
 
-The Pi needs an internet path while updating. Once `wlan0` is acting as the hotspot, use Ethernet or a second Wi-Fi adapter for internet access before rerunning the installer. Every rerun downloads a clean application copy, upgrades required packages, rebuilds the Python environment, migrates configuration keys, and regenerates the system and kiosk files, so it can repair an older installation as well as update a current one. At the end, a transient systemd timer schedules the reboot independently of the `curl | bash` process, making automatic reboot reliable after the terminal command exits.
+**Required parts**
 
-For recovery testing only, `STEM_SKIP_OS_UPGRADE=1` can be passed to `bash` to skip the full operating-system upgrade while still refreshing the application and its configuration:
+- [ ] Raspberry Pi 4 Model B (4 GB), microSD card, official-grade 5 V / 3 A supply, case/cooling, and a local display or operator phone/tablet.
+- [ ] Logitech C270 USB webcam and four mecanum DC motors with compatible wheels/chassis.
+- [ ] Two dual-channel H-bridge drivers, correctly rated fused motor battery/supply, wiring, common ground, and an accessible physical motor-power switch.
+- [ ] For the planned C270 gimbal and ramp: a verified servo-driver board, a separate servo-rated regulated supply, four servo channels, compatible pan/tilt and ramp servos, and mechanical end-stop testing before the driver is enabled.
+- [ ] Two ECHO robots, two Inland ESP32-CAM boards, matching camera modules, two stable regulated 5 V camera supplies, and either built-in camera USB or 3.3 V-safe USB-to-serial flashing hardware.
+- [ ] A 2.4 GHz Wi-Fi-capable operator device. A browser gamepad is optional; no Pi-side gamepad hardware is required.
+
+**Raspberry Pi software checklist**
+
+- [ ] Current 64-bit Raspberry Pi OS with internet available for initial installation.
+- [ ] Run `bash installer/install.sh` as the normal Pi user. It installs Python, Flask, OpenCV, V4L2 tools, NetworkManager, Avahi, and required GPIO support.
+- [ ] Flash and configure the two LARP controller sketches and two ESP32-CAM sketches with the same hotspot credentials.
+- [ ] Optional YOLO: follow [docs/VISION_SETUP.md](docs/VISION_SETUP.md) to install `ultralytics` and `ncnn` inside `.vision-venv` and export `yolo11n_ncnn_model`.
+- [ ] Optional landmarks: confirm the installed OpenCV build exposes `cv2.aruco`; the dashboard reports an isolated warning if it does not.
+
+**Arduino IDE checklist**
+
+- [ ] Install Arduino IDE and the **esp32 by Espressif Systems** board package for the Inland ESP32-CAM; select the AI Thinker-compatible profile described in [docs/ESP32_CAM_SETUP.md](docs/ESP32_CAM_SETUP.md).
+- [ ] Install the ECHO/EchoLib dependencies specified in [firmware/larp-scout/README.md](firmware/larp-scout/README.md) before flashing the LARP drive controllers.
+- [ ] Upload with GPIO0 grounded only during ESP32-CAM flashing, then remove the jumper before normal boot.
+- [ ] Read [the LARP camera/controller integration guide](docs/LARP_CAMERA_CONTROLLER_INTEGRATION.md) before connecting the camera to power or using an Arduino as a serial bridge.
+
+### 3TSahur hub
+
+| Part | Role |
+| --- | --- |
+| Raspberry Pi 4 Model B (4 GB) | Runs the hotspot, web dashboard, control service, and USB camera feed. |
+| Logitech C270 | USB hub camera. Use a powered USB hub if the Pi cannot supply enough current. |
+| Two dual-channel H-bridge motor drivers | Drive the four mecanum motors. Motor power must come from a suitable external supply. |
+| Four mecanum DC motors | Front-left, rear-left, front-right, rear-right wheel positions. |
+
+The Pi GPIO layout below is intentionally the same layout as the integration base repository. GPIO numbers are **BCM numbers**, not physical header pin numbers.
+
+| Wheel | Driver channel | GPIO direction pins |
+| --- | --- | --- |
+| Front left | Front driver IN1 / IN2 | GPIO 5 / GPIO 6 |
+| Rear left | Front driver IN3 / IN4 | GPIO 16 / GPIO 19 |
+| Front right | Rear driver IN1 / IN2 | GPIO 20 / GPIO 21 |
+| Rear right | Rear driver IN3 / IN4 | GPIO 13 / GPIO 26 |
+
+Do not power motors from the Pi's 5 V rail. Share a common ground between the Pi and motor-driver logic, verify each motor direction with wheels raised, and keep an accessible physical power switch. Full connection notes are in [docs/WIRING.md](docs/WIRING.md).
+
+### Planned C270 gimbal and ramp
+
+The dashboard now includes **Gimbal mode** (`G`, then arrow keys) and a **ramp toggle** (`R`) on the 3TSahur tab. This release is intentionally a no-output staging layer: it records bounded requested pan/tilt and ramp positions but contains no servo-driver library, GPIO mapping, I2C address, PWM channel, or physical output. It cannot move servos until the team supplies the driver model, power plan, channels, and calibrated mechanical limits. See [auxiliary-actuator setup requirements](docs/3TSAHUR_AUXILIARY_ACTUATORS.md).
+
+### LARP scouts and cameras
+
+Each scout contains:
+
+- An ECHO robot controller running the LARP drive firmware. The retained motor IDs are left = `1`, right = `6`.
+- An Inland ESP32-CAM flashing the LARP camera firmware, configured as an AI Thinker-compatible pin layout.
+- The same Wi-Fi SSID/password as the Pi hotspot.
+
+The ESP32-CAM board variations can differ. Check the board silk screen and camera connector before powering it. The camera is a separate Wi-Fi video node: retain the ECHO controller's existing motor wiring, power the camera from a regulated 5 V branch, and pair `ROBOT_ID` with `CAMERA_ID` (`A`/`A`, `B`/`B`). See the [LARP camera/controller integration guide](docs/LARP_CAMERA_CONTROLLER_INTEGRATION.md) for the complete safe-power, flashing, Wi-Fi, and field-test procedure.
+
+## Install on the Raspberry Pi
+
+### Fast install (recommended after review)
+
+On a current Raspberry Pi OS image with internet access, run this as the
+normal Pi user—not `root`. It downloads the repository's installer, which
+then performs package installation, preflight validation, atomic app
+replacement, hotspot/service setup, and reboot.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/install.sh | STEM_SKIP_OS_UPGRADE=1 bash
+curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/curl-install.sh | bash
 ```
 
-## Attached Pi screen
-
-After installation and reboot, the Pi signs in to its graphical desktop and opens Chromium as a normal application window at `http://127.0.0.1:8080`. It can be resized or minimized, leaving the desktop and Terminal available. Closing it causes the launcher to reopen it after two seconds, so the control station cannot remain accidentally closed. Phones and laptops on `EchoSwarm` use `http://10.42.0.1` or `http://echoswarm.local`.
-
-The interface uses the browser viewport rather than a fixed pixel resolution. Wide screens use the mecanum panel on the left and the two ESP32 panels on the right. Narrow or portrait displays stack the panels vertically.
-
-The kiosk supports:
-
-- Current Raspberry Pi OS using Wayland and labwc.
-- Older Raspberry Pi OS desktop releases using X11/LXDE autostart.
-- Raspberry Pi OS Lite, when compatible Raspberry Pi desktop packages are available.
-
-Dashboard-window logs are stored at `~/.local/state/stem-robot-kiosk.log`.
-
-## Logitech C270 camera
-
-The dashboard automatically prefers the C270's persistent `/dev/v4l/by-id/` capture node, verifies that the node returns real frames, and then tries the remaining `/dev/video*` nodes. The large robot panel displays either the live MJPEG feed or the exact capture error and retries after a disconnect. Camera selection and errors are also reported by `http://10.42.0.1:8080/api/status`; `v4l2-ctl --list-devices` shows the nodes detected by Raspberry Pi OS.
-
-## Motor wiring and first test
-
-The pin directions come from the working four-motor test supplied with this project and use **BCM numbering**.
-
-| Wheel assumption | Driver channel | Forward pin | Reverse pin |
-|---|---|---:|---:|
-| Front left | Driver 1, Motor A | GPIO 5 | GPIO 6 |
-| Rear left | Driver 1, Motor B | GPIO 16 | GPIO 19 |
-| Front right | Driver 2, Motor A | GPIO 20 | GPIO 21 |
-| Rear right | Driver 2, Motor B (reversed wiring) | GPIO 13 | GPIO 26 |
-
-The original test proves the electrical forward direction but does not identify which physical plug reaches each wheel. For the first test, lift the chassis so every wheel is clear of the floor, set speed to 20%, tap W, and verify all wheels push forward. If a driver channel reaches a different wheel, update only `DEFAULT_MOTOR_PINS` in `robot_server/motor.py`. Do not test strafing on the floor until the wheel mapping is confirmed.
-
-An accessible hardware emergency stop or motor-power switch should still be used. Browser safety controls are an additional layer, not a substitute for disconnecting motor power.
-
-## Keyboard controls
-
-| Robot | Key | Motion |
-|---|---|---|
-| Big mecanum | W / S | Forward / backward |
-| Big mecanum | A / D | Strafe left / right |
-| Big mecanum | Q / E | Rotate left / right |
-| Big mecanum | Space | Kill all four big-robot motors |
-| ECHO Scout A | Arrow keys | Differential drive |
-| ECHO Scout B | I / J / K / L | Forward / left / backward / right |
-| All robots | Escape | Kill every robot immediately |
-
-Multiple keys can be held for combined motion. The speed slider limits all four wheel outputs.
-
-Each keyboard group is routed to a different API endpoint: WASD/QE cannot issue Scout commands, Arrow keys cannot issue mecanum commands, and IJKL cannot issue commands to either of the other robots. The browser keeps at most one request in flight per robot and overwrites pending input with the newest state, preventing a slow connection from building a motor-command backlog.
-
-If the header says `GPIO unavailable - motors disabled`, the keyboard and web server are working but the Raspberry Pi GPIO backend did not load. Rerun the installer and check `sudo journalctl -u stem-robot-dashboard -n 100` rather than continuing a motor test.
-
-## ECHO Scout firmware
-
-The shared Arduino sketch is [`firmware/echo-scout/ECHO_Robot_Controller.ino`](firmware/echo-scout/ECHO_Robot_Controller.ino). Flash one board with `ROBOT_ID = 'A'` and the other with `ROBOT_ID = 'B'`. Both join `EchoSwarm` in Wi-Fi station mode, start with their motors stopped, use ECHO motor channels 1 and 6 through EchoLib's `TankDrive`, and advertise these addresses:
-
-```text
-http://echo-scout-a.local
-http://echo-scout-b.local
-```
-
-The Pi calls the scouts through same-origin proxy endpoints, so a phone only needs to open the main Pi dashboard. Each scout sends a UDP heartbeat to the Pi once per second, allowing the HUD to confirm `Connected` even before cameras are fitted. Each scout also serves a small independent touch UI for bench testing. Both layers use a 500 ms firmware watchdog; if commands stop arriving, the affected scout stops itself.
-
-The sketch exposes `/drive`, `/stop`, `/status`, and `/motion`. `/status` includes connection strength, stopped/running state, uptime, and the coarse CSI disturbance reading. Read the [firmware-specific guide](firmware/echo-scout/README.md) before the first wheels-up motor test.
-
-If separate ESP32-CAM boards are installed, the HUD expects:
-
-```text
-http://echo-scout-a-cam.local/stream
-http://echo-scout-b-cam.local/stream
-```
-
-Those URLs can be overridden with `ESP32_ONE_STREAM_URL` and `ESP32_TWO_STREAM_URL` in `/etc/stem-research-academy/config.env`.
-
-## Configuration and service commands
+To install a reviewed non-default branch, download the bootstrap from that
+branch and send the same branch name to **bash**:
 
 ```bash
-# Edit persistent settings
-sudo nano /etc/stem-research-academy/config.env
-
-# Watch server logs
-sudo journalctl -u stem-robot-dashboard -f
-
-# Check the hotspot
-systemctl status stem-robot-hotspot
-nmcli connection show stem-robot-hotspot
-
-# Check the local dashboard window
-tail -f ~/.local/state/stem-robot-kiosk.log
-
-# Restart everything after configuration changes
-sudo systemctl restart stem-robot-dashboard stem-robot-hotspot
+branch=your-reviewed-branch
+curl -fsSL "https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/${branch}/stem-research-academy/installer/curl-install.sh" | STEM_REPO_BRANCH="$branch" bash
 ```
 
-## Local development
+The installer intentionally reboots. Read the script or use the clone method
+below first if your team prefers to inspect every install step locally.
 
-The server falls back to simulation mode when `RPi.GPIO` is unavailable, so the interface and API can be tested away from the Pi.
+### Fix a Pi hostname warning before installing
+
+If `sudo` prints `unable to resolve host ...: Name or service not known`, the
+Pi's current hostname and `/etc/hosts` do not agree. This is a local Raspberry
+Pi OS configuration warning, **not** a Git or GitHub conflict. A single warning
+may still appear on the first `sudo` command below, before the repair takes
+effect.
+
+Run this block as the normal Pi user. It detects the Pi's actual hostname
+(rather than assuming `3tsahur`), backs up `/etc/hosts`, writes the two required
+local mappings, verifies them, and retries the package-index update:
 
 ```bash
-cd stem-research-academy
+set -Eeuo pipefail
+
+if [ "$(id -u)" -eq 0 ]; then
+    echo "Run this as the normal Pi user, not root." >&2
+    exit 1
+fi
+if ! command -v sudo >/dev/null 2>&1; then
+    echo "sudo is required but was not found." >&2
+    exit 1
+fi
+
+pi_hostname="$(hostnamectl --static 2>/dev/null || true)"
+if [ -z "$pi_hostname" ]; then
+    pi_hostname="$(hostname 2>/dev/null || true)"
+fi
+if [ -z "$pi_hostname" ] || [ "${#pi_hostname}" -gt 253 ] || \
+   ! printf '%s\n' "$pi_hostname" | grep -Eq '^[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$'; then
+    echo "Could not determine a safe current hostname; no files were changed." >&2
+    exit 1
+fi
+
+hosts_backup="/etc/hosts.before-stem-install-$(date +%Y%m%d-%H%M%S)"
+hosts_temp="$(mktemp)"
+trap 'rm -f -- "$hosts_temp"' EXIT
+printf '127.0.0.1\tlocalhost\n127.0.1.1\t%s\n' "$pi_hostname" > "$hosts_temp"
+
+sudo cp --preserve=mode,ownership,timestamps -- /etc/hosts "$hosts_backup"
+sudo install -o root -g root -m 0644 "$hosts_temp" /etc/hosts
+
+getent hosts localhost
+getent hosts "$pi_hostname"
+echo "Hostname repair complete for: $pi_hostname"
+echo "Backup saved at: $hosts_backup"
+
+sudo apt-get update
+```
+
+This intentionally creates a minimal `/etc/hosts`; restore the timestamped
+backup if the Pi previously depended on custom local aliases. If hostname
+resolution succeeds but `apt-get update` reports a repository/source error,
+that is a separate APT/network issue and must be diagnosed from its exact URL
+and error message.
+
+### Copy/paste Pi upgrade from the partner installation
+
+If the Pi already runs the partner project or another dashboard build, **do
+not reflash Raspberry Pi OS**. The 3TSahur installer replaces the installed
+application and restarts the existing `stem-robot-dashboard` service. It uses
+the same application path (`~/STEMResearchAcademy`) and configuration location
+(`/etc/stem-research-academy/config.env`), so do not attempt to run both
+dashboard versions at the same time.
+
+Run this entire block as the normal Pi user. It creates timestamped backups
+when the application or config exists, then installs the current integration
+branch without performing a full Pi OS package upgrade:
+
+```bash
+set -Eeuo pipefail
+
+upgrade_stamp="$(date +%Y%m%d-%H%M%S)"
+app_backup="$HOME/STEMResearchAcademy.partner-backup-$upgrade_stamp"
+config_backup="$HOME/stem-config.partner-backup-$upgrade_stamp.env"
+
+if [ -d "$HOME/STEMResearchAcademy" ]; then
+    cp -a -- "$HOME/STEMResearchAcademy" "$app_backup"
+    echo "Application backup: $app_backup"
+else
+    echo "No existing ~/STEMResearchAcademy directory; skipping app backup."
+fi
+
+if sudo test -f /etc/stem-research-academy/config.env; then
+    sudo cp -- /etc/stem-research-academy/config.env "$config_backup"
+    sudo chown "$(id -u):$(id -g)" "$config_backup"
+    echo "Configuration backup: $config_backup"
+else
+    echo "No existing config.env; skipping config backup."
+fi
+
+curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/curl-install.sh | STEM_SKIP_OS_UPGRADE=1 bash
+```
+
+No Raspberry Pi OS reflash is needed; the installer validates the replacement
+and intentionally reboots the Pi when it finishes.
+
+After the Pi reboots, expect these intentional changes:
+
+- The hotspot is `3TSahur-Swarm` and the Pi hostname is `3tsahur`.
+- The dashboard is at `http://10.42.0.1` after joining that hotspot.
+- The retained mecanum GPIO layout and motor wiring stay the same.
+- Reflash each LARP controller with the LARP firmware and matching Wi-Fi
+  credentials before expecting it to reconnect. Reflash the ESP32-CAM boards
+  only when their new dashboard feeds are needed.
+
+Verify the service, then test 3TSahur with its wheels raised before connecting
+or driving the LARPs:
+
+```bash
+sudo systemctl status stem-robot-dashboard --no-pager
+sudo systemctl status stem-robot-hotspot --no-pager
+```
+
+If you need to return to the partner build after a successful upgrade, use the
+backup above or rerun the partner repository's installer. See the [partner
+baseline comparison](docs/PARTNER_BASELINE_COMPARISON.md) for the retained
+motor architecture and the exact configuration differences.
+
+### Optional one-command YOLO install
+
+Install the base hub first. Then, if you want pretrained person detection,
+run this separate command as the normal Pi user. It creates `.vision-venv`,
+installs Ultralytics/NCNN, downloads the pretrained `yolo11n` weights, and
+exports the 320px NCNN model used by the dashboard.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/install-vision.sh | bash
+```
+
+YOLO remains optional: do not install it until the base dashboard, cameras,
+and controls have passed their physical checks. It is never required for motor
+control or LARP operation.
+
+### Manual vision install
+
+Use this alternative only if you prefer to inspect each command rather than using
+the one-command installer above.
+
+- Current 64-bit Raspberry Pi OS; complete the base installation first.
+- Stable power, at least 3 GB free storage, and temporary internet for the
+  one-time package/model download and conversion.
+- A connected C270 or a verified LARP ESP32-CAM MJPEG stream.
+- Install as the normal Pi user in a separate environment—never as `root` and
+  never into the dashboard's system Python packages.
+
+```bash
+cd ~/STEMResearchAcademy
+python3 -m venv --system-site-packages .vision-venv
+source .vision-venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install "ultralytics>=8.3,<9" ncnn
+
+# Downloads pretrained COCO weights once, then exports the Pi-friendly runtime.
+python - <<'PY'
+from ultralytics import YOLO
+YOLO("yolo11n.pt").export(format="ncnn", imgsz=320)
+PY
+```
+
+The complete [pretrained vision setup guide](docs/VISION_SETUP.md) includes
+the C270 visual test, LARP feed prerequisites, safe performance settings,
+offline-use notes, and a hardware validation checklist. Upstream references:
+[YOLO11 models](https://docs.ultralytics.com/models/yolo11/),
+[NCNN export](https://docs.ultralytics.com/integrations/ncnn/), and
+[Raspberry Pi deployment](https://docs.ultralytics.com/guides/raspberry-pi/).
+
+## Flash the LARP firmware
+
+| Target | Sketch | Set before upload |
+| --- | --- | --- |
+| LARP Scout A/B ECHO board | [firmware/larp-scout/larp_scout_controller.ino](firmware/larp-scout/larp_scout_controller.ino) | `ROBOT_ID`, Wi-Fi credentials, and any board-specific library setup. |
+| Inland ESP32-CAM A/B | [firmware/larp-esp32-cam/larp-esp32-cam.ino](firmware/larp-esp32-cam/larp-esp32-cam.ino) | `CAMERA_ID`, Wi-Fi credentials, and the camera board profile. |
+
+Upload one copy configured as `A` and one as `B` for each firmware type. The [LARP controller README](firmware/larp-scout/README.md) and [camera README](firmware/larp-esp32-cam/README.md) cover dependencies and upload notes.
+
+### ESP32-CAM quick start
+
+The Inland ESP32-CAM is a separate Wi-Fi video node, not a motor-controller
+accessory. Flash it as `A` or `B`, connect it to stable 5 V power, and use the
+matching `larp-a-cam.local/stream` or `larp-b-cam.local/stream` address. The
+dashboard opens only the selected LARP feed to protect control responsiveness.
+See the complete [Inland ESP32-CAM setup guide](docs/ESP32_CAM_SETUP.md) for
+the flash wiring, pin map, network fallback, and troubleshooting steps.
+For the complete LARP-level procedure—including power separation, when an
+Arduino can safely act as a serial bridge, controller/camera pairing, and a
+field-test checklist—read the [LARP camera/controller integration guide](docs/LARP_CAMERA_CONTROLLER_INTEGRATION.md).
+
+### Flash an Inland ESP32-CAM
+
+Use these steps once for **Scout A** and again for **Scout B**. The ESP32-CAM
+is the scout's Wi-Fi video node; it does not connect to or control the ECHO
+motor controller.
+
+1. Install Arduino IDE and the **esp32 by Espressif Systems** board package.
+2. Before applying power, verify that the Inland module uses the
+   AI Thinker-compatible camera layout. Use a stable regulated 5 V supply
+   capable of at least 1 A—never a Raspberry Pi GPIO pin or the ECHO logic
+   rail.
+3. Connect a 3.3 V-safe USB-to-serial adapter: adapter **5 V** to camera
+   **5 V**, **GND** to **GND**, adapter **TX** to **U0R / GPIO 3**, and adapter
+   **RX** to **U0T / GPIO 1**. For uploading only, connect **GPIO 0** to
+   **GND**.
+4. In Arduino IDE, select **AI Thinker ESP32-CAM**, choose the adapter's serial
+   port, and open
+   [`firmware/larp-esp32-cam/larp-esp32-cam.ino`](firmware/larp-esp32-cam/larp-esp32-cam.ino).
+   If the upload is unreliable, lower the upload speed.
+
+   **Do not use `NodeMCU-32S` for this project.** It is a generic ESP32 profile
+   and may appear to upload successfully, but that does not confirm the camera
+   pinout. This firmware deliberately retains the common AI Thinker ESP32-CAM
+   camera pins. Verify the Inland module's silk-screen/pinout matches AI Thinker.
+5. Set `CAMERA_ID` to `'A'` for Scout A or `'B'` for Scout B. Set
+   `WIFI_SSID` and `WIFI_PASSWORD` to the exact credentials for the
+   `3TSahur-Swarm` Pi hotspot.
+6. Upload the sketch. If it stays at “Connecting,” briefly press **Reset**
+   while Arduino IDE is connecting.
+7. Remove the GPIO 0-to-GND jumper, press **Reset**, and power the board
+   normally. It will not boot the camera firmware while GPIO 0 remains grounded.
+8. Join a phone, tablet, or computer to the Pi hotspot and check
+   `http://larp-a-cam.local/status` and
+   `http://larp-a-cam.local/stream` (replace `a` with `b` for Scout B).
+   The matching LARP dashboard tab should then open the feed automatically.
+
+#### If the available bridge is an Arduino UNO R4
+
+The UNO R4 can pass upload data between the computer and camera, but it cannot
+connect directly because its serial pins use 5 V logic and the ESP32 uses
+3.3 V logic. A resistor divider alone is not enough. You need:
+
+- an UNO R4 Minima or UNO R4 WiFi and its USB cable;
+- a **two-channel, UART-capable 5 V-to-3.3 V logic-level shifter**;
+- a separate regulated **5 V, 1 A or greater** camera supply;
+- jumper wires, including a removable GPIO 0-to-GND jumper.
+
+> **Do not connect UNO D1/TX directly to camera U0R/GPIO 3. Do not power the
+> camera from the UNO 3.3 V pin. Disconnect USB and camera power before
+> changing wires.**
+
+```mermaid
+flowchart LR
+    PC["Computer / Arduino IDE"] -->|"USB data + UNO power"| UNO["UNO R4<br/>5 V UART"]
+    UNO -->|"D1 / TX"| CH1["Level shifter channel 1<br/>5 V to 3.3 V"]
+    CH1 -->|"safe 3.3 V"| RX["ESP32-CAM<br/>U0R / GPIO 3 / RX"]
+    TX["ESP32-CAM<br/>U0T / GPIO 1 / TX"] -->|"3.3 V"| CH2["Level shifter channel 2<br/>3.3 V to 5 V"]
+    CH2 -->|"safe 5 V"| UNO
+    PSU["Separate regulated supply<br/>5 V, at least 1 A"] -->|"positive only"| CAM5["ESP32-CAM 5V"]
+    GND["Common ground"] ---|"UNO GND"| UNO
+    GND --- SHG["Shifter GND"]
+    GND --- ESPG["ESP32-CAM GND"]
+    GND --- PSUG["Supply GND"]
+    BOOT["GPIO 0 to GND<br/>upload only"] --- GND
+    BAD1["NEVER: UNO TX directly to ESP RX"] -. "unsafe 5 V" .-> RX
+    BAD2["NEVER: separate supply + to UNO 5V"] -. "do not join positive rails" .-> UNO
+    classDef danger fill:#7f1d1d,color:#fff,stroke:#ef4444,stroke-width:2px;
+    class BAD1,BAD2 danger;
+```
+
+```mermaid
+flowchart LR
+    A["1. D0/D1 disconnected<br/>upload bridge to UNO"] --> B["2. Power off<br/>wire shifter, supply, ground"]
+    B --> C["3. GPIO 0 low<br/>reset camera into bootloader"]
+    C --> D["4. Select AI Thinker<br/>keep UNO port, upload at 115200"]
+    D --> E["5. Power off<br/>remove GPIO 0 jumper"]
+    E --> F["Normal boot<br/>verify at 115200"]
+```
+
+1. **Prepare the UNO.** Leave D0 and D1 disconnected. Connect only the UNO USB
+   cable. In Arduino IDE, select your exact UNO R4 model and its serial port,
+   then upload this bridge sketch:
+
+   ```cpp
+   void setup() {
+     Serial.begin(115200);   // UNO R4 USB serial
+     Serial1.begin(115200);  // D0/RX and D1/TX
+   }
+
+   void loop() {
+     while (Serial.available()) Serial1.write(Serial.read());
+     while (Serial1.available()) Serial.write(Serial1.read());
+   }
+   ```
+
+   **Checkpoint:** Arduino IDE reports a successful UNO upload. Leave this
+   sketch running; do not hold the UNO in reset.
+2. **Wire everything with all power disconnected.** `HV`/`LV` names vary by
+   shifter, so follow its labels and direction markings.
+
+   ```text
+   COMPUTER --USB--> UNO R4
+
+   UNO 5V  ------> shifter HV power       UNO GND ---------+
+   UNO 3.3V -----> shifter LV power       shifter GND -----+-- common ground
+   UNO D1/TX ----> [5V -> 3.3V channel] --> ESP U0R/GPIO 3  |
+   UNO D0/RX <---- [5V <- 3.3V channel] <-- ESP U0T/GPIO 1  |
+                                                            |
+   separate 5V >=1A supply + ----------------> ESP 5V      |
+   separate supply GND ------------------------------------+
+   ESP GPIO 0 ---------------------------------> GND  (upload only)
+   ```
+
+   Do not connect the separate supply's positive 5 V output to UNO 5V.
+   **Checkpoint:** TX and RX are crossed through two shifter channels, every
+   device shares ground, and GPIO 0 is connected to ground.
+3. **Enter camera upload mode.** Reconnect UNO USB and camera power while GPIO 0
+   remains grounded. Press the camera **Reset** button once; if it has no Reset
+   button, briefly remove and restore camera power.
+4. **Upload the camera sketch.** In Arduino IDE, open
+   `firmware/larp-esp32-cam/larp-esp32-cam.ino`. Change the selected board to
+   **esp32 by Espressif Systems > AI Thinker ESP32-CAM**, but keep the **same
+   UNO R4 USB serial port**
+   selected. Set upload speed to **115200** and close Serial Monitor. Confirm
+   `CAMERA_ID`, `WIFI_SSID`, and `WIFI_PASSWORD`, then select **Upload**.
+
+   **Checkpoint:** the output ends with a successful flash/reset message. If it
+   stays on `Connecting...`, press camera Reset once, check GPIO 0 is grounded,
+   and verify the crossed TX/RX paths.
+5. **Return the camera to normal boot.** Disconnect camera power. Remove only
+   the GPIO 0-to-GND jumper, then restore camera power. Press camera Reset if
+   needed. Open Serial Monitor at **115200** to see its network address.
+
+The UNO bridge cannot automatically control the camera's Reset or GPIO 0 pins.
+If it still cannot synchronize after checking the wiring and using short
+jumpers, use a dedicated 3.3 V USB-to-UART adapter. Electrical rationale:
+[Arduino UNO R4
+Minima documentation](https://docs.arduino.cc/hardware/uno-r4-minima), [Arduino
+UNO R4 WiFi documentation](https://docs.arduino.cc/hardware/uno-r4-wifi/),
+[Renesas RA4M1 input thresholds](https://docs.arduino.cc/resources/datasheets/ra4m1-datasheet.pdf),
+[Espressif serial-connection guidance](https://docs.espressif.com/projects/esptool/en/latest/esp32/esptool/serial-connection.html),
+and [Espressif boot-mode guidance](https://docs.espressif.com/projects/esptool/en/latest/esp32/advanced-topics/boot-mode-selection.html).
+
+For the full connection table, pin map, network fallback, and troubleshooting,
+see [the Inland ESP32-CAM setup guide](docs/ESP32_CAM_SETUP.md).
+
+## Tests and simulation evidence
+
+The hardware-independent test suite exercises simulated GPIO/PWM motor decisions, camera discovery, scout command proxy behavior, firmware settings, and installer invariants.
+
+```bash
 python -m venv .venv
+# Linux/macOS
 . .venv/bin/activate
+# Windows PowerShell
+# .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 python -m unittest discover -s tests -v
-python -m robot_server.app
 ```
+
+The current target desktop simulation ran **75 tests successfully**; the
+independently checked partner baseline ran **32 tests successfully**. The target
+suite covers dashboard/UI,
+mecanum mixing, camera discovery/recovery/profile isolation, firmware invariants,
+scout registry, Flask control APIs, mission events, snapshots, bounded evidence,
+cached health telemetry, motion-gated vision, landmarks, and optional-feature
+failure handling. Repeated held-command heartbeats are also verified to
+refresh the watchdog without rewriting unchanged Pi or LARP motor outputs.
+Hardware validation is still required for motor
+polarity/current, Wi-Fi range, camera focus, CSI calibration, gamepad mapping,
+and physical emergency-stop behavior. Read
+[docs/SIMULATION_RESULTS.md](docs/SIMULATION_RESULTS.md) for the exact
+results and limitations.
 
 ## Project structure
 
 ```text
 stem-research-academy/
-├── installer/
-│   ├── systemd/
-│   │   ├── stem-robot-dashboard.service
-│   │   └── stem-robot-hotspot.service
-│   ├── hotspot.sh
-│   └── install.sh
-├── robot_server/
-│   ├── static/
-│   ├── templates/
-│   ├── app.py
-│   ├── camera.py
-│   └── motor.py
-├── tests/
-├── requirements.txt
-└── run.py
+├── robot_server/                 # Python dashboard, GPIO drive, camera, scout proxy
+│   ├── static/                   # Browser UI assets
+│   ├── templates/                # Dashboard page
+│   └── tests/                    # Software simulation tests
+├── firmware/
+│   ├── larp-scout/               # ECHO drive firmware for Scouts A and B
+│   └── larp-esp32-cam/           # Inland ESP32-CAM streaming firmware
+├── installer/                    # Pi installer, hotspot, systemd, kiosk setup
+├── docs/                         # Wiring, setup, test report, integration changes
+├── run.py                        # Dashboard entry point
+└── requirements.txt              # Local development dependencies
 ```
+
+## Local development
+
+Run the dashboard without GPIO hardware for UI work and code review:
+
+```bash
+python -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+python run.py
+```
+
+Then browse to `http://127.0.0.1:8080`. On a non-Pi machine, GPIO behavior is simulated/fails safely; it does not move hardware. Keep real motor testing on the Pi, with wheels off the ground for the first run.
+
+## Documentation
+
+- [Setup guide](docs/SETUP.md) — end-to-end Pi, network, firmware, and first-drive procedure.
+- [Tomorrow field checklist](docs/TOMORROW_CHECKLIST.md) — physical validation and the servo/gimbal data required for the next development step.
+- [Field information checklist](docs/FIELD_INFORMATION_CHECKLIST.md) — exact photos, serial logs, network evidence, and hardware data needed for the next integration step.
+- [Latency and connection tuning](docs/LATENCY_TUNING.md) — control-priority safeguards, reconnection behavior, and field-test sequence.
+- [Wiring reference](docs/WIRING.md) — exact 3TSahur motor GPIO mapping and ESP32-CAM notes.
+- [Inland ESP32-CAM setup](docs/ESP32_CAM_SETUP.md) — upload wiring, pin map, stream verification, and troubleshooting.
+- [LARP camera/controller integration](docs/LARP_CAMERA_CONTROLLER_INTEGRATION.md) — safe power, Arduino-bridge decision guide, pairing, setup, and field tests.
+- [Simulation results](docs/SIMULATION_RESULTS.md) — commands run, passed tests, and test limitations.
+- [Changes from original](docs/CHANGES_FROM_ORIGINAL.md) — what came from the integration base and what changed.
+- [Installer guide](installer/README.md) and [server guide](robot_server/README.md) — package-specific operation details.
+
+## Safety checklist
+
+- Test each motion direction with the wheels clear of the floor.
+- Use a fused motor supply sized for motor stall current; never run motor power through the Pi.
+- Keep the motor battery disconnected while wiring or flashing boards.
+- Make sure every controller shares the intended common logic ground.
+- Test `Space`/`Esc` and a network-disconnect stop before operating near people or property.
+
+---
+
+Built from the partner project's deployment/dashboard foundation and adapted for the 3TSahur hub and LARP Scout system. See [docs/CHANGES_FROM_ORIGINAL.md](docs/CHANGES_FROM_ORIGINAL.md) for the complete integration record.

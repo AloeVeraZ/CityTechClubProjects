@@ -1,4 +1,4 @@
-"""UDP heartbeat discovery for ECHO scouts on the Pi hotspot."""
+"""UDP heartbeat discovery for LARP scouts on the 3TSahur hotspot."""
 
 from __future__ import annotations
 

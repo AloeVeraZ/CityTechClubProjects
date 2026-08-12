@@ -14,8 +14,8 @@ class MotorPins:
     reverse: int
 
 
-# BCM numbering. This is the only wheel-to-driver mapping that should need
-# changing if the physical motor plugs do not match the assumed positions.
+# BCM numbering. This wheel assignment intentionally matches the partner
+# integration base. Do not share a GPIO input between driver boards.
 DEFAULT_MOTOR_PINS = {
     "front_left": MotorPins(5, 6),       # Driver 1, Motor A
     "rear_left": MotorPins(16, 19),      # Driver 1, Motor B
@@ -117,6 +117,17 @@ class MecanumDrive:
                 for value in (forward, strafe, rotate)
             )
             speed = max(0.0, min(1.0, float(speed)))
+            command = {
+                "forward": forward,
+                "strafe": strafe,
+                "rotate": rotate,
+                "speed": speed,
+            }
+            # Held controls refresh the server watchdog every 80 ms. Preserve
+            # that route-level heartbeat without rewriting four unchanged PWM
+            # channels on every request.
+            if command == self.last_command:
+                return
             mixed = self.mix(forward, strafe, rotate)
             outputs = {name: value * speed for name, value in mixed.items()}
             if any(
@@ -133,12 +144,7 @@ class MecanumDrive:
             for name, value in outputs.items():
                 if name in self._motors:
                     self._motors[name].set(value)
-            self.last_command = {
-                "forward": forward,
-                "strafe": strafe,
-                "rotate": rotate,
-                "speed": speed,
-            }
+            self.last_command = command
 
     def stop(self) -> None:
         self.drive(0, 0, 0, self.last_command["speed"])

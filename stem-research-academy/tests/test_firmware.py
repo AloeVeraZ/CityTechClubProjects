@@ -2,19 +2,16 @@ import pathlib
 import unittest
 
 
-FIRMWARE = (
-    pathlib.Path(__file__).parents[1]
-    / "firmware"
-    / "echo-scout"
-    / "ECHO_Robot_Controller.ino"
-)
+FIRMWARE = pathlib.Path(__file__).parents[1] / "firmware" / "larp-scout" / "larp_scout_controller.ino"
+CAMERA_FIRMWARE = pathlib.Path(__file__).parents[1] / "firmware" / "larp-esp32-cam" / "larp-esp32-cam.ino"
 INSTALLER = pathlib.Path(__file__).parents[1] / "installer" / "install.sh"
 
 
-class EchoScoutFirmwareTests(unittest.TestCase):
+class LarpFirmwareTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.source = FIRMWARE.read_text(encoding="utf-8")
+        cls.camera_source = CAMERA_FIRMWARE.read_text(encoding="utf-8")
         cls.installer = INSTALLER.read_text(encoding="utf-8")
 
     def test_attachment_was_consolidated_to_one_sketch(self):
@@ -22,9 +19,9 @@ class EchoScoutFirmwareTests(unittest.TestCase):
         self.assertEqual(self.source.count("void loop()"), 1)
 
     def test_final_hotspot_credentials_match_installer(self):
-        self.assertIn('WIFI_SSID[] = "EchoSwarm"', self.source)
+        self.assertIn('WIFI_SSID[] = "3TSahur-Swarm"', self.source)
         self.assertIn('WIFI_PASSWORD[] = "roboswarm1"', self.source)
-        self.assertIn("HOTSPOT_SSID=EchoSwarm", self.installer)
+        self.assertIn("HOTSPOT_SSID=3TSahur-Swarm", self.installer)
         self.assertIn("HOTSPOT_PASSWORD=roboswarm1", self.installer)
 
     def test_echo_differential_drive_api_and_safety_are_present(self):
@@ -37,6 +34,12 @@ class EchoScoutFirmwareTests(unittest.TestCase):
         self.assertIn("drivetrain.setBrake()", self.source)
         self.assertIn("drivetrain.drive(0, 0)", self.source)
 
+    def test_repeated_heartbeats_do_not_rewrite_unchanged_motor_outputs(self):
+        self.assertIn("if (x != appliedDriveX || y != appliedDriveY)", self.source)
+        self.assertIn("if (force || !motorsStopped", self.source)
+        self.assertIn("stopMotors(true);", self.source)
+        self.assertIn("lastCommandAt = millis();", self.source)
+
     def test_pi_integration_endpoints_and_station_mode_are_present(self):
         self.assertIn("WiFi.mode(WIFI_STA)", self.source)
         self.assertIn("PI_HEARTBEAT_UDP_PORT = 5006", self.source)
@@ -48,6 +51,44 @@ class EchoScoutFirmwareTests(unittest.TestCase):
         for endpoint in ("/drive", "/stop", "/status", "/motion"):
             self.assertIn(f'"{endpoint}"', self.source)
         self.assertNotIn("192, 168, 4", self.source)
+
+    def test_csi_presence_signal_is_available_to_the_dashboard(self):
+        self.assertIn("csiMotionDetected", self.source)
+        self.assertIn("csiMotionLevel", self.source)
+        self.assertIn('"\\\"motion\\\":"', self.source)
+        self.assertIn('"\\\"motion_level\\\":"', self.source)
+        self.assertIn("CSI_VARIANCE_THRESHOLD", self.source)
+
+    def test_larp_devices_retry_the_pi_hotspot_without_blocking_startup(self):
+        self.assertIn("void beginWiFi()", self.source)
+        self.assertIn("void maintainWiFi()", self.source)
+        self.assertIn("WiFi.disconnect(false, false)", self.source)
+        self.assertIn("if (serverStarted) server.handleClient()", self.source)
+        self.assertNotIn("while (WiFi.status() != WL_CONNECTED)", self.source)
+        self.assertIn("void beginWiFi()", self.camera_source)
+        self.assertIn("WIFI_RETRY_A_MS = 1800", self.source)
+        self.assertIn("WIFI_RETRY_B_MS = 2200", self.source)
+        self.assertIn("wifiRetryMs()", self.source)
+        self.assertIn("WIFI_RETRY_A_MS = 2000", self.camera_source)
+        self.assertIn("WIFI_RETRY_B_MS = 2400", self.camera_source)
+        self.assertIn("void maintainWiFi()", self.camera_source)
+        self.assertIn("WiFi.disconnect(false, false)", self.camera_source)
+        self.assertNotIn("while (WiFi.status() != WL_CONNECTED)", self.camera_source)
+
+    def test_larp_camera_firmware_exposes_a_mjpeg_stream(self):
+        self.assertIn("CAMERA_ID", self.camera_source)
+        self.assertIn('"3TSahur-Swarm"', self.camera_source)
+        self.assertIn("esp_camera_init", self.camera_source)
+        self.assertIn('"/stream"', self.camera_source)
+        self.assertIn("larp-a-cam", self.camera_source)
+        self.assertIn("STREAM_FRAME_INTERVAL_MS = 100", self.camera_source)
+        self.assertIn("vTaskDelay(pdMS_TO_TICKS", self.camera_source)
+
+    def test_camera_init_failure_explains_required_profile_and_pinout(self):
+        self.assertIn("Camera initialization failed (esp_err=0x%x)", self.camera_source)
+        self.assertIn("AI Thinker ESP32-CAM", self.camera_source)
+        self.assertIn("NodeMCU-32S may upload", self.camera_source)
+        self.assertIn("PWDN 32, XCLK 0", self.camera_source)
 
     def test_installer_schedules_reboot_outside_pipe_process(self):
         self.assertIn("systemd-run", self.installer)
@@ -80,12 +121,41 @@ class EchoScoutFirmwareTests(unittest.TestCase):
         self.assertIn("Restoring the previous working application", self.installer)
         self.assertIn("http://127.0.0.1:8080/healthz", self.installer)
 
+    def test_installer_migrates_partner_config_and_hostname_resolution(self):
+        self.assertIn("migrate_config_key LARP_A_CAMERA_URL ESP32_ONE_STREAM_URL", self.installer)
+        self.assertIn("migrate_config_key LARP_B_CAMERA_URL ESP32_TWO_STREAM_URL", self.installer)
+        self.assertIn("migrate_config_key LARP_A_HOST SCOUT_A_HOST", self.installer)
+        self.assertIn("migrate_config_key LARP_B_HOST SCOUT_B_HOST", self.installer)
+        self.assertIn('result.append("127.0.1.1\\t3tsahur")', self.installer)
+        self.assertIn("/etc/hosts.before-3tsahur-", self.installer)
+        self.assertIn('sudo install -o root -g root -m 0600 "$CONFIG_ROLLBACK" "$CONFIG_FILE"', self.installer)
+        self.assertIn('sudo hostnamectl set-hostname "$ORIGINAL_HOSTNAME"', self.installer)
+
     def test_installer_uses_resizable_window_and_simple_dashboard_address(self):
         self.assertIn('nginx-light', self.installer)
         self.assertIn('listen 80 default_server', self.installer)
         self.assertIn('CAMERA_FPS=10', self.installer)
         self.assertIn('DRIVE_WATCHDOG_SECONDS=0.20', self.installer)
         self.assertNotIn('fullscreen robot dashboard', self.installer)
+
+    def test_curl_bootstrap_delegates_to_the_versioned_installer(self):
+        bootstrap = (INSTALLER.parent / "curl-install.sh").read_text(encoding="utf-8")
+        self.assertIn("installer/install.sh", bootstrap)
+        self.assertIn("STEM_REPO_BRANCH", bootstrap)
+        self.assertIn("https://github.com/AloeVeraZ/CityTechClubProjects.git", bootstrap)
+        self.assertIn("STEM_SOURCE_SUBDIR:-stem-research-academy", bootstrap)
+        self.assertIn('STEM_SOURCE_SUBDIR="$SOURCE_SUBDIR"', bootstrap)
+        self.assertIn("without sudo", bootstrap)
+
+    def test_installer_defaults_to_the_monorepo_project_subdirectory(self):
+        self.assertIn("https://github.com/AloeVeraZ/CityTechClubProjects.git", self.installer)
+        self.assertIn("STEM_SOURCE_SUBDIR:-stem-research-academy", self.installer)
+
+    def test_optional_vision_installer_uses_an_isolated_environment(self):
+        vision_installer = (INSTALLER.parent / "install-vision.sh").read_text(encoding="utf-8")
+        self.assertIn(".vision-venv", vision_installer)
+        self.assertIn('"ultralytics>=8.3,<9" ncnn', vision_installer)
+        self.assertIn('model.export(format="ncnn"', vision_installer)
 
 
 if __name__ == "__main__":
