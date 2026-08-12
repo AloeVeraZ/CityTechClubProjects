@@ -99,7 +99,7 @@ volatile float csiLatestEnergy = 0;
 volatile uint32_t csiPacketCount = 0;
 portMUX_TYPE csiMux = portMUX_INITIALIZER_UNLOCKED;
 
-void onCsiReceived(void *, wifi_csi_info_t *info) {
+void onCsiReceived(void *, struct wifi_csi_info_t *info) {
   if (info == nullptr || info->buf == nullptr || info->len < 2) return;
 
   int64_t sumSquares = 0;

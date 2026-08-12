@@ -182,6 +182,86 @@ input[type="range"] { width: 100%; margin: 0; accent-color: var(--lime); }
 .toast { position: fixed; z-index: 10; bottom: 26px; left: 50%; padding: 12px 18px; border-radius: 999px; background: var(--danger); color: white; font-size: 13px; font-weight: 750; transform: translate(-50%, 150%); transition: transform .2s ease; }
 .toast.show { transform: translate(-50%, 0); }
 
+/* Desktop command deck: all cameras left, all controls right, one viewport. */
+@media (min-width: 1101px) {
+  .dashboard { grid-template-rows: auto auto minmax(610px, 1fr) auto; min-height: 100dvh; }
+  .robot-deck { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(520px, .92fr); grid-template-rows: 1.25fr 1fr 1fr; gap: 8px; min-height: 610px; height: calc(100dvh - 310px); }
+  .robot-panel { display: contents; }
+  .robot-panel .video-stage, .robot-panel .control-stage { overflow: hidden; border: 1px solid var(--line); border-radius: 13px; }
+  #panel-3tsahur .video-stage { grid-area: 1 / 1; }
+  #panel-3tsahur .control-stage { grid-area: 1 / 2; }
+  #panel-larp-a .video-stage { grid-area: 2 / 1; }
+  #panel-larp-a .control-stage { grid-area: 2 / 2; }
+  #panel-larp-b .video-stage { grid-area: 3 / 1; }
+  #panel-larp-b .control-stage { grid-area: 3 / 2; }
+  .video-stage { min-height: 0; height: auto; border-bottom: 1px solid var(--line); }
+  .video-label { left: 14px; bottom: 11px; font-size: 9px; }
+  .control-stage { gap: 5px; padding: 8px 10px; font-size: 9px; }
+  .panel-header h2 { font-size: 19px; }
+  .panel-header .eyebrow { margin-bottom: 2px; font-size: 7px; }
+  .status { padding: 4px 6px; font-size: 7px; }
+  .analysis-card { gap: 4px; padding: 6px; }
+  .analysis-card .eyebrow { display: none; }
+  .analysis-card strong { font-size: 10px; }
+  .vision-status { font-size: 7px; }
+  .analysis-actions { gap: 3px; }
+  .vision-toggle, .landmark-toggle, .snapshot-button, .evidence-button { padding: 5px 2px; font-size: 7px; }
+  .camera-auto { padding-top: 4px; }
+  .camera-auto span, .camera-auto small { font-size: 6px; }
+  .camera-auto strong { font-size: 8px; }
+  .primary-controls { display: grid; grid-template-columns: .9fr 1.1fr; grid-template-rows: auto 1fr auto auto; }
+  .primary-controls > .panel-header { grid-column: 1 / -1; }
+  .primary-controls > .analysis-card { grid-column: 1; grid-row: 2; }
+  .primary-controls > .drive-card { grid-column: 2; grid-row: 2 / 4; }
+  .primary-controls > .actuator-card { grid-column: 1; grid-row: 3; }
+  .primary-controls > .telemetry { grid-column: 1 / -1; }
+  .drive-card { gap: 5px; padding: 6px; }
+  .speed-row { font-size: 8px; }
+  .key-grid { gap: 3px; }
+  .key { min-height: 28px; font-size: 11px; }
+  .key small { font-size: 6px; }
+  .hint, .actuator-card > p { display: none; }
+  .stop-button { padding: 5px; font-size: 7px; }
+  .actuator-card { gap: 4px; padding: 6px; }
+  .actuator-card .eyebrow { display: none; }
+  .auxiliary-heading output { font-size: 7px; }
+  .actuator-actions button, .gimbal-pad button { padding: 4px; min-height: 0; font-size: 7px; }
+  .actuator-card > output { font-size: 8px; }
+  .scout-control-stage { display: grid; grid-template-columns: .9fr 1.1fr; grid-template-rows: auto 1fr auto; }
+  .scout-control-stage > .panel-header { grid-column: 1 / -1; }
+  .scout-control-stage > .analysis-card { grid-column: 1; grid-row: 2; }
+  .scout-control-stage > .scout-connection { grid-column: 1; grid-row: 3; }
+  .scout-control-stage > .csi-sensor { grid-column: 2; grid-row: 2; }
+  .scout-control-stage > .scout-controls { grid-column: 2; grid-row: 3; }
+  .scout-control-stage > .telemetry { display: none; }
+  .scout-connection { grid-template-columns: auto 1fr; gap: 5px; }
+  .scout-connection small { display: none; }
+  .connection-icon { width: 23px; height: 23px; font-size: 9px; }
+  .scout-connection strong { font-size: 8px; }
+  .csi-sensor { gap: 3px; padding: 6px; }
+  .csi-heading .eyebrow { font-size: 7px; }
+  .csi-heading strong, .csi-sensor p, .csi-sensor > output { font-size: 7px; }
+  .csi-heading output { font-size: 9px; }
+  .csi-meter { height: 4px; }
+  .calibrate { padding: 3px 5px; font-size: 7px; }
+  .scout-controls { grid-template-columns: 72px 1fr; gap: 5px; padding: 5px; }
+  .scout-controls label { font-size: 7px; }
+  .scout-pad { gap: 2px; }
+  .scout-pad button { height: 25px; font-size: 10px; }
+  .scout-pad .scout-stop { font-size: 6px; }
+  .telemetry { font-size: 7px; }
+  .mission-tools { gap: 5px; padding: 8px 12px; }
+  .mission-header h2 { font-size: 15px; }
+  .mission-header .eyebrow { display: none; }
+  #health-summary { padding: 5px 8px; font-size: 7px; }
+  .mission-content { gap: 6px; }
+  .mission-section { padding: 7px; }
+  .mission-section h3 { margin-bottom: 4px; font-size: 7px; }
+  .mission-tools label { margin-top: 3px; font-size: 7px; }
+  .mission-tools label small, .mission-tools dl, .mission-tools ol { font-size: 6px; }
+  .mission-tools ol { max-height: 48px; }
+}
+
 @media (max-width: 1100px) {
   .dashboard-header { align-items: flex-start; flex-direction: column; }
   .dashboard-actions { width: 100%; justify-content: space-between; }

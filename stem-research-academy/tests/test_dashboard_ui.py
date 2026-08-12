@@ -116,7 +116,9 @@ class DashboardTabTests(unittest.TestCase):
         self.assertIn("controller.abort(), 140", SCRIPT)
 
     def test_video_and_controls_use_separate_grid_columns(self):
-        self.assertIn('grid-template-columns: minmax(0, 1.55fr) minmax(400px, .9fr);', STYLES)
+        self.assertIn('grid-template-columns: minmax(0, 1.08fr) minmax(520px, .92fr);', STYLES)
+        self.assertIn('#panel-3tsahur .video-stage { grid-area: 1 / 1; }', STYLES)
+        self.assertIn('#panel-3tsahur .control-stage { grid-area: 1 / 2; }', STYLES)
         self.assertNotIn('.drive-card { position: absolute', STYLES)
         self.assertNotIn('.scout-controls { position: absolute', STYLES)
         self.assertNotIn('.mission-tools { position: fixed', STYLES)
