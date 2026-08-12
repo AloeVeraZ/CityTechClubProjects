@@ -13,28 +13,18 @@ raised before ground operation.
 ## Laptop setup for the ECHO board
 
 The drive controller is a 3DBuffalo ECHO board built around an ESP32-S3. The
-following software is sufficient for both the small motor test and the full
-LARP controller sketch. Git, Python, PlatformIO, and a separate ESP32-CAM
-programmer are not required for this board.
+direct motor test and full LARP controller use the ESP32 motor PWM driver
+directly. EchoLib, Adafruit BusIO, Git, Python, and PlatformIO are not required.
 
 1. Install the current Arduino IDE 2.x from the
    [official Arduino download page](https://www.arduino.cc/en/software/).
 2. Open **Tools > Board > Boards Manager**, search for `esp32`, and install
    **esp32 by Espressif Systems**.
 3. Select **Tools > Board > esp32 > ESP32S3 Dev Module**.
-4. Open **Sketch > Include Library > Manage Libraries**, search for
-   `Adafruit BusIO`, and install **Adafruit BusIO by Adafruit**.
-5. Download **Source code (zip)** for
-   [3DBuffalo EchoLib 1.3.0](https://github.com/3DBuffalo/Echo_Lib/releases/tag/V1.3.0).
-   Do not unzip it. In Arduino IDE, choose **Sketch > Include Library > Add
-   .ZIP Library...**, select the ZIP, and restart Arduino IDE. The sketches
-   are compile-checked against 1.3.0. This release changed the drive class
-   name to `TankDrive`, which the full sketch uses.
 
-EchoLib includes all of its features through `EchoLib.h`, so Adafruit BusIO is
-needed even for a motor-only sketch. `WiFi`, `WebServer`, `ESPmDNS`, and
-`WiFiUdp` used by the full controller arrive with the Espressif board package;
-do not install similarly named third-party libraries for them.
+`WiFi`, `WebServer`, `ESPmDNS`, `WiFiUdp`, and MCPWM all arrive with the
+Espressif board package. EchoLib may remain installed as a vendor reference,
+but neither sketch includes or compiles it.
 
 ### Arduino Tools settings
 
@@ -69,9 +59,8 @@ menu item.
 
 The test sketch is
 [`motor-1-slow-test/motor-1-slow-test.ino`](motor-1-slow-test/motor-1-slow-test.ino).
-It uses EchoLib's individual motor API to run only port 1 at 10% power for two
-seconds, then stop for three seconds. It repeats until the board is reset or
-powered off.
+It directly controls Motor 1 on GPIO 47/48 at 1 kHz and 10% power for two
+seconds, then stops for three seconds. It repeats until reset or powered off.
 
 1. Turn the robot off before touching motor wiring. Confirm one motor is in
    the ECHO socket labeled **1**.

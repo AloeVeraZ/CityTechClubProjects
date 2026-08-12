@@ -1,8 +1,18 @@
-C:\CityTechClubProjects\.arduino-build\motor-1-slow-test\sketch\motor-1-slow-test.ino.cpp.o: \
- C:\CityTechClubProjects\.arduino-build\motor-1-slow-test\sketch\motor-1-slow-test.ino.cpp \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/Arduino.h \
+C:\CityTechClubProjects\.arduino-build\motor-1-slow-test\core\wiring_shift.c.o: \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\wiring_shift.c \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp32-hal.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/newlib/platform_include/stdio.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp_arduino_version.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_system/include/esp_system.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_common/include/esp_err.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_common/include/esp_compiler.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_common/include/esp_attr.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_common/include/esp_bit_defs.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_common/include/esp_idf_version.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_hw_support/include/esp_sleep.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/hal/include/hal/touch_sensor_legacy_types.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/soc/esp32s3/include/soc/soc_caps.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/hal/include/hal/gpio_types.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/soc/esp32s3/include/soc/gpio_num.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/freertos/FreeRTOS-Kernel/include/freertos/FreeRTOS.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/freertos/config/include/freertos/FreeRTOSConfig.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/freertos/config/xtensa/include/freertos/FreeRTOSConfig_arch.h \
@@ -28,15 +38,10 @@ C:\CityTechClubProjects\.arduino-build\motor-1-slow-test\sketch\motor-1-slow-tes
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/xtensa/include/xtensa/xtruntime.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_hw_support/include/spinlock.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_hw_support/include/esp_cpu.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/soc/esp32s3/include/soc/soc_caps.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/xtensa/include/xtensa_api.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/xtensa/include/xt_utils.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/xtensa/esp32s3/include/xtensa/config/extreg.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_common/include/esp_bit_defs.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_common/include/esp_attr.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_hw_support/include/esp_intr_alloc.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_common/include/esp_err.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_common/include/esp_compiler.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_hw_support/include/esp_intr_types.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_system/include/esp_private/crosscore_int.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_common/include/esp_macros.h \
@@ -50,8 +55,6 @@ C:\CityTechClubProjects\.arduino-build\motor-1-slow-test\sketch\motor-1-slow-tes
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/heap/include/multi_heap.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_rom/include/esp_rom_sys.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/soc/esp32s3/include/soc/reset_reasons.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_system/include/esp_system.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_common/include/esp_idf_version.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/freertos/FreeRTOS-Kernel/portable/xtensa/include/freertos/portbenchmark.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_timer/include/esp_timer.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_hw_support/include/esp_etm.h \
@@ -68,18 +71,7 @@ C:\CityTechClubProjects\.arduino-build\motor-1-slow-test\sketch\motor-1-slow-tes
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/freertos/FreeRTOS-Kernel/include/freertos/stream_buffer.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/freertos/FreeRTOS-Kernel/include/freertos/event_groups.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/freertos/FreeRTOS-Kernel/include/freertos/timers.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp8266-compat.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/soc/esp32s3/register/soc/gpio_reg.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/stdlib_noniso.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/binary.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/extra_attr.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\variants\esp32s3/pins_arduino.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp32-hal.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_hw_support/include/esp_sleep.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/hal/include/hal/touch_sensor_legacy_types.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/hal/include/hal/gpio_types.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/soc/esp32s3/include/soc/gpio_num.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp32-hal-log.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp32-hal-log.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_rom/esp32s3/include/esp32s3/rom/ets_sys.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/log/include/esp_log.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/log/include/esp_log_config.h \
@@ -92,84 +84,47 @@ C:\CityTechClubProjects\.arduino-build\motor-1-slow-test\sketch\motor-1-slow-tes
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/log/include/esp_log_args.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/log/include/esp_log_attr.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/log/include/esp_private/log_attr.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp32-hal-matrix.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp32-hal-matrix.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/soc/esp32s3/include/soc/gpio_sig_map.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp32-hal-uart.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp32-hal-uart.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/soc/esp32s3/include/soc/uart_pins.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/soc/esp32s3/register/soc/io_mux_reg.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/hal/include/hal/uart_types.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/soc/esp32s3/include/soc/clk_tree_defs.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp32-hal-gpio.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp32-hal-gpio.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\variants\esp32s3/pins_arduino.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_driver_gpio/include/driver/gpio.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_rom/include/esp_rom_gpio.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/soc/esp32s3/include/soc/gpio_pins.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_driver_gpio/include/driver/gpio_etm.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp32-hal-touch.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp32-hal-touch-ng.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp32-hal-touch.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp32-hal-touch-ng.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_driver_touch_sens/include/driver/touch_sens.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_driver_touch_sens/include/driver/touch_sens_types.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/hal/include/hal/touch_sens_types.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_driver_touch_sens/hw_ver2/include/driver/touch_version_types.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp32-hal-dac.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp32-hal-adc.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp32-hal-spi.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp32-hal-i2c.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp32-hal-ledc.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp32-hal-dac.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp32-hal-adc.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp32-hal-spi.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp32-hal-i2c.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp32-hal-ledc.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/hal/include/hal/ledc_types.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp32-hal-rmt.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp32-hal-sigmadelta.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp32-hal-timer.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp32-hal-rmt.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp32-hal-sigmadelta.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp32-hal-timer.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_driver_gptimer/include/driver/gptimer_types.h \
  C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/hal/include/hal/timer_types.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp32-hal-bt.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp32-hal-psram.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp32-hal-rgb-led.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp32-hal-cpu.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/esp32-hal-hosted.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/WCharacter.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/newlib/platform_include/ctype.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/WString.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/pgmspace.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/Stream.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/Print.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/Printable.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/IPAddress.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/lwip/lwip/src/include/lwip/ip_addr.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/lwip/lwip/src/include/lwip/opt.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/lwip/port/include/lwipopts.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/newlib/platform_include/sys/fcntl.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/newlib/platform_include/sys/ioctl.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/newlib/platform_include/sys/poll.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_system/include/esp_task.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_hw_support/include/esp_random.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/lwip/port/include/sntp/sntp_get_set_time.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/lwip/port/include/sockets_ext.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/lwip/port/freertos/include/arch/sys_arch.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/lwip/lwip/src/include/lwip/debug.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/lwip/lwip/src/include/lwip/arch.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/lwip/port/esp32xx/include/arch/cc.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/lwip/lwip/src/include/lwip/def.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/lwip/lwip/src/include/lwip/ip4_addr.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/lwip/lwip/src/include/lwip/ip6_addr.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/lwip/lwip/src/include/lwip/def.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/lwip/lwip/src/include/lwip/ip6_zone.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_netif/include/esp_netif_ip_addr.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/Client.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/Server.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/Udp.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/HardwareSerial.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/HWCDC.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_event/include/esp_event.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_event/include/esp_event_base.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_driver_usb_serial_jtag/include/driver/usb_serial_jtag.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/USBCDC.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/Esp.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_partition/include/esp_partition.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_hw_support/include/hal/cpu_hal.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/esp_hw_support/include/hal/cpu_ll.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/freertos_stats.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/io_pin_remap.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32/Arduino.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/driver/deprecated/driver/mcpwm.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/driver/deprecated/driver/mcpwm_types_legacy.h \
- C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/hal/include/hal/mcpwm_types.h
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp32-hal-bt.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp32-hal-psram.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp32-hal-rgb-led.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp32-hal-cpu.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp32-hal-hosted.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\wiring_private.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\Arduino.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp_arduino_version.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\esp8266-compat.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\tools\esp32s3-libs\3.3.8/include/soc/esp32s3/register/soc/gpio_reg.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\stdlib_noniso.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\binary.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\extra_attr.h \
+ C:\Users\angel\AppData\Local\Arduino15\packages\esp32\hardware\esp32\3.3.8\cores\esp32\io_pin_remap.h

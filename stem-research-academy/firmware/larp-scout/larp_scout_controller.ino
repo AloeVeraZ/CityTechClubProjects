@@ -10,18 +10,18 @@
 
   Hardware target: ECHO board / ESP32-S3
   Arduino board: ESP32S3 Dev Module
-  Libraries: EchoLib and its documented dependencies
+  Motor control: direct ESP32 MCPWM (no EchoLib required)
 
   IMPORTANT: Motor direction has not been physically verified. Test with the
   wheels lifted, a low speed, and immediate access to motor power.
 */
 
 #include <Arduino.h>
-#include <EchoLib.h>
 #include <ESPmDNS.h>
 #include <WebServer.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
+#include "driver/mcpwm.h"
 #include "esp_wifi.h"
 
 // ---------------------------------------------------------------------------
@@ -35,6 +35,10 @@ constexpr char WIFI_PASSWORD[] = "roboswarm1";
 
 constexpr uint8_t LEFT_MOTOR_ID = 1;
 constexpr uint8_t RIGHT_MOTOR_ID = 6;
+constexpr int MOTOR_1_PIN_A = 47;
+constexpr int MOTOR_1_PIN_B = 48;
+constexpr int MOTOR_6_PIN_A = 16;
+constexpr int MOTOR_6_PIN_B = 15;
 constexpr uint8_t STARTUP_SPEED_LIMIT = 35;
 constexpr unsigned long COMMAND_TIMEOUT_MS = 500;
 constexpr unsigned long WIFI_RETRY_A_MS = 1800;
@@ -55,10 +59,6 @@ const char *robotHost() { return ROBOT_ID == 'A' ? "larp-a" : "larp-b"; }
 const char *cameraHost() { return ROBOT_ID == 'A' ? "larp-a-cam.local" : "larp-b-cam.local"; }
 unsigned long wifiRetryMs() { return ROBOT_ID == 'A' ? WIFI_RETRY_A_MS : WIFI_RETRY_B_MS; }
 
-// EchoLib's documented differential-drive class accepts turn (X) and
-// forward/reverse (Y) values. Motors 1 and 6 match the Zippy example.
-MotorControllers motors;
-TankDrive drivetrain(motors, LEFT_MOTOR_ID, RIGHT_MOTOR_ID);
 WebServer server(80);
 WiFiUDP csiUdp;
 
@@ -267,9 +267,52 @@ void piRegistrationTask(void *) {
 // Motor safety and HTTP API
 // ---------------------------------------------------------------------------
 
+void configureDirectMotors() {
+  // Pin and timer assignments copied from 3DBuffalo EchoLib 1.2/1.3.
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, MOTOR_1_PIN_A);
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0B, MOTOR_1_PIN_B);
+  mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM2A, MOTOR_6_PIN_A);
+  mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM2B, MOTOR_6_PIN_B);
+
+  mcpwm_config_t config = {};
+  config.frequency = 1000;
+  config.cmpr_a = 0;
+  config.cmpr_b = 0;
+  config.duty_mode = MCPWM_DUTY_MODE_0;
+  config.counter_mode = MCPWM_UP_COUNTER;
+  mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &config);
+  mcpwm_init(MCPWM_UNIT_1, MCPWM_TIMER_2, &config);
+  mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
+  mcpwm_start(MCPWM_UNIT_1, MCPWM_TIMER_2);
+}
+
+void setDirectMotor(int motorId, int percent) {
+  percent = constrain(percent, -100, 100);
+  const mcpwm_unit_t unit = motorId == LEFT_MOTOR_ID ? MCPWM_UNIT_0 : MCPWM_UNIT_1;
+  const mcpwm_timer_t timer = motorId == LEFT_MOTOR_ID ? MCPWM_TIMER_0 : MCPWM_TIMER_2;
+
+  if (percent == 0) {
+    mcpwm_set_signal_low(unit, timer, MCPWM_OPR_A);
+    mcpwm_set_signal_low(unit, timer, MCPWM_OPR_B);
+  } else if (percent > 0) {
+    mcpwm_set_duty(unit, timer, MCPWM_OPR_A, percent);
+    mcpwm_set_duty_type(unit, timer, MCPWM_OPR_A, MCPWM_DUTY_MODE_0);
+    mcpwm_set_signal_low(unit, timer, MCPWM_OPR_B);
+  } else {
+    mcpwm_set_duty(unit, timer, MCPWM_OPR_B, -percent);
+    mcpwm_set_duty_type(unit, timer, MCPWM_OPR_B, MCPWM_DUTY_MODE_0);
+    mcpwm_set_signal_low(unit, timer, MCPWM_OPR_A);
+  }
+}
+
+void driveDirect(int x, int y) {
+  setDirectMotor(LEFT_MOTOR_ID, constrain(x + y, -100, 100));
+  setDirectMotor(RIGHT_MOTOR_ID, constrain(y - x, -100, 100));
+}
+
 void stopMotors(bool force = false) {
   if (force || !motorsStopped || appliedDriveX != 0 || appliedDriveY != 0) {
-    drivetrain.drive(0, 0);
+    driveDirect(0, 0);
   }
   appliedDriveX = 0;
   appliedDriveY = 0;
@@ -293,7 +336,7 @@ void handleDrive() {
   // command when its actual output changes, leaving the loop responsive to
   // HTTP, Wi-Fi maintenance, CSI processing, and the watchdog itself.
   if (x != appliedDriveX || y != appliedDriveY) {
-    drivetrain.drive(x, y);
+    driveDirect(x, y);
     appliedDriveX = x;
     appliedDriveY = y;
   }
@@ -417,7 +460,7 @@ void setup() {
   Serial.begin(115200);
   delay(300);
 
-  drivetrain.setBrake();
+  configureDirectMotors();
   stopMotors(true);
 
   beginWiFi();

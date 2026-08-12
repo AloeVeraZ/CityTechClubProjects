@@ -24,6 +24,15 @@ constexpr float MOTOR_SPEED_PERCENT = 10.0f;
 constexpr unsigned long RUN_TIME_MS = 2000;
 constexpr unsigned long REST_TIME_MS = 3000;
 
+#line 26 "C:\\CityTechClubProjects\\stem-research-academy\\firmware\\larp-scout\\motor-1-slow-test\\motor-1-slow-test.ino"
+void stopMotor1();
+#line 32 "C:\\CityTechClubProjects\\stem-research-academy\\firmware\\larp-scout\\motor-1-slow-test\\motor-1-slow-test.ino"
+void setMotor1(float percent);
+#line 50 "C:\\CityTechClubProjects\\stem-research-academy\\firmware\\larp-scout\\motor-1-slow-test\\motor-1-slow-test.ino"
+void setup();
+#line 70 "C:\\CityTechClubProjects\\stem-research-academy\\firmware\\larp-scout\\motor-1-slow-test\\motor-1-slow-test.ino"
+void loop();
+#line 26 "C:\\CityTechClubProjects\\stem-research-academy\\firmware\\larp-scout\\motor-1-slow-test\\motor-1-slow-test.ino"
 void stopMotor1() {
   // EchoLib's brake/zero behavior: both DRV8874 control inputs held low.
   mcpwm_set_signal_low(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A);
