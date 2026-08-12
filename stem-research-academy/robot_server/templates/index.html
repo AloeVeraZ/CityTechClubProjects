@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="server-time-ms" content="{{ server_time_ms }}">
   <title>3TSahur Swarm Control</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css', v=8) }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css', v=9) }}">
 </head>
 <body>
   <main class="dashboard">
@@ -14,10 +14,13 @@
         <p class="eyebrow">3TSahur-Swarm local command center</p>
         <h1>Reconnaissance dashboard</h1>
       </div>
-      <div class="dashboard-note" aria-label="Dashboard operating safeguards">
-        <span class="note-live"><i></i> Local control</span>
-        <span>One active camera stream</span>
-        <span>Watchdog-protected controls</span>
+      <div class="dashboard-actions">
+        <div class="dashboard-note" aria-label="Dashboard operating safeguards">
+          <span class="note-live"><i></i> Local control</span>
+          <span>One active camera stream</span>
+          <span>Watchdog-protected controls</span>
+        </div>
+        <button class="kill-all" id="kill-all" type="button">Stop all robots · Esc</button>
       </div>
     </header>
 
@@ -36,7 +39,12 @@
     <section id="panel-3tsahur" class="robot-panel active" role="tabpanel" aria-labelledby="tab-3tsahur" data-tab-panel="3tsahur">
       <div class="video-stage primary-video-stage">
         <img class="video" data-stream-for="3tsahur" data-stream-src="{{ url_for('camera_feed') }}" alt="Live Logitech C270 camera feed from 3TSahur">
-        <canvas class="vision-overlay" data-vision-overlay="3tsahur" aria-hidden="true"></canvas><button class="vision-toggle" type="button" data-vision-toggle="3tsahur" aria-pressed="false">Vision off · C</button><button class="landmark-toggle" type="button" data-landmark-toggle="3tsahur" aria-pressed="false">Markers off · L</button><button class="snapshot-button" type="button" data-snapshot="3tsahur">Snapshot</button><button class="evidence-button" type="button" data-evidence="3tsahur">Evidence</button><output class="vision-status" data-vision-status="3tsahur">Analysis ready when enabled</output>
+        <canvas class="vision-overlay" data-vision-overlay="3tsahur" aria-hidden="true"></canvas>
+        <details class="camera-tools" data-disclosure-key="camera-tools-3tsahur">
+          <summary>Analysis tools</summary>
+          <div class="camera-tools-menu"><button class="vision-toggle" type="button" data-vision-toggle="3tsahur" aria-pressed="false">Vision off · C</button><button class="landmark-toggle" type="button" data-landmark-toggle="3tsahur" aria-pressed="false">Markers off · L</button><button class="snapshot-button" type="button" data-snapshot="3tsahur">Snapshot</button><button class="evidence-button" type="button" data-evidence="3tsahur">Evidence</button></div>
+        </details>
+        <output class="vision-status" data-vision-status="3tsahur">Analysis ready when enabled</output>
         <div class="camera-message" id="camera-message">Starting Logitech C270 camera...</div>
         <div class="video-shade"></div>
         <div class="video-label"><span class="live-dot"></span>3TSahur · Logitech C270</div>
@@ -67,24 +75,26 @@
           <p class="hint">WASD drive · Q/E rotate · Space stops 3TSahur</p>
           <button class="stop-button" id="stop" type="button">Stop 3TSahur · all 4 motors</button>
         </div>
-        <section class="actuator-card" aria-label="3TSahur auxiliary camera and ramp controls">
-          <header>
+        <details class="actuator-card optional-panel" aria-label="3TSahur auxiliary camera and ramp controls" data-disclosure-key="actuator-tools">
+          <summary>
             <div><p class="eyebrow">Auxiliary systems</p><strong>Gimbal + ramp</strong></div>
             <output id="actuator-status">Awaiting servo configuration</output>
-          </header>
-          <div class="actuator-actions">
-            <button id="gimbal-mode" type="button" aria-pressed="false">Gimbal mode · G</button>
-            <button id="ramp-toggle" type="button">Raise ramp · R</button>
+          </summary>
+          <div class="optional-panel-content">
+            <div class="actuator-actions">
+              <button id="gimbal-mode" type="button" aria-pressed="false">Gimbal mode · G</button>
+              <button id="ramp-toggle" type="button">Raise ramp · R</button>
+            </div>
+            <div class="gimbal-pad" aria-label="Logitech C270 gimbal controls">
+              <button type="button" data-gimbal="pan-left">← Pan</button>
+              <button type="button" data-gimbal="tilt-up">Tilt ↑</button>
+              <button type="button" data-gimbal="tilt-down">Tilt ↓</button>
+              <button type="button" data-gimbal="pan-right">Pan →</button>
+            </div>
+            <output id="gimbal-readout">Pan 0° · Tilt 0°</output>
+            <p>Press G, then use arrow keys to aim the camera. Press R to toggle the ramp. These controls are staged only until the servo driver is configured.</p>
           </div>
-          <div class="gimbal-pad" aria-label="Logitech C270 gimbal controls">
-            <button type="button" data-gimbal="pan-left">← Pan</button>
-            <button type="button" data-gimbal="tilt-up">Tilt ↑</button>
-            <button type="button" data-gimbal="tilt-down">Tilt ↓</button>
-            <button type="button" data-gimbal="pan-right">Pan →</button>
-          </div>
-          <output id="gimbal-readout">Pan 0° · Tilt 0°</output>
-          <p>Press G, then use arrow keys to aim the camera. Press R to toggle the ramp. These controls are staged only until the servo driver is configured.</p>
-        </section>
+        </details>
         <footer class="telemetry">
           <span id="direction">Standing by</span>
           <span id="host">10.42.0.1:8080</span>
@@ -95,7 +105,12 @@
     <section id="panel-larp-a" class="robot-panel" role="tabpanel" aria-labelledby="tab-larp-a" data-tab-panel="larp-a" hidden>
       <div class="video-stage scout-video-stage cyan-stage">
         <img class="scout-video" data-stream-for="larp-a" data-stream-src="{{ larp_a_stream }}" alt="Live Inland ESP32-CAM feed from LARP Scout A">
-        <canvas class="vision-overlay" data-vision-overlay="larp-a" aria-hidden="true"></canvas><button class="vision-toggle" type="button" data-vision-toggle="larp-a" aria-pressed="false">Vision off · C</button><button class="landmark-toggle" type="button" data-landmark-toggle="larp-a" aria-pressed="false">Markers off · L</button><button class="snapshot-button" type="button" data-snapshot="larp-a">Snapshot</button><button class="evidence-button" type="button" data-evidence="larp-a">Evidence</button><output class="vision-status" data-vision-status="larp-a">Analysis ready when enabled</output>
+        <canvas class="vision-overlay" data-vision-overlay="larp-a" aria-hidden="true"></canvas>
+        <details class="camera-tools" data-disclosure-key="camera-tools-larp-a">
+          <summary>Analysis tools</summary>
+          <div class="camera-tools-menu"><button class="vision-toggle" type="button" data-vision-toggle="larp-a" aria-pressed="false">Vision off · C</button><button class="landmark-toggle" type="button" data-landmark-toggle="larp-a" aria-pressed="false">Markers off · L</button><button class="snapshot-button" type="button" data-snapshot="larp-a">Snapshot</button><button class="evidence-button" type="button" data-evidence="larp-a">Evidence</button></div>
+        </details>
+        <output class="vision-status" data-vision-status="larp-a">Analysis ready when enabled</output>
         <div class="grid-backdrop"></div>
         <div class="video-shade"></div>
         <div class="video-label"><span class="live-dot"></span>LARP Scout A · Inland ESP32-CAM</div>
@@ -113,18 +128,16 @@
           <strong id="scout-a-connection">Waiting for LARP heartbeat</strong>
           <small>Arrow keys</small>
         </div>
-        <section class="csi-sensor" id="scout-a-csi" aria-labelledby="scout-a-csi-title">
-          <div class="csi-heading">
+        <details class="csi-sensor optional-panel" id="scout-a-csi" aria-labelledby="scout-a-csi-title" data-disclosure-key="scout-a-csi">
+          <summary class="csi-heading">
             <div>
               <p class="eyebrow" id="scout-a-csi-title">CSI presence sensor</p>
               <strong id="scout-a-csi-state">Awaiting Scout A telemetry</strong>
             </div>
             <output id="scout-a-csi-level">--</output>
-          </div>
-          <div class="csi-meter" role="progressbar" aria-label="Scout A channel-state disturbance level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="scout-a-csi-meter"></i></div>
-          <p>Signal disturbance only - verify any possible presence with the camera.</p>
-          <button class="calibrate" type="button" data-calibrate="a">Calibrate CSI (20s)</button><output id="scout-a-calibration">Calibration idle</output>
-        </section>
+          </summary>
+          <div class="optional-panel-content"><div class="csi-meter" role="progressbar" aria-label="Scout A channel-state disturbance level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="scout-a-csi-meter"></i></div><p>Signal disturbance only - verify any possible presence with the camera.</p><button class="calibrate" type="button" data-calibrate="a">Calibrate CSI (20s)</button><output id="scout-a-calibration">Calibration idle</output></div>
+        </details>
         <div class="scout-controls" data-scout="a">
           <label>Speed <output>35%</output><input type="range" min="10" max="70" value="35"></label>
           <div class="scout-pad" aria-label="LARP Scout A controls">
@@ -142,7 +155,12 @@
     <section id="panel-larp-b" class="robot-panel" role="tabpanel" aria-labelledby="tab-larp-b" data-tab-panel="larp-b" hidden>
       <div class="video-stage scout-video-stage orange-stage">
         <img class="scout-video" data-stream-for="larp-b" data-stream-src="{{ larp_b_stream }}" alt="Live Inland ESP32-CAM feed from LARP Scout B">
-        <canvas class="vision-overlay" data-vision-overlay="larp-b" aria-hidden="true"></canvas><button class="vision-toggle" type="button" data-vision-toggle="larp-b" aria-pressed="false">Vision off · C</button><button class="landmark-toggle" type="button" data-landmark-toggle="larp-b" aria-pressed="false">Markers off · L</button><button class="snapshot-button" type="button" data-snapshot="larp-b">Snapshot</button><button class="evidence-button" type="button" data-evidence="larp-b">Evidence</button><output class="vision-status" data-vision-status="larp-b">Analysis ready when enabled</output>
+        <canvas class="vision-overlay" data-vision-overlay="larp-b" aria-hidden="true"></canvas>
+        <details class="camera-tools" data-disclosure-key="camera-tools-larp-b">
+          <summary>Analysis tools</summary>
+          <div class="camera-tools-menu"><button class="vision-toggle" type="button" data-vision-toggle="larp-b" aria-pressed="false">Vision off · C</button><button class="landmark-toggle" type="button" data-landmark-toggle="larp-b" aria-pressed="false">Markers off · L</button><button class="snapshot-button" type="button" data-snapshot="larp-b">Snapshot</button><button class="evidence-button" type="button" data-evidence="larp-b">Evidence</button></div>
+        </details>
+        <output class="vision-status" data-vision-status="larp-b">Analysis ready when enabled</output>
         <div class="grid-backdrop"></div>
         <div class="video-shade"></div>
         <div class="video-label"><span class="live-dot"></span>LARP Scout B · Inland ESP32-CAM</div>
@@ -160,18 +178,16 @@
           <strong id="scout-b-connection">Waiting for LARP heartbeat</strong>
           <small>I / J / K / L keys</small>
         </div>
-        <section class="csi-sensor" id="scout-b-csi" aria-labelledby="scout-b-csi-title">
-          <div class="csi-heading">
+        <details class="csi-sensor optional-panel" id="scout-b-csi" aria-labelledby="scout-b-csi-title" data-disclosure-key="scout-b-csi">
+          <summary class="csi-heading">
             <div>
               <p class="eyebrow" id="scout-b-csi-title">CSI presence sensor</p>
               <strong id="scout-b-csi-state">Awaiting Scout B telemetry</strong>
             </div>
             <output id="scout-b-csi-level">--</output>
-          </div>
-          <div class="csi-meter" role="progressbar" aria-label="Scout B channel-state disturbance level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="scout-b-csi-meter"></i></div>
-          <p>Signal disturbance only - verify any possible presence with the camera.</p>
-          <button class="calibrate" type="button" data-calibrate="b">Calibrate CSI (20s)</button><output id="scout-b-calibration">Calibration idle</output>
-        </section>
+          </summary>
+          <div class="optional-panel-content"><div class="csi-meter" role="progressbar" aria-label="Scout B channel-state disturbance level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="scout-b-csi-meter"></i></div><p>Signal disturbance only - verify any possible presence with the camera.</p><button class="calibrate" type="button" data-calibrate="b">Calibrate CSI (20s)</button><output id="scout-b-calibration">Calibration idle</output></div>
+        </details>
         <div class="scout-controls" data-scout="b">
           <label>Speed <output>35%</output><input type="range" min="10" max="70" value="35"></label>
           <div class="scout-pad" aria-label="LARP Scout B controls">
@@ -186,9 +202,17 @@
       </section>
     </section>
   </main>
-  <aside class="mission-tools" aria-label="Mission tools"><label><input id="deadman" type="checkbox"> Dead-man mode <small>Hold Shift / gamepad A</small></label><label><input id="auto-priority" type="checkbox" checked> Adaptive control priority <small>Pauses auxiliary traffic only when delayed</small></label><strong>System health</strong><dl id="health-panel"><dt>Pi control</dt><dd>Checking…</dd><dt>Camera</dt><dd>Checking…</dd><dt>Network</dt><dd>Checking…</dd></dl><strong>Mission timeline</strong><ol id="event-list" aria-live="polite"></ol></aside>
-  <button class="kill-all" id="kill-all" type="button">Stop all robots · Esc</button>
+  <aside class="mission-tools" aria-label="Mission tools">
+    <details class="mission-drawer" data-disclosure-key="mission-tools">
+      <summary aria-label="Mission tools and system health"><span><small>Mission systems</small><strong>Tools & telemetry</strong></span><output id="health-summary">Checking systems</output></summary>
+      <div class="mission-content">
+        <section class="mission-section safety-settings" aria-labelledby="safety-tools-title"><h3 id="safety-tools-title">Safety & bandwidth</h3><label><input id="deadman" type="checkbox"> <span>Dead-man mode <small>Hold Shift / gamepad A</small></span></label><label><input id="auto-priority" type="checkbox" checked> <span>Adaptive control priority <small>Pauses auxiliary traffic only when delayed</small></span></label></section>
+        <details class="mission-section" data-disclosure-key="system-health"><summary><span>System health</span><small>Expand details</small></summary><dl id="health-panel"><dt>Pi control</dt><dd>Checking…</dd><dt>Camera</dt><dd>Checking…</dd><dt>Network</dt><dd>Checking…</dd></dl></details>
+        <details class="mission-section" data-disclosure-key="mission-timeline"><summary><span>Mission timeline</span><small>Latest events</small></summary><ol id="event-list" aria-live="polite"></ol></details>
+      </div>
+    </details>
+  </aside>
   <div class="toast" id="toast" role="status">Controls disconnected — motors stopped</div>
-  <script src="{{ url_for('static', filename='dashboard.js', v=7) }}"></script>
+  <script src="{{ url_for('static', filename='dashboard.js', v=8) }}"></script>
 </body>
 </html>

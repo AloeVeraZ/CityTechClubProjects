@@ -75,6 +75,19 @@ class DashboardTabTests(unittest.TestCase):
         self.assertIn("lastGamepadSentAt", SCRIPT)
         self.assertIn("now - lastGamepadSentAt >= 80", SCRIPT)
 
+    def test_optional_tools_are_collapsible_without_removing_controls(self):
+        self.assertIn('class="mission-drawer"', TEMPLATE)
+        self.assertIn('id="health-summary"', TEMPLATE)
+        self.assertIn('data-disclosure-key="system-health"', TEMPLATE)
+        self.assertIn('data-disclosure-key="mission-timeline"', TEMPLATE)
+        self.assertEqual(TEMPLATE.count('class="camera-tools"'), 3)
+        self.assertEqual(TEMPLATE.count('class="csi-sensor optional-panel"'), 2)
+        self.assertIn('data-disclosure-key="actuator-tools"', TEMPLATE)
+        self.assertIn("disclosureStorageKey", SCRIPT)
+        self.assertIn("localStorage.setItem", SCRIPT)
+        self.assertIn("healthSummary.value", SCRIPT)
+        self.assertIn("event.target.closest?.('input, select, button, summary, a')", SCRIPT)
+
     def test_tab_switching_is_keyboard_accessible_and_stops_motion(self):
         self.assertIn('function selectRobotTab', SCRIPT)
         self.assertIn("if (changingTabs) killAll();", SCRIPT)

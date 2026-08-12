@@ -11,6 +11,7 @@
   const cameraFeeds = [...document.querySelectorAll('[data-stream-for][data-stream-src]')];
   const toast = document.querySelector('#toast');
   const autoPriority = document.querySelector('#auto-priority');
+  const healthSummary = document.querySelector('#health-summary');
   const session = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
   const initialServerTime = Number(document.querySelector('meta[name="server-time-ms"]')?.content);
   let serverClockOffset = Number.isFinite(initialServerTime) ? initialServerTime - Date.now() : 0;
@@ -39,6 +40,23 @@
     '0,1,0': 'Strafing left', '0,-1,0': 'Strafing right',
     '0,0,1': 'Rotating left', '0,0,-1': 'Rotating right', '0,0,0': 'Standing by'
   };
+
+  // Optional panels use native <details> for keyboard and screen-reader
+  // support. Remember the operator's layout without adding network traffic.
+  const disclosureStorageKey = 'stem-dashboard-disclosures-v1';
+  try {
+    const savedDisclosures = JSON.parse(localStorage.getItem(disclosureStorageKey) || '{}');
+    document.querySelectorAll('[data-disclosure-key]').forEach(disclosure => {
+      const key = disclosure.dataset.disclosureKey;
+      if (typeof savedDisclosures[key] === 'boolean') disclosure.open = savedDisclosures[key];
+      disclosure.addEventListener('toggle', () => {
+        savedDisclosures[key] = disclosure.open;
+        localStorage.setItem(disclosureStorageKey, JSON.stringify(savedDisclosures));
+      });
+    });
+  } catch (_) {
+    // Private browsing or restricted storage must not affect dashboard use.
+  }
 
   // At most one request per robot may be active. If input changes while that
   // request is running, only the newest command is retained. An urgent stop
@@ -439,6 +457,7 @@
       killAll(true);
       return;
     }
+    if (event.target.closest?.('input, select, button, summary, a')) return;
     if (key === ' ') {
       event.preventDefault();
       killBig(true);
@@ -494,6 +513,7 @@
 
   window.addEventListener('keyup', event => {
     const key = event.key.toLowerCase();
+    if (event.target.closest?.('input, select, button, summary, a')) return;
     if (bigKeys.has(key)) {
       event.preventDefault();
       bigPressed.delete(key);
@@ -589,6 +609,15 @@
       const disk = Number.isFinite(health.disk_free_mb) ? `${health.disk_free_mb} MB free` : 'checking';
       const evidence = data.evidence || {};
       document.querySelector('#health-panel').innerHTML = `<dt>Pi control</dt><dd>${hardwareReady ? 'ready' : 'simulation'}</dd><dt>Camera</dt><dd>${data.camera_available ? `${data.camera_width}x${data.camera_height} @ ${data.camera_fps}` : 'unavailable'} · ${data.camera_restart_count || 0} retries</dd><dt>Temperature</dt><dd>${temperature}</dd><dt>Power</dt><dd>${power}</dd><dt>Throttling</dt><dd>${throttle}</dd><dt>Storage</dt><dd>${disk}</dd><dt>Evidence</dt><dd>${(evidence.items || []).length} saved · ${evidence.queue_depth || 0} queued</dd><dt>Network</dt><dd>${location.host}</dd>`;
+      const healthWarnings = [
+        !hardwareReady,
+        !data.camera_available,
+        health.power_warning === true,
+        health.throttling_warning === true,
+        Number.isFinite(health.temperature_c) && health.temperature_c >= 80
+      ].filter(Boolean).length;
+      healthSummary.value = healthWarnings ? `${healthWarnings} alert${healthWarnings === 1 ? '' : 's'}` : 'Systems nominal';
+      healthSummary.classList.toggle('warning', healthWarnings > 0);
       status.classList.toggle('offline', !hardwareReady);
       status.innerHTML = `<i></i> ${hardwareReady ? 'Pi controls ready' : 'GPIO unavailable - motors disabled'}`;
       host.textContent = `${data.hostname} / ${location.host}`;
@@ -603,6 +632,8 @@
     } catch (_) {
       status.classList.add('offline');
       status.innerHTML = '<i></i> Disconnected';
+      healthSummary.value = 'Connection lost';
+      healthSummary.classList.add('warning');
     }
   }
 

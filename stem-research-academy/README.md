@@ -221,11 +221,13 @@ streams at once.
 
 ### Current dashboard visual system
 
-The UI uses a static control-room visual system: an editorial status header,
-compact safety pills, a three-robot navigation dock, and layered control cards.
-It is a presentation-only refresh: the tabs, controls, keyboard bindings,
-single-stream policy, safety stops, optional vision, CSI, mission tools, and
-actuator staging all retain their existing behavior.
+The UI uses a restrained dark control-room system inspired by the compact card,
+segmented-navigation, and progressive-disclosure patterns catalogued on
+[21st.dev](https://21st.dev/). Thin borders, consistent spacing, and a neutral
+canvas keep the live camera and drive controls visually dominant. Camera
+analysis, CSI details, auxiliary actuators, system health, and the mission
+timeline can each be collapsed. The bottom mission drawer starts minimized and
+remembers the operator's layout on that browser.
 
 ```text
 +-----------------------------------------------------------------------+
@@ -238,14 +240,13 @@ actuator staging all retain their existing behavior.
 | vision + snapshot overlay            | status, speed, drive, stop     |
 |                                      | CSI / gimbal / ramp as needed  |
 +--------------------------------------+--------------------------------+
-| STOP ALL (Esc)       Mission timeline, health, dead-man controls      |
+| STOP ALL (Esc)       Collapsible mission, health, and analysis tools  |
 +-----------------------------------------------------------------------+
 ```
 
-The visual layer adds no JavaScript, packages, API calls, polling, video
-streams, model work, or motor-control code. It also removes the former
-camera CSS filter and mission-panel backdrop filter to avoid extra compositor
-work on the Raspberry Pi.
+The disclosure-state helper uses browser-local storage only. The redesign adds
+no packages, API calls, polling, video streams, model work, CSS filters, or
+motor-control code, so collapsed panels do not alter Pi or network load.
 
 The dashboard works with mouse/touch controls and the following keyboard shortcuts when the page is focused:
 
@@ -722,7 +723,7 @@ pip install -r requirements.txt
 python -m unittest discover -s tests -v
 ```
 
-The current target desktop simulation ran **76 tests successfully**; the
+The current target desktop simulation ran **77 tests successfully**; the
 independently checked partner baseline ran **32 tests successfully**. The target
 suite covers dashboard/UI,
 mecanum mixing, camera discovery/recovery/profile isolation, firmware invariants,
