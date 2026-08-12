@@ -26,36 +26,36 @@ Do not run model installation as `root`, and do not install the ML packages into
 
 ## Install YOLO11 Nano and NCNN
 
-Run these commands as the Pi's normal user after the base project is installed:
+Update the base application first and let the Pi reboot. This installs the
+dashboard launcher that can select the optional runtime while retaining a safe
+fallback to the base runtime:
 
 ```bash
-cd ~/STEMResearchAcademy
-python3 -m venv --system-site-packages .vision-venv
-source .vision-venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install "ultralytics>=8.3,<9" ncnn
+curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/curl-install.sh | STEM_SKIP_OS_UPGRADE=1 bash
 ```
 
-The first package install can take several minutes on a Pi. If it fails due to storage pressure, stop, free space, and retry—do not delete the robot project or its `/etc/stem-research-academy/config.env` file.
-
-## Download and export the pretrained model
-
-Run this once while the vision environment is active:
+After the reboot, run the optional installer as the Pi's normal user, without
+`sudo`:
 
 ```bash
-python - <<'PY'
-from ultralytics import YOLO
-
-# Downloads pretrained COCO weights; this is not a training step.
-model = YOLO("yolo11n.pt")
-
-# NCNN is the embedded-friendly runtime used for Pi inference.
-model.export(format="ncnn", imgsz=320)
-print("Created yolo11n_ncnn_model/ in the current directory.")
-PY
+curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/install-vision.sh | bash
 ```
 
-Keep the resulting `yolo11n_ncnn_model/` directory with the application. If the Pi must be offline later, create the export once on a connected Pi and retain that directory; neither weights nor a dataset need to be downloaded again for inference.
+The installer follows Ultralytics' Pi deployment pattern: it installs
+`ultralytics[export]` in an isolated environment, downloads `yolo11n.pt`, and
+exports NCNN for faster ARM inference. It uses `imgsz=320`, batch size 1, and
+CPU export for this Pi 4 control workload. It then loads the exported model and
+runs a synthetic frame through NCNN before restarting the dashboard.
+
+The first package install and model export can take several minutes. If it
+fails due to storage pressure, stop, free space, and retry—do not delete the
+robot project or `/etc/stem-research-academy/config.env`.
+
+The runtime and model are stored under
+`~/.local/share/stem-research-academy/vision/`, outside the replace-on-update
+application directory. The installer records their absolute paths as
+`VISION_VENV` and `VISION_MODEL` in the persistent config. Normal application
+updates therefore retain vision, and normal driving does not need internet.
 
 ## Enable or disable vision in the dashboard
 
@@ -79,10 +79,9 @@ package lacks `cv2.aruco`.
 This one-frame check writes a labelled image to `/tmp` without touching the dashboard service or motor controls:
 
 ```bash
-cd ~/STEMResearchAcademy
-source .vision-venv/bin/activate
-python - <<'PY'
+~/.local/share/stem-research-academy/vision/.vision-venv/bin/python - <<'PY'
 import cv2
+from pathlib import Path
 from ultralytics import YOLO
 
 camera = cv2.VideoCapture(0)
@@ -94,7 +93,7 @@ camera.release()
 if not ok:
     raise RuntimeError("C270 opened but did not return a frame.")
 
-model = YOLO("yolo11n_ncnn_model")
+model = YOLO(str(Path.home() / ".local/share/stem-research-academy/vision/yolo11n_ncnn_model"))
 results = model(frame, classes=[0], conf=0.45, imgsz=320, verbose=False)
 cv2.imwrite("/tmp/3tsahur-yolo-preview.jpg", results[0].plot())
 print("Saved /tmp/3tsahur-yolo-preview.jpg")

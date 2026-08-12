@@ -162,9 +162,18 @@ class LarpFirmwareTests(unittest.TestCase):
 
     def test_optional_vision_installer_uses_an_isolated_environment(self):
         vision_installer = (INSTALLER.parent / "install-vision.sh").read_text(encoding="utf-8")
+        dashboard_service = (INSTALLER.parent / "systemd" / "stem-robot-dashboard.service").read_text(encoding="utf-8")
+        dashboard_launcher = (INSTALLER.parent / "start-dashboard.sh").read_text(encoding="utf-8")
         self.assertIn(".vision-venv", vision_installer)
-        self.assertIn('"ultralytics>=8.3,<9" ncnn', vision_installer)
+        self.assertIn('"ultralytics[export]>=8.3,<9" ncnn', vision_installer)
         self.assertIn('model.export(format="ncnn"', vision_installer)
+        self.assertIn('ncnn_model(np.zeros(', vision_installer)
+        self.assertIn('set_config_key VISION_VENV', vision_installer)
+        self.assertIn('set_config_key VISION_MODEL', vision_installer)
+        self.assertIn('.local/share/stem-research-academy/vision', vision_installer)
+        self.assertIn('installer/start-dashboard.sh', dashboard_service)
+        self.assertIn('exec "$VISION_PYTHON" -m robot_server.app', dashboard_launcher)
+        self.assertIn('exec "$BASE_PYTHON" -m robot_server.app', dashboard_launcher)
 
 
 if __name__ == "__main__":

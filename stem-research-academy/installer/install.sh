@@ -414,6 +414,7 @@ sudo hostnamectl set-hostname 3tsahur
 
 say "Installing the hotspot and dashboard services..."
 sudo install -m 0755 "$APP_DIR/installer/hotspot.sh" /usr/local/sbin/stem-robot-hotspot
+chmod 0755 "$APP_DIR/installer/start-dashboard.sh"
 
 SERVICE_TEMP="$(mktemp)"
 sed -e "s|@APP_USER@|$APP_USER|g" -e "s|@APP_DIR@|$APP_DIR|g" \

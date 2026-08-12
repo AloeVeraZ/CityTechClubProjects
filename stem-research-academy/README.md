@@ -281,7 +281,7 @@ Commands are deliberately short-lived. Releasing a key, losing the client connec
 - [ ] Current 64-bit Raspberry Pi OS with internet available for initial installation.
 - [ ] Run `bash installer/install.sh` as the normal Pi user. It installs Python, Flask, OpenCV, V4L2 tools, NetworkManager, Avahi, and required GPIO support.
 - [ ] Flash and configure the two LARP controller sketches and two ESP32-CAM sketches with the same hotspot credentials.
-- [ ] Optional YOLO: follow [docs/VISION_SETUP.md](docs/VISION_SETUP.md) to install `ultralytics` and `ncnn` inside `.vision-venv` and export `yolo11n_ncnn_model`.
+- [ ] Optional YOLO: follow [docs/VISION_SETUP.md](docs/VISION_SETUP.md) to install the isolated persistent runtime and export `yolo11n_ncnn_model`.
 - [ ] Optional landmarks: confirm the installed OpenCV build exposes `cv2.aruco`; the dashboard reports an isolated warning if it does not.
 
 **Arduino IDE checklist**
@@ -470,13 +470,47 @@ motor architecture and the exact configuration differences.
 
 ### Optional one-command YOLO install
 
-Install the base hub first. Then, if you want pretrained person detection,
-run this separate command as the normal Pi user. It creates `.vision-venv`,
-installs Ultralytics/NCNN, downloads the pretrained `yolo11n` weights, and
-exports the 320px NCNN model used by the dashboard.
+First install or update the base hub with the normal one-line installer above
+and let the Pi reboot. This is required because older dashboard services cannot
+start from the isolated vision runtime. Then run this separate command as the
+normal Pi user (do **not** add `sudo`):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/install-vision.sh | bash
+```
+
+The command checks for 64-bit Raspberry Pi OS and 3 GB of free space, creates
+`~/.local/share/stem-research-academy/vision/.vision-venv`, installs the
+Ultralytics export dependencies and NCNN, downloads the COCO-pretrained
+`yolo11n.pt`, exports a 320px `yolo11n_ncnn_model`, and runs a synthetic NCNN
+inference before restarting the dashboard. It also writes the absolute runtime
+and model paths to `/etc/stem-research-academy/config.env`, so both survive
+normal application updates.
+
+After it prints `dashboard health check passed`, open a robot tab and select
+**Vision off** or press `C`. Start with one camera and keep the wheels raised
+for the first test. Vision is lazy and motion-gated: when its toggle is off, no
+model is loaded and no inference competes with robot control.
+
+Verify the installation or collect the exact error with:
+
+```bash
+sudo systemctl status stem-robot-dashboard --no-pager
+grep -E '^VISION_(VENV|MODEL)=' /etc/stem-research-academy/config.env
+~/.local/share/stem-research-academy/vision/.vision-venv/bin/python - <<'PY'
+import os
+from ultralytics import YOLO
+
+model_path = os.path.expanduser("~/.local/share/stem-research-academy/vision/yolo11n_ncnn_model")
+YOLO(model_path)
+print("YOLO11 Nano NCNN runtime is ready:", model_path)
+PY
+```
+
+If the button reports **Vision unavailable**, run:
+
+```bash
+sudo journalctl -u stem-robot-dashboard -n 80 --no-pager
 ```
 
 YOLO remains optional: do not install it until the base dashboard, cameras,
@@ -485,8 +519,8 @@ control or LARP operation.
 
 ### Manual vision install
 
-Use this alternative only if you prefer to inspect each command rather than using
-the one-command installer above.
+Use this alternative if the repository is already installed locally and you
+prefer to run the reviewed script from disk instead of piping it from GitHub.
 
 - Current 64-bit Raspberry Pi OS; complete the base installation first.
 - Stable power, at least 3 GB free storage, and temporary internet for the
@@ -497,16 +531,7 @@ the one-command installer above.
 
 ```bash
 cd ~/STEMResearchAcademy
-python3 -m venv --system-site-packages .vision-venv
-source .vision-venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install "ultralytics>=8.3,<9" ncnn
-
-# Downloads pretrained COCO weights once, then exports the Pi-friendly runtime.
-python - <<'PY'
-from ultralytics import YOLO
-YOLO("yolo11n.pt").export(format="ncnn", imgsz=320)
-PY
+bash installer/install-vision.sh
 ```
 
 The complete [pretrained vision setup guide](docs/VISION_SETUP.md) includes
@@ -697,7 +722,7 @@ pip install -r requirements.txt
 python -m unittest discover -s tests -v
 ```
 
-The current target desktop simulation ran **75 tests successfully**; the
+The current target desktop simulation ran **76 tests successfully**; the
 independently checked partner baseline ran **32 tests successfully**. The target
 suite covers dashboard/UI,
 mecanum mixing, camera discovery/recovery/profile isolation, firmware invariants,
