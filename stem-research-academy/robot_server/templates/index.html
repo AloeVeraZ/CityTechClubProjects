@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="server-time-ms" content="{{ server_time_ms }}">
   <title>3TSahur Swarm Control</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css', v=10) }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css', v=11) }}">
 </head>
 <body>
   <main class="dashboard">
@@ -36,6 +36,7 @@
       </a>
     </nav>
 
+    <div class="robot-deck" aria-label="Three-robot command deck">
     <section id="panel-3tsahur" class="robot-panel active" aria-labelledby="jump-3tsahur" data-robot-panel="3tsahur">
       <div class="video-stage primary-video-stage">
         <img class="video" data-stream-for="3tsahur" data-stream-src="{{ url_for('camera_feed') }}" alt="Live automatic Logitech USB camera feed from 3TSahur">
@@ -130,6 +131,7 @@
         <footer class="telemetry"><span id="scout-b-motion">CSI idle</span><span>larp-b.local</span></footer>
       </section>
     </section>
+    </div>
 
     <section class="mission-tools" id="mission-tools" aria-labelledby="mission-tools-title">
       <header class="mission-header"><div><p class="eyebrow">End-of-page telemetry</p><h2 id="mission-tools-title">Mission systems</h2></div><output id="health-summary">Checking systems</output></header>

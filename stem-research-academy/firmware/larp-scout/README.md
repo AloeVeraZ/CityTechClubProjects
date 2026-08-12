@@ -17,19 +17,19 @@ following software is sufficient for both the small motor test and the full
 LARP controller sketch. Git, Python, PlatformIO, and a separate ESP32-CAM
 programmer are not required for this board.
 
-1. Install the current Arduino IDE 2.x from the official Arduino download
-   page.
+1. Install the current Arduino IDE 2.x from the
+   [official Arduino download page](https://www.arduino.cc/en/software/).
 2. Open **Tools > Board > Boards Manager**, search for `esp32`, and install
    **esp32 by Espressif Systems**.
 3. Select **Tools > Board > esp32 > ESP32S3 Dev Module**.
 4. Open **Sketch > Include Library > Manage Libraries**, search for
    `Adafruit BusIO`, and install **Adafruit BusIO by Adafruit**.
-5. Download the latest ZIP from the official
-   [3DBuffalo EchoLib releases](https://github.com/3DBuffalo/Echo_Lib/releases/latest).
+5. Download **Source code (zip)** for
+   [3DBuffalo EchoLib 1.3.0](https://github.com/3DBuffalo/Echo_Lib/releases/tag/V1.3.0).
    Do not unzip it. In Arduino IDE, choose **Sketch > Include Library > Add
-   .ZIP Library...**, select the ZIP, and restart Arduino IDE. This guide and
-   the sketches target EchoLib 1.3.0 or later; version 1.3.0 changed the drive
-   class name to `TankDrive`, which the full sketch uses.
+   .ZIP Library...**, select the ZIP, and restart Arduino IDE. The sketches
+   are compile-checked against 1.3.0. This release changed the drive class
+   name to `TankDrive`, which the full sketch uses.
 
 EchoLib includes all of its features through `EchoLib.h`, so Adafruit BusIO is
 needed even for a motor-only sketch. `WiFi`, `WebServer`, `ESPmDNS`, and
@@ -100,7 +100,10 @@ if the test needs the opposite direction.
 
 ## Upload the full controller after the motor test
 
-1. Open `larp_scout_controller.ino`.
+1. Open `larp_scout_controller.ino`. Keep the adjacent `larp-scout.ino` file
+   in the same folder: Arduino requires that primary tab because its name
+   matches the `larp-scout` sketch folder. The controller code remains in the
+   `larp_scout_controller.ino` tab.
 2. Set `ROBOT_ID` to `'A'` for the first scout or `'B'` for the second. Leave
    the motor assignment at port 1 for the left motor and port 6 for the right
    motor unless the physical robot is verified to be wired differently.
