@@ -119,8 +119,9 @@ class DashboardTabTests(unittest.TestCase):
 
     def test_video_and_controls_use_separate_grid_columns(self):
         self.assertIn('grid-template-columns: minmax(0, 1.08fr) minmax(520px, .92fr);', STYLES)
-        self.assertIn('#panel-3tsahur .video-stage { grid-area: 1 / 1; }', STYLES)
-        self.assertIn('#panel-3tsahur .control-stage { grid-area: 1 / 2; }', STYLES)
+        self.assertIn('grid-template-rows: repeat(6, minmax(0, 1fr));', STYLES)
+        self.assertIn('#panel-3tsahur .video-stage { grid-area: 1 / 1 / span 6 / 2; }', STYLES)
+        self.assertIn('#panel-3tsahur .control-stage { grid-area: 1 / 2 / span 2 / 3; }', STYLES)
         self.assertNotIn('.drive-card { position: absolute', STYLES)
         self.assertNotIn('.scout-controls { position: absolute', STYLES)
         self.assertNotIn('.mission-tools { position: fixed', STYLES)

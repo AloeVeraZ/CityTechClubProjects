@@ -10,8 +10,9 @@
     Motor 5: GPIO  7 /  6   MCPWM unit 1, timer 1
     Motor 6: GPIO 16 / 15   MCPWM unit 1, timer 2
 
-  This sketch initializes only Motor 1. With the wheel raised, it runs at
-  10% for two seconds, stops for three seconds, and repeats.
+  This sketch initializes only Motor 1 and waits safely at zero power. Send
+  G over the Serial Monitor to run at 10% for two seconds exactly once. Send
+  S at any time to stop.
 */
 
 #include <Arduino.h>
@@ -21,7 +22,6 @@ constexpr int MOTOR_1_PIN_A = 47;
 constexpr int MOTOR_1_PIN_B = 48;
 constexpr float MOTOR_SPEED_PERCENT = 10.0f;
 constexpr unsigned long RUN_TIME_MS = 2000;
-constexpr unsigned long REST_TIME_MS = 3000;
 
 void stopMotor1() {
   // EchoLib's brake/zero behavior: both DRV8874 control inputs held low.
@@ -64,15 +64,22 @@ void setup() {
   mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0);
 
   stopMotor1();
-  Serial.println("Direct ECHO Motor 1 test ready (no EchoLib). ");
+  Serial.println("Direct ECHO Motor 1 test ready (no EchoLib).");
+  Serial.println("Send G to run once. Send S to stop.");
 }
 
 void loop() {
-  Serial.println("Motor 1: 10% forward for 2 seconds");
-  setMotor1(MOTOR_SPEED_PERCENT);
-  delay(RUN_TIME_MS);
+  if (!Serial.available()) return;
 
-  stopMotor1();
-  Serial.println("Motor 1: stopped for 3 seconds");
-  delay(REST_TIME_MS);
+  const char command = Serial.read();
+  if (command == 'g' || command == 'G') {
+    Serial.println("Motor 1: 10% forward for 2 seconds");
+    setMotor1(MOTOR_SPEED_PERCENT);
+    delay(RUN_TIME_MS);
+    stopMotor1();
+    Serial.println("Motor 1: stopped. Send G to test again.");
+  } else if (command == 's' || command == 'S') {
+    stopMotor1();
+    Serial.println("Motor 1: emergency stop");
+  }
 }
