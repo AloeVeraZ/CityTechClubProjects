@@ -170,6 +170,16 @@ class VisionInstallerTests(unittest.TestCase):
         service = (root / "installer" / "systemd" / "stem-robot-dashboard.service").read_text(encoding="utf-8")
         self.assertIn("MemoryMax=1G", service)
 
+    def test_offline_bundle_installer_never_downloads_from_the_pi(self):
+        root = Path(__file__).parents[1]
+        installer = (root / "installer" / "install-vision-offline.sh").read_text(encoding="utf-8")
+
+        self.assertIn('SOURCE_WEIGHTS="$BUNDLE_DIR/yolov4-tiny.weights"', installer)
+        self.assertIn('set_config_key VISION_AUTO_ENABLE "1"', installer)
+        self.assertIn("sha256sum --check --status", installer)
+        self.assertNotIn("Invoke-WebRequest", installer)
+        self.assertNotIn("github.com", installer)
+
 
 if __name__ == "__main__":
     unittest.main()
