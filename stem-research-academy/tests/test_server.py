@@ -96,17 +96,13 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(response.status_code, 409)
         self.assertEqual(drive.last_command["forward"], 0)
 
-    def test_dashboard_renders_all_three_robots(self):
+    def test_dashboard_renders_only_the_3tsahur_mecanum_robot(self):
         response = self.client.get("/")
-        self.assertIn(b"Choose camera feeds", response.data)
         self.assertIn(b'data-robot-panel="3tsahur"', response.data)
-        self.assertIn(b'data-robot-panel="larp-a"', response.data)
-        self.assertIn(b'data-robot-panel="larp-b"', response.data)
         self.assertIn(b'data-stream-for="3tsahur"', response.data)
-        self.assertIn(b'data-stream-for="larp-a"', response.data)
-        self.assertIn(b'data-stream-for="larp-b"', response.data)
-        self.assertIn(b"LARP Scout A", response.data)
-        self.assertIn(b"LARP Scout B", response.data)
+        self.assertNotIn(b'data-robot-panel="larp-a"', response.data)
+        self.assertNotIn(b'data-robot-panel="larp-b"', response.data)
+        self.assertNotIn(b"LARP Scout", response.data)
         self.assertIn(b"3TSahur", response.data)
 
     def test_ramp_accepts_two_positions_without_drive_changes(self):

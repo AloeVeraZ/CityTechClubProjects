@@ -89,7 +89,7 @@ button { touch-action: manipulation; }
 .analysis-card > header, .auxiliary-heading, .csi-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .analysis-card strong, .actuator-card strong { font-size: 12px; }
 .vision-status { max-width: 58%; color: #c8f5ff; font: 750 9px/1.3 ui-monospace, monospace; text-align: right; }
-.analysis-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.analysis-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
 .vision-toggle, .landmark-toggle, .snapshot-button, .evidence-button { min-width: 0; padding: 7px 4px; border: 1px solid var(--line); border-radius: 7px; background: rgba(255,255,255,.04); color: var(--ink); font-size: 8px; font-weight: 800; cursor: pointer; }
 .vision-toggle { border-color: rgba(104,221,255,.36); color: #c3f4ff; }
 .landmark-toggle { border-color: rgba(255,182,92,.4); color: #ffd7a4; }

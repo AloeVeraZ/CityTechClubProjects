@@ -24,7 +24,6 @@
   let rampCommandPending = false;
   const visionEnabled = {'3tsahur': false};
   const visionInFlight = {'3tsahur': false};
-  const landmarkEnabled = {'3tsahur': false};
   const controlLatencySamples = [];
   let controlPriorityUntil = 0;
   let cameraTrafficPaused = false;
@@ -208,33 +207,33 @@
 
   function renderVision(source, data) {
     const button = document.querySelector(`[data-vision-toggle="${source}"]`);
-    const landmarkButton = document.querySelector(`[data-landmark-toggle="${source}"]`);
     const label = document.querySelector(`[data-vision-status="${source}"]`);
     const canvas = document.querySelector(`[data-vision-overlay="${source}"]`);
     const peopleOn = Boolean(data.enabled ?? visionEnabled[source]);
-    const markersOn = Boolean(data.landmarks_enabled ?? landmarkEnabled[source]);
     visionEnabled[source] = peopleOn;
-    landmarkEnabled[source] = markersOn;
     button.setAttribute('aria-pressed', String(peopleOn));
-    button.textContent = `${peopleOn ? 'Vision on' : 'Vision off'} · C`;
-    landmarkButton.setAttribute('aria-pressed', String(markersOn));
-    landmarkButton.textContent = `${markersOn ? 'Markers on' : 'Markers off'} · L`;
-    if (!peopleOn && !markersOn) {
-      label.textContent = 'Analysis ready when enabled';
+    button.textContent = `${peopleOn ? 'YOLO on' : 'YOLO off'} · C`;
+    if (!peopleOn) {
+      label.textContent = 'YOLO person detection off';
       clearVisionOverlay(source);
       return;
     }
-    if (peopleOn && data.available === false && !markersOn) {
-      label.textContent = data.error ? `Vision unavailable: ${data.error}` : 'Starting vision worker…';
+    if (data.available === false) {
+      label.textContent = data.error || 'YOLO unavailable: model or runtime is not installed';
+      clearVisionOverlay(source);
+      return;
+    }
+    if (data.available == null) {
+      label.textContent = 'Starting YOLO person detection…';
       clearVisionOverlay(source);
       return;
     }
     const detections = data.detections || [];
-    const landmarks = data.landmarks || [];
-    const summaries = [];
-    if (peopleOn) summaries.push(data.available === false ? 'Vision unavailable' : data.inference_skipped ? 'Motion gate idle' : detections.length ? `${detections.length} person${detections.length === 1 ? '' : 's'}` : 'No person');
-    if (markersOn) summaries.push(data.landmark_skipped ? 'Marker gate idle' : data.landmarks_available === false ? 'Markers unavailable' : `${landmarks.length} marker${landmarks.length === 1 ? '' : 's'}`);
-    label.textContent = summaries.join(' · ');
+    label.textContent = data.inference_skipped
+      ? 'YOLO active · waiting for motion'
+      : detections.length
+        ? `PERSON DETECTED · ${detections.length}`
+        : 'YOLO active · no person detected';
     const bounds = canvas.getBoundingClientRect();
     canvas.width = Math.max(1, Math.round(bounds.width));
     canvas.height = Math.max(1, Math.round(bounds.height));
@@ -251,17 +250,10 @@
       context.strokeRect(x, y, width, height);
       context.fillText(`PERSON ${Math.round(box.confidence * 100)}%`, x + 3, Math.max(13, y - 5));
     });
-    context.strokeStyle = '#ffb547'; context.fillStyle = '#ffb547';
-    landmarks.forEach(marker => {
-      const x = marker.x1 * scaleX, y = marker.y1 * scaleY;
-      const width = (marker.x2 - marker.x1) * scaleX, height = (marker.y2 - marker.y1) * scaleY;
-      context.strokeRect(x, y, width, height);
-      context.fillText(`MARKER ${marker.id}`, x + 3, Math.max(13, y - 5));
-    });
   }
 
   async function refreshVision(source) {
-    if (anyRobotMoving() || (!visionEnabled[source] && !landmarkEnabled[source]) || visionInFlight[source]) return;
+    if (anyRobotMoving() || !visionEnabled[source] || visionInFlight[source]) return;
     visionInFlight[source] = true;
     try {
       const response = await fetch(`/api/vision/${source}`, {cache: 'no-store'});
@@ -286,22 +278,6 @@
       visionEnabled[source] = false;
       renderVision(source, {enabled: false, available: null, detections: []});
       showToast('Vision unavailable - robot controls remain active');
-    }
-  }
-
-  async function toggleLandmarks(source) {
-    const enabled = !landmarkEnabled[source];
-    landmarkEnabled[source] = enabled;
-    renderVision(source, {enabled: visionEnabled[source], landmarks_enabled: enabled});
-    try {
-      const response = await fetch(`/api/landmarks/${source}`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({enabled}), cache: 'no-store'});
-      if (!response.ok) throw new Error(`request failed: ${response.status}`);
-      renderVision(source, await response.json());
-      showToast(`${source} landmark recognition ${enabled ? 'enabled' : 'disabled'}`);
-    } catch (_) {
-      landmarkEnabled[source] = false;
-      renderVision(source, {enabled: visionEnabled[source], landmarks_enabled: false});
-      showToast('Landmarks unavailable - robot controls remain active');
     }
   }
 
@@ -359,11 +335,6 @@
       toggleVision('3tsahur');
       return;
     }
-    if (key === 'l' && !event.repeat) {
-      event.preventDefault();
-      toggleLandmarks('3tsahur');
-      return;
-    }
     if (key === 'r' && !event.repeat) {
       event.preventDefault();
       toggleRamp();
@@ -397,7 +368,6 @@
   document.querySelector('#stop').addEventListener('click', () => killBig(true));
   document.querySelector('#kill-all').addEventListener('click', () => killAll(true));
   document.querySelectorAll('[data-vision-toggle]').forEach(button => button.addEventListener('click', () => toggleVision(button.dataset.visionToggle)));
-  document.querySelectorAll('[data-landmark-toggle]').forEach(button => button.addEventListener('click', () => toggleLandmarks(button.dataset.landmarkToggle)));
   document.querySelector('#ramp-toggle').addEventListener('click', toggleRamp);
   speed.addEventListener('input', () => { speedValue.value = `${speed.value}%`; sendBig(true); });
 
@@ -464,9 +434,7 @@
   function reportEvent(kind, source, message) { if (!anyRobotMoving()) fetch('/api/events', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({kind, source, message}), cache: 'no-store'}).catch(() => {}); }
   async function refreshEvents() { if (anyRobotMoving()) return; try { const data = await (await fetch('/api/events', {cache: 'no-store'})).json(); document.querySelector('#event-list').innerHTML = (data.events || []).slice(0, 8).map(e => `<li><time>${new Date(e.at_ms).toLocaleTimeString()}</time> ${e.message}</li>`).join('') || '<li>No mission events yet.</li>'; } catch (_) {} }
   async function takeSnapshot(source) { if (anyRobotMoving()) { showToast('Stop the robots before taking a snapshot'); return; } try { const response = await fetch(`/api/snapshots/${source}`, {method: 'POST', cache: 'no-store'}); const data = await response.json(); if (!response.ok) throw Error(data.error); window.open(data.url, '_blank', 'noopener'); showToast('Snapshot saved'); refreshEvents(); } catch (error) { showToast(error.message || 'Snapshot unavailable'); } }
-  async function saveEvidence(source) { if (anyRobotMoving()) { showToast('Stop the robots before saving evidence'); return; } try { const response = await fetch(`/api/evidence/${source}`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({note: 'Operator evidence capture'}), cache: 'no-store'}); const data = await response.json(); if (!response.ok) throw Error(data.error); showToast('Evidence bundle queued'); refreshEvents(); } catch (error) { showToast(error.message || 'Evidence unavailable'); } }
   document.querySelectorAll('[data-snapshot]').forEach(button => button.addEventListener('click', () => takeSnapshot(button.dataset.snapshot)));
-  document.querySelectorAll('[data-evidence]').forEach(button => button.addEventListener('click', () => saveEvidence(button.dataset.evidence)));
   deadman.addEventListener('change', () => { killAll(); reportEvent('safety', 'dashboard', `Dead-man mode ${deadman.checked ? 'enabled' : 'disabled'}`); });
   autoPriority.addEventListener('change', () => { if (!autoPriority.checked) controlPriorityUntil = 0; applyControlPriority(); reportEvent('network', 'dashboard', `Adaptive control priority ${autoPriority.checked ? 'enabled' : 'disabled'}`); });
   window.addEventListener('keydown', event => { if (deadman.checked && event.key === 'Shift') document.body.dataset.deadman = 'held'; });

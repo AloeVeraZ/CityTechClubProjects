@@ -37,17 +37,17 @@ class DashboardTabTests(unittest.TestCase):
         self.assertIn('data-vision-toggle="3tsahur"', TEMPLATE)
         self.assertIn('data-vision-overlay="3tsahur"', TEMPLATE)
         self.assertIn("key === 'c'", SCRIPT)
-        self.assertIn("toggleVision(activeRobotTab)", SCRIPT)
+        self.assertIn("toggleVision('3tsahur')", SCRIPT)
         self.assertIn("/api/vision/${source}", SCRIPT)
-        self.assertIn("Vision unavailable - robot controls remain active", SCRIPT)
+        self.assertIn("YOLO unavailable: model or runtime is not installed", SCRIPT)
         self.assertIn(".vision-overlay", STYLES)
 
     def test_recon_features_are_optional_and_control_aware(self):
-        self.assertEqual(TEMPLATE.count('data-landmark-toggle="'), 1)
-        self.assertEqual(TEMPLATE.count('data-evidence="'), 1)
+        self.assertNotIn('data-landmark-toggle="', TEMPLATE)
+        self.assertNotIn('data-evidence="', TEMPLATE)
         self.assertIn('id="auto-priority"', TEMPLATE)
-        self.assertIn("/api/landmarks/${source}", SCRIPT)
-        self.assertIn("/api/evidence/${source}", SCRIPT)
+        self.assertNotIn("/api/landmarks/", SCRIPT)
+        self.assertNotIn("/api/evidence/", SCRIPT)
         self.assertIn("function recordControlTiming", SCRIPT)
         self.assertIn("function anyRobotMoving", SCRIPT)
         self.assertIn("if (anyRobotMoving()) return;", SCRIPT)
@@ -84,7 +84,7 @@ class DashboardTabTests(unittest.TestCase):
     def test_keyboard_context_is_fixed_to_3tsahur(self):
         self.assertNotIn('activeRobotTab', SCRIPT)
         self.assertIn("toggleVision('3tsahur')", SCRIPT)
-        self.assertIn("toggleLandmarks('3tsahur')", SCRIPT)
+        self.assertNotIn("toggleLandmarks", SCRIPT)
 
     def test_3tsahur_has_only_two_position_ramp_controls(self):
         self.assertIn('id="ramp-toggle"', TEMPLATE)
@@ -106,6 +106,13 @@ class DashboardTabTests(unittest.TestCase):
         self.assertIn("const visionEnabled = {'3tsahur': false};", SCRIPT)
         self.assertNotIn("'larp-a'", SCRIPT)
         self.assertNotIn("'larp-b'", SCRIPT)
+
+    def test_recon_ui_is_only_yolo_person_detection_and_snapshot(self):
+        self.assertIn('>YOLO off · C</button>', TEMPLATE)
+        self.assertIn('data-snapshot="3tsahur"', TEMPLATE)
+        self.assertIn('PERSON DETECTED', SCRIPT)
+        self.assertIn('YOLO active · no person detected', SCRIPT)
+        self.assertIn('PERSON ${Math.round(box.confidence * 100)}%', SCRIPT)
 
     def test_only_mecanum_drive_heartbeat_remains(self):
         self.assertIn("if (bigPressed.size) sendBig(true)", SCRIPT)
