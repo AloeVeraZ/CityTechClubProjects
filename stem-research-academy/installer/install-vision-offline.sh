@@ -4,7 +4,7 @@ set -Eeuo pipefail
 
 APP_DIR="${STEM_APP_DIR:-$HOME/STEMResearchAcademy}"
 CONFIG_FILE="/etc/stem-research-academy/config.env"
-MODEL_ROOT="${STEM_VISION_DIR:-$HOME/.local/share/stem-research-academy/vision}"
+MODEL_ROOT="${STEM_VISION_DIR:-$APP_DIR/vision_models}"
 BUNDLE_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_CONFIG="$BUNDLE_DIR/yolov4-tiny.cfg"
 SOURCE_WEIGHTS="$BUNDLE_DIR/yolov4-tiny.weights"

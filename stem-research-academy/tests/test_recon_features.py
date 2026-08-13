@@ -14,6 +14,10 @@ class _Frame:
 
 
 class VisionEfficiencyTests(unittest.TestCase):
+    def make_manual_manager(self, sources=None):
+        with patch.dict("os.environ", {"VISION_AUTO_ENABLE": "0"}):
+            return VisionManager(sources or {"camera": lambda: _Frame()})
+
     def test_installed_model_auto_enables_detection_at_startup(self):
         with TemporaryDirectory() as directory:
             config = Path(directory) / "model.cfg"
@@ -34,14 +38,24 @@ class VisionEfficiencyTests(unittest.TestCase):
         ensure_worker.assert_called_once()
 
     def test_missing_model_stays_disabled_at_startup(self):
-        with patch.dict("os.environ", {"VISION_AUTO_ENABLE": "1"}, clear=True):
+        with patch.dict("os.environ", {"VISION_AUTO_ENABLE": "1"}, clear=True), patch.object(
+            VisionManager, "_model_files_installed", return_value=False
+        ):
             manager = VisionManager({"camera": lambda: _Frame()})
 
         self.assertFalse(manager.snapshot("camera")["enabled"])
         self.assertIsNone(manager._thread)
 
+    def test_unset_model_config_uses_the_bundled_model_folder(self):
+        root = Path(__file__).parents[1]
+        with patch.dict("os.environ", {"VISION_AUTO_ENABLE": "0"}, clear=True):
+            manager = VisionManager({"camera": lambda: _Frame()})
+
+        self.assertEqual(Path(manager.model_config), root / "vision_models" / "yolov4-tiny.cfg")
+        self.assertEqual(Path(manager.model_weights), root / "vision_models" / "yolov4-tiny.weights")
+
     def test_object_detection_defaults_to_low_threshold_without_motion_gating(self):
-        with patch.dict("os.environ", {}, clear=True):
+        with patch.dict("os.environ", {"VISION_AUTO_ENABLE": "0"}, clear=True):
             manager = VisionManager({"camera": lambda: _Frame()})
 
         self.assertEqual(manager.confidence, 0.20)
@@ -50,7 +64,7 @@ class VisionEfficiencyTests(unittest.TestCase):
         self.assertIn("cell phone", manager.detected_classes)
 
     def test_stationary_person_frames_are_inferred_continuously(self):
-        manager = VisionManager({"camera": lambda: _Frame()})
+        manager = self.make_manual_manager()
         manager._last_inference_at["camera"] = time.monotonic()
         with patch.dict("sys.modules", {"cv2": object()}), patch.object(
             manager, "_motion_score", return_value=0.0
@@ -61,14 +75,14 @@ class VisionEfficiencyTests(unittest.TestCase):
         self.assertFalse(manager.snapshot("camera")["inference_skipped"])
 
     def test_disabling_never_starts_the_optional_worker(self):
-        manager = VisionManager({"camera": lambda: _Frame()})
+        manager = self.make_manual_manager()
         state = manager.set_enabled("camera", False)
 
         self.assertIsNone(manager._thread)
         self.assertFalse(state["enabled"])
 
     def test_enabling_one_yolo_source_disables_the_previous_source(self):
-        manager = VisionManager({"one": lambda: _Frame(), "two": lambda: _Frame()})
+        manager = self.make_manual_manager({"one": lambda: _Frame(), "two": lambda: _Frame()})
         with patch.object(manager, "_ensure_thread_locked"):
             manager.set_enabled("one", True)
             manager.set_enabled("two", True)
@@ -77,7 +91,7 @@ class VisionEfficiencyTests(unittest.TestCase):
         self.assertTrue(manager.snapshot("two")["enabled"])
 
     def test_motion_gate_skips_yolo_until_periodic_refresh(self):
-        manager = VisionManager({"camera": lambda: _Frame()})
+        manager = self.make_manual_manager()
         manager.object_motion_gate = True
         manager._last_inference_at["camera"] = time.monotonic()
         with patch.dict("sys.modules", {"cv2": object()}), patch.object(
@@ -91,7 +105,7 @@ class VisionEfficiencyTests(unittest.TestCase):
         detect.assert_not_called()
 
     def test_motion_gate_forces_periodic_static_scene_inference(self):
-        manager = VisionManager({"camera": lambda: _Frame()})
+        manager = self.make_manual_manager()
         manager.object_motion_gate = True
         manager._last_inference_at["camera"] = 0
         with patch.dict("sys.modules", {"cv2": object()}), patch.object(
@@ -103,7 +117,7 @@ class VisionEfficiencyTests(unittest.TestCase):
         self.assertFalse(manager.snapshot("camera")["inference_skipped"])
 
     def test_static_scene_also_gates_lightweight_landmark_checks(self):
-        manager = VisionManager({"camera": lambda: _Frame()})
+        manager = self.make_manual_manager()
         manager._last_landmark_at["camera"] = time.monotonic()
         with patch.dict("sys.modules", {"cv2": object()}), patch.object(
             manager, "_motion_score", return_value=0.001
@@ -175,6 +189,7 @@ class VisionInstallerTests(unittest.TestCase):
         installer = (root / "installer" / "install-vision-offline.sh").read_text(encoding="utf-8")
 
         self.assertIn('SOURCE_WEIGHTS="$BUNDLE_DIR/yolov4-tiny.weights"', installer)
+        self.assertIn('MODEL_ROOT="${STEM_VISION_DIR:-$APP_DIR/vision_models}"', installer)
         self.assertIn('set_config_key VISION_AUTO_ENABLE "1"', installer)
         self.assertIn("sha256sum --check --status", installer)
         self.assertNotIn("Invoke-WebRequest", installer)

@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 import threading
 import time
+from pathlib import Path
 from typing import Callable
 
 
@@ -114,8 +115,15 @@ class VisionManager:
         self._should_pause = should_pause or (lambda: False)
         self.interval = max(0.25, float(os.environ.get("VISION_INTERVAL_SECONDS", "0.50")))
         self.confidence = min(0.95, max(0.05, float(os.environ.get("VISION_CONFIDENCE", "0.20"))))
-        self.model_config = os.path.expanduser(os.environ.get("VISION_MODEL_CONFIG", ""))
-        self.model_weights = os.path.expanduser(os.environ.get("VISION_MODEL_WEIGHTS", ""))
+        bundled_models = Path(__file__).resolve().parents[1] / "vision_models"
+        configured_model = os.environ.get("VISION_MODEL_CONFIG", "").strip()
+        configured_weights = os.environ.get("VISION_MODEL_WEIGHTS", "").strip()
+        self.model_config = os.path.expanduser(configured_model) if configured_model else str(
+            bundled_models / "yolov4-tiny.cfg"
+        )
+        self.model_weights = os.path.expanduser(configured_weights) if configured_weights else str(
+            bundled_models / "yolov4-tiny.weights"
+        )
         self.auto_enable = _environment_flag("VISION_AUTO_ENABLE", True)
         self.image_size = max(224, min(416, int(os.environ.get("VISION_IMAGE_SIZE", "320"))))
         self.cpu_threads = max(1, min(4, int(os.environ.get("VISION_CPU_THREADS", "2"))))

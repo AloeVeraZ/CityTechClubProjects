@@ -36,6 +36,9 @@ The installer:
 
 After this completes, normal recognition is fully offline. Model files persist
 under `~/.local/share/stem-research-academy/vision/` across application updates.
+The application also includes a fallback copy under `vision_models/`, so an
+empty `VISION_MODEL_CONFIG` or `VISION_MODEL_WEIGHTS` no longer disables the
+detector.
 
 ## Use
 
