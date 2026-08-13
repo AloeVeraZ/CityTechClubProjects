@@ -7,8 +7,12 @@ servos operate the ramp directly from Raspberry Pi GPIO signals.
 
 | Servo | Signal | Power | Ground |
 | --- | --- | --- | --- |
-| Ramp Servo 1 | BCM GPIO12, physical pin 32 | 5 V, physical pin 2 | Physical pin 6 |
-| Ramp Servo 2 | BCM GPIO18, physical pin 12 | 5 V, physical pin 4 | Physical pin 14 |
+| Ramp Servo 1 | BCM GPIO12, physical pin 32 | Buck +5 V | Buck ground |
+| Ramp Servo 2 | BCM GPIO18, physical pin 12 | Buck +5 V | Buck ground |
+
+Also connect the buck-converter ground to a Pi ground such as physical pin 6 or
+14. This common reference is required even though servo power comes from the
+battery and buck converter.
 
 Typical servo colors are red for power, brown/black for ground, and
 orange/white/yellow for signal. Verify the colors for the exact servo before
@@ -35,23 +39,26 @@ RAMP_SERVO_1_GPIO_BCM=18
 RAMP_SERVO_FREQUENCY_HZ=50
 RAMP_SERVO_MIN_PULSE_US=1000
 RAMP_SERVO_MAX_PULSE_US=2000
+RAMP_SERVO_SETTLE_SECONDS=0.6
 ```
 
 The installer provides `python3-rpi.gpio`. The application starts both PWM
-signals at the 0-degree duty cycle and keeps the selected position active.
+signals at the 0-degree duty cycle. After every startup/open/close movement, it
+holds the requested signal for 0.6 seconds and then sets PWM duty to zero. This
+stops continuous software-PWM timing variation from making an idle servo hunt.
+The servo no longer actively resists external force after the signal releases.
 
-## Power warning
+## Buck-converter checks
 
-The two 5 V header pins share the Pi's main 5 V rail; they are not two separate
-power supplies. Direct header power is only safe when the Pi power supply has
-enough remaining capacity for both servos, including startup and stall current.
-Servo current spikes can cause undervoltage, resets, or permanent damage.
+Measure the buck output before connecting the servos and set it to 5.0 V. Its
+continuous and peak current ratings must cover both servos together. Place a
+bulk capacitor near the servo power split if the converter manufacturer or
+servo documentation recommends one.
 
 For the first test, disconnect drivetrain power and remove the ramp linkages.
-If the Pi reports undervoltage, resets, or the servos chatter, disconnect the
-servo red wires and use a separate regulated 5 V supply. With an external
-supply, connect its ground to Pi ground so the GPIO signals have a common
-reference.
+If jitter remains, confirm the buck-to-Pi common ground first, then check the
+buck voltage while both servos move. A sagging/noisy supply or a mechanically
+stalled servo cannot be corrected in software.
 
 The API routes are `GET /api/status` and `POST /api/actuators/ramp`. The request
 body is either `{"state":"closed"}` or `{"state":"open"}`.

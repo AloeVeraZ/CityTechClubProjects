@@ -16,6 +16,7 @@ class DirectGPIOServoBoard:
         self.frequency = int(os.environ.get("RAMP_SERVO_FREQUENCY_HZ", "50"))
         self.minimum_us = int(os.environ.get("RAMP_SERVO_MIN_PULSE_US", "1000"))
         self.maximum_us = int(os.environ.get("RAMP_SERVO_MAX_PULSE_US", "2000"))
+        self.settle_seconds = float(os.environ.get("RAMP_SERVO_SETTLE_SECONDS", "0.6"))
         self.pins = {
             0: int(os.environ.get("RAMP_SERVO_0_GPIO_BCM", "12")),
             1: int(os.environ.get("RAMP_SERVO_1_GPIO_BCM", "18")),
@@ -24,6 +25,7 @@ class DirectGPIOServoBoard:
         self.error: str | None = None
         self._gpio = gpio_module
         self._pwms: dict[int, object] = {}
+        self._detach_timers: dict[int, threading.Timer] = {}
         self._lock = threading.Lock()
 
         try:
@@ -40,6 +42,11 @@ class DirectGPIOServoBoard:
                 pwm.start(self._duty_cycle(self.CLOSED_ANGLE))
                 self._pwms[channel] = pwm
             self.hardware = True
+            # Move both servos to zero at startup, then remove the continuously
+            # varying Linux software-PWM signal so the servos cannot hunt.
+            with self._lock:
+                for channel in self._pwms:
+                    self._schedule_detach_locked(channel)
         except (ImportError, OSError, RuntimeError, ValueError) as error:
             self.error = f"Direct servo GPIO unavailable: {error}"
             self.hardware = False
@@ -50,6 +57,8 @@ class DirectGPIOServoBoard:
             raise ValueError("RAMP_SERVO_FREQUENCY_HZ must be between 40 and 100")
         if not 400 <= self.minimum_us < self.maximum_us <= 3000:
             raise ValueError("Invalid ramp servo pulse-width range")
+        if not 0.1 <= self.settle_seconds <= 5:
+            raise ValueError("RAMP_SERVO_SETTLE_SECONDS must be between 0.1 and 5")
         if len(set(self.pins.values())) != 2:
             raise ValueError("Ramp servos must use two different GPIO pins")
 
@@ -59,13 +68,36 @@ class DirectGPIOServoBoard:
         return pulse_us * self.frequency / 10_000.0
 
     def set_angle(self, channel: int, angle: float) -> None:
-        if channel not in self._pwms:
-            raise ValueError(f"Ramp servo channel {channel} is unavailable")
         with self._lock:
+            if channel not in self._pwms:
+                raise ValueError(f"Ramp servo channel {channel} is unavailable")
+            timer = self._detach_timers.pop(channel, None)
+            if timer is not None:
+                timer.cancel()
             self._pwms[channel].ChangeDutyCycle(self._duty_cycle(angle))
+            self._schedule_detach_locked(channel)
+
+    def _schedule_detach_locked(self, channel: int) -> None:
+        timer = threading.Timer(self.settle_seconds, self._detach_signal, args=(channel,))
+        timer.daemon = True
+        self._detach_timers[channel] = timer
+        timer.start()
+
+    def _detach_signal(self, channel: int) -> None:
+        with self._lock:
+            self._detach_timers.pop(channel, None)
+            pwm = self._pwms.get(channel)
+            if pwm is not None:
+                try:
+                    pwm.ChangeDutyCycle(0)
+                except RuntimeError:
+                    pass
 
     def _stop_pwm(self) -> None:
-        for pwm in self._pwms.values():
+        for timer in list(self._detach_timers.values()):
+            timer.cancel()
+        self._detach_timers.clear()
+        for pwm in list(self._pwms.values()):
             try:
                 pwm.ChangeDutyCycle(0)
                 pwm.stop()
@@ -103,6 +135,7 @@ class ActuatorController:
                 "hardware": configured,
                 "reason": self._board.error or "Direct GPIO ramp servos ready",
                 "gpio_bcm": {str(channel): pin for channel, pin in self._board.pins.items()},
+                "signal_release_seconds": getattr(self._board, "settle_seconds", 0.6),
                 "channels": {str(channel): angle for channel, angle in self._channel_angles.items()},
                 "ramp": {
                     "state": self._ramp,

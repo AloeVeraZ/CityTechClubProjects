@@ -29,18 +29,18 @@ header numbers so the connections are unambiguous.
 | Servo | Wire | Raspberry Pi connection |
 | --- | --- | --- |
 | Ramp Servo 1 | Signal (orange/white/yellow) | BCM GPIO12, physical pin 32 |
-| Ramp Servo 1 | +5 V (red) | 5 V, physical pin 2 |
-| Ramp Servo 1 | Ground (brown/black) | Ground, physical pin 6 |
+| Ramp Servo 1 | +5 V (red) | Buck-converter +5 V output |
+| Ramp Servo 1 | Ground (brown/black) | Buck-converter ground output |
 | Ramp Servo 2 | Signal (orange/white/yellow) | BCM GPIO18, physical pin 12 |
-| Ramp Servo 2 | +5 V (red) | 5 V, physical pin 4 |
-| Ramp Servo 2 | Ground (brown/black) | Ground, physical pin 14 |
+| Ramp Servo 2 | +5 V (red) | Buck-converter +5 V output |
+| Ramp Servo 2 | Ground (brown/black) | Buck-converter ground output |
+| Common reference | Ground jumper | Buck-converter ground to Pi ground, physical pin 6 or 14 |
 
 GPIO12 and GPIO18 carry 3.3 V control signals; never connect either servo's
 red 5 V wire to a GPIO signal pin. Both servos start at 0 degrees, open to 30
 degrees, and return to 0 degrees when closed.
 
-Powering two servos from the Pi's 5 V header is only suitable if their combined
-startup/stall current fits within the power left over from the Pi's supply.
-Test with drivetrain power disconnected. If the Pi reports undervoltage,
-reboots, or either servo chatters, stop and use a separate regulated 5 V servo
-supply with its ground connected to a Pi ground.
+The common-ground jumper is mandatory: without it, the 3.3 V servo signals do
+not have a stable electrical reference and the servos can jitter unpredictably.
+Set the buck converter to 5.0 V before connecting the servos and make sure its
+continuous and peak current ratings cover both servos together.

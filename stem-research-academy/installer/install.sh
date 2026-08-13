@@ -328,6 +328,7 @@ RAMP_SERVO_1_GPIO_BCM=18
 RAMP_SERVO_FREQUENCY_HZ=50
 RAMP_SERVO_MIN_PULSE_US=1000
 RAMP_SERVO_MAX_PULSE_US=2000
+RAMP_SERVO_SETTLE_SECONDS=0.6
 EOF
     sudo install -m 0600 "$CONFIG_TEMP" "$CONFIG_FILE"
     rm -f "$CONFIG_TEMP"
@@ -378,6 +379,7 @@ ensure_config_key RAMP_SERVO_1_GPIO_BCM "18"
 ensure_config_key RAMP_SERVO_FREQUENCY_HZ "50"
 ensure_config_key RAMP_SERVO_MIN_PULSE_US "1000"
 ensure_config_key RAMP_SERVO_MAX_PULSE_US "2000"
+ensure_config_key RAMP_SERVO_SETTLE_SECONDS "0.6"
 
 # Hotspot credentials are installer-managed so firmware and Pi stay in sync.
 sudo sed -i -E \

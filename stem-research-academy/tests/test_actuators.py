@@ -1,5 +1,7 @@
 import pathlib
+import time
 import unittest
+from unittest.mock import patch
 
 from robot_server.actuators import ActuatorController, DirectGPIOServoBoard
 
@@ -56,6 +58,7 @@ class FakeServoBoard:
         self.pins = {0: 12, 1: 18}
         self.hardware = True
         self.error = None
+        self.settle_seconds = 0.6
         self.angles = []
 
     def set_angle(self, channel, angle):
@@ -71,6 +74,7 @@ class ServoActuatorTests(unittest.TestCase):
         self.assertIn("python3-rpi.gpio", installer)
         self.assertIn("RAMP_SERVO_0_GPIO_BCM=12", installer)
         self.assertIn("RAMP_SERVO_1_GPIO_BCM=18", installer)
+        self.assertIn("RAMP_SERVO_SETTLE_SECONDS=0.6", installer)
 
     def test_direct_gpio_initializes_both_servos_closed_at_zero_degrees(self):
         gpio = FakeGPIO()
@@ -81,6 +85,20 @@ class ServoActuatorTests(unittest.TestCase):
         self.assertEqual([item[0] for item in gpio.setups], [12, 18])
         self.assertAlmostEqual(gpio.pwms[12].started[0], 5.0)
         self.assertAlmostEqual(gpio.pwms[18].started[0], 5.0)
+        board.close()
+
+    def test_pwm_signal_is_released_after_servo_settles(self):
+        gpio = FakeGPIO()
+        with patch.dict("os.environ", {"RAMP_SERVO_SETTLE_SECONDS": "0.1"}):
+            board = DirectGPIOServoBoard(gpio_module=gpio)
+        board.set_angle(0, 30)
+        self.assertGreater(gpio.pwms[12].duties[-1], 0)
+
+        time.sleep(0.14)
+
+        self.assertEqual(gpio.pwms[12].duties[-1], 0)
+        self.assertEqual(gpio.pwms[18].duties[-1], 0)
+        board.close()
 
     def test_open_moves_both_ramp_servos_to_30_degrees(self):
         board = FakeServoBoard()
