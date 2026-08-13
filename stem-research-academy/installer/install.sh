@@ -10,6 +10,7 @@ CONFIG_DIR="/etc/stem-research-academy"
 CONFIG_FILE="$CONFIG_DIR/config.env"
 APP_USER="$(id -un)"
 TEMP_CHECKOUT=""
+PIGPIO_BUILD_DIR=""
 STAGED_APP_DIR=""
 APP_SWAPPED=0
 CONFIG_ROLLBACK=""
@@ -48,6 +49,9 @@ cleanup() {
     if [ -n "$TEMP_CHECKOUT" ] && [ -d "$TEMP_CHECKOUT" ]; then
         rm -rf -- "$TEMP_CHECKOUT"
     fi
+    if [ -n "$PIGPIO_BUILD_DIR" ] && [ -d "$PIGPIO_BUILD_DIR" ]; then
+        rm -rf -- "$PIGPIO_BUILD_DIR"
+    fi
     if [ -n "$STAGED_APP_DIR" ] && [ -d "$STAGED_APP_DIR" ]; then
         rm -rf -- "$STAGED_APP_DIR"
     fi
@@ -78,6 +82,37 @@ apt_get() {
         attempt=$((attempt + 1))
         : > "$output"
     done
+}
+
+apt_has_candidate() {
+    apt-cache policy "$1" 2>/dev/null | awk '
+        $1 == "Candidate:" && $2 != "(none)" { found = 1 }
+        END { exit(found ? 0 : 1) }
+    '
+}
+
+install_pigpio() {
+    if apt_has_candidate pigpio && apt_has_candidate python3-pigpio; then
+        say "Installing pigpio from the Raspberry Pi OS package repository..."
+        apt_get install -y pigpio python3-pigpio
+    else
+        say "The pigpio daemon has no APT candidate; building official pigpio v79..."
+        apt_get install -y build-essential python3-setuptools
+        PIGPIO_BUILD_DIR="$(mktemp -d)"
+        curl --fail --location --retry 3 --retry-delay 2 \
+            https://github.com/joan2937/pigpio/archive/refs/tags/v79.tar.gz \
+            --output "$PIGPIO_BUILD_DIR/pigpio-v79.tar.gz"
+        tar -xzf "$PIGPIO_BUILD_DIR/pigpio-v79.tar.gz" -C "$PIGPIO_BUILD_DIR"
+        make -C "$PIGPIO_BUILD_DIR/pigpio-79" -j"$(nproc)"
+        sudo make -C "$PIGPIO_BUILD_DIR/pigpio-79" install
+        rm -rf -- "$PIGPIO_BUILD_DIR"
+        PIGPIO_BUILD_DIR=""
+    fi
+
+    command -v pigpiod >/dev/null 2>&1 || \
+        fail "pigpiod was not installed by either APT or the official source fallback."
+    python3 -c 'import pigpio' >/dev/null 2>&1 || \
+        fail "The pigpio Python module is unavailable after installation."
 }
 
 prune_old_installations() {
@@ -136,15 +171,15 @@ apt_get install -y \
     libnss-mdns \
     network-manager \
     nginx-light \
-    pigpio \
     python3 \
     python3-flask \
     python3-opencv \
-    python3-pigpio \
     python3-pip \
     python3-venv \
     util-linux \
     v4l-utils
+
+install_pigpio
 
 # Package and command names differ between Raspberry Pi OS generations.
 if apt-cache show chromium >/dev/null 2>&1; then
@@ -431,19 +466,25 @@ sed -e "s|@APP_USER@|$APP_USER|g" -e "s|@APP_DIR@|$APP_DIR|g" \
     "$APP_DIR/installer/systemd/stem-robot-dashboard.service" > "$SERVICE_TEMP"
 sudo install -m 0644 "$SERVICE_TEMP" /etc/systemd/system/stem-robot-dashboard.service
 rm -f "$SERVICE_TEMP"
+PIGPIOD_BIN="$(command -v pigpiod)"
+SERVICE_TEMP="$(mktemp)"
+sed -e "s|@PIGPIOD_BIN@|$PIGPIOD_BIN|g" \
+    "$APP_DIR/installer/systemd/pigpiod.service" > "$SERVICE_TEMP"
+sudo install -m 0644 "$SERVICE_TEMP" /etc/systemd/system/pigpiod.service
+rm -f "$SERVICE_TEMP"
 sudo install -m 0644 \
     "$APP_DIR/installer/systemd/stem-robot-hotspot.service" \
     /etc/systemd/system/stem-robot-hotspot.service
 
 getent group gpio >/dev/null && sudo usermod -aG gpio "$APP_USER" || true
 getent group video >/dev/null && sudo usermod -aG video "$APP_USER" || true
+sudo systemctl daemon-reload
 sudo systemctl enable NetworkManager.service
 sudo systemctl enable avahi-daemon.service
 sudo systemctl enable pigpiod.service
 sudo systemctl start pigpiod.service
 sudo systemctl set-default graphical.target
 sudo systemctl enable lightdm.service 2>/dev/null || true
-sudo systemctl daemon-reload
 sudo systemctl enable stem-robot-hotspot.service stem-robot-dashboard.service
 
 say "Configuring the attached screen as a resizable robot dashboard window..."

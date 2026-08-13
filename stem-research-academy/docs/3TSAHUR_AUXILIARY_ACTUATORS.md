@@ -40,8 +40,10 @@ RAMP_SERVO_MIN_PULSE_US=1000
 RAMP_SERVO_MAX_PULSE_US=2000
 ```
 
-The installer provides `pigpio` and `python3-pigpio`, starts `pigpiod`, and
-requires that daemon before starting the dashboard. The application sends a
+The installer uses Raspberry Pi OS packages when both are available. If the
+`pigpio` daemon has no APT installation candidate, it builds official pigpio
+v79 from source instead. It starts `pigpiod` and requires that daemon before
+starting the dashboard. The application sends a
 continuous 1000 microsecond pulse for absolute 0 degrees and a continuous 1167
 microsecond pulse for 30 degrees. `pigpio` times the edges independently of the
 dashboard's Linux process, which lets both servos hold their selected position

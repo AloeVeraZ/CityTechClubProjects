@@ -46,12 +46,20 @@ class ServoActuatorTests(unittest.TestCase):
         root = pathlib.Path(__file__).parents[1]
         installer = (root / "installer" / "install.sh").read_text(encoding="utf-8")
         service = (root / "installer" / "systemd" / "stem-robot-dashboard.service").read_text(encoding="utf-8")
-        self.assertIn("python3-pigpio", installer)
-        self.assertIn("pigpio", installer)
+        daemon_service = (root / "installer" / "systemd" / "pigpiod.service").read_text(encoding="utf-8")
+        self.assertIn("apt_has_candidate pigpio", installer)
+        self.assertIn("joan2937/pigpio/archive/refs/tags/v79.tar.gz", installer)
+        self.assertIn("sudo make -C", installer)
         self.assertIn("systemctl enable pigpiod.service", installer)
         self.assertIn("RAMP_SERVO_0_GPIO_BCM=12", installer)
         self.assertIn("RAMP_SERVO_1_GPIO_BCM=18", installer)
         self.assertIn("pigpiod.service", service)
+        self.assertIn("ExecStart=@PIGPIOD_BIN@", daemon_service)
+
+    def test_pigpio_is_not_in_the_mandatory_apt_batch(self):
+        installer = (pathlib.Path(__file__).parents[1] / "installer" / "install.sh").read_text(encoding="utf-8")
+        mandatory_batch = installer.split("apt_get install -y \\", 1)[1].split("\n\n", 1)[0]
+        self.assertNotIn("pigpio", mandatory_batch)
 
     def test_pigpio_initializes_and_holds_both_servos_at_absolute_zero(self):
         pi = FakePi()

@@ -1,0 +1,14 @@
+[Unit]
+Description=DMA-timed GPIO daemon for 3TSahur ramp servos
+After=local-fs.target
+
+[Service]
+Type=forking
+PIDFile=/run/pigpio.pid
+ExecStart=@PIGPIOD_BIN@
+ExecStop=/bin/kill -TERM $MAINPID
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
