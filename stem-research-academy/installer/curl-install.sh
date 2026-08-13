@@ -31,7 +31,7 @@ command -v curl >/dev/null 2>&1 || {
     exit 1
 }
 
-echo "Downloading 3TSahur/LARP installer from ${REPO_BRANCH}..."
+echo "Downloading 3TSahur installer from ${REPO_BRANCH}..."
 curl --fail --location --retry 3 --retry-delay 2 --silent --show-error \
     "$INSTALLER_URL" -o "$TEMP_INSTALLER"
 STEM_REPO_URL="$REPO_URL" STEM_REPO_BRANCH="$REPO_BRANCH" STEM_SOURCE_SUBDIR="$SOURCE_SUBDIR" \

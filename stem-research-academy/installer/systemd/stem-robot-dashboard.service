@@ -13,8 +13,7 @@ ExecStart=/bin/bash @APP_DIR@/installer/start-dashboard.sh @APP_DIR@
 Restart=always
 RestartSec=2
 TimeoutStopSec=5
-# Hard ceiling requested for the entire dashboard, camera, and detector. The
-# 24 MB YOLOv4-tiny model normally stays far below this bound.
+# Hard ceiling for the dashboard, camera stream, and control service.
 MemoryMax=1G
 
 [Install]

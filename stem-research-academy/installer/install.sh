@@ -360,24 +360,7 @@ CAMERA_WIDTH=640
 CAMERA_HEIGHT=480
 CAMERA_FPS=10
 DRIVE_WATCHDOG_SECONDS=0.20
-LARP_A_CAMERA_URL=
-LARP_B_CAMERA_URL=
 KIOSK_URL=http://127.0.0.1:8080
-LARP_A_HOST=larp-a.local
-LARP_B_HOST=larp-b.local
-VISION_MODEL_CONFIG=
-VISION_MODEL_WEIGHTS=
-VISION_AUTO_ENABLE=1
-VISION_CLASSES=
-VISION_CONFIDENCE=0.20
-VISION_IMAGE_SIZE=320
-VISION_INTERVAL_SECONDS=0.50
-VISION_OBJECT_MOTION_GATE=0
-VISION_CPU_THREADS=2
-VISION_MAX_DETECTIONS=15
-VISION_MOTION_GATE=1
-VISION_MOTION_THRESHOLD=0.02
-VISION_FORCE_INFERENCE_SECONDS=5
 RAMP_SERVO_0_GPIO_BCM=12
 RAMP_SERVO_1_GPIO_BCM=18
 RAMP_SERVO_0_REVERSED=0
@@ -389,24 +372,13 @@ EOF
     rm -f "$CONFIG_TEMP"
 fi
 
-# Add keys introduced by later installer versions without discarding camera,
-# ESP32, or custom hardware settings from an earlier installation.
+# Add keys introduced by later installer versions without discarding camera or
+# custom hardware settings from an earlier installation.
 ensure_config_key() {
     local key="$1" value="$2"
     if ! sudo grep -qE "^${key}=" "$CONFIG_FILE"; then
         printf '%s=%s\n' "$key" "$value" | sudo tee -a "$CONFIG_FILE" >/dev/null
     fi
-}
-
-# Translate partner-era setting names on first upgrade. Keep the old lines as
-# a readable rollback record, but make their values active under LARP names.
-migrate_config_key() {
-    local new_key="$1" old_key="$2" fallback="$3" value
-    if sudo grep -qE "^${new_key}=" "$CONFIG_FILE"; then
-        return
-    fi
-    value="$(sudo sed -n -E "s/^${old_key}=(.*)$/\1/p" "$CONFIG_FILE" | tail -n 1)"
-    printf '%s=%s\n' "$new_key" "${value:-$fallback}" | sudo tee -a "$CONFIG_FILE" >/dev/null
 }
 
 ensure_config_key KIOSK_URL "$KIOSK_URL"
@@ -421,23 +393,6 @@ ensure_config_key CAMERA_WIDTH "640"
 ensure_config_key CAMERA_HEIGHT "480"
 ensure_config_key CAMERA_FPS "10"
 ensure_config_key DRIVE_WATCHDOG_SECONDS "0.20"
-migrate_config_key LARP_A_CAMERA_URL ESP32_ONE_STREAM_URL ""
-migrate_config_key LARP_B_CAMERA_URL ESP32_TWO_STREAM_URL ""
-migrate_config_key LARP_A_HOST SCOUT_A_HOST "larp-a.local"
-migrate_config_key LARP_B_HOST SCOUT_B_HOST "larp-b.local"
-ensure_config_key VISION_MODEL_CONFIG ""
-ensure_config_key VISION_MODEL_WEIGHTS ""
-ensure_config_key VISION_AUTO_ENABLE "1"
-ensure_config_key VISION_CLASSES ""
-ensure_config_key VISION_CONFIDENCE "0.20"
-ensure_config_key VISION_IMAGE_SIZE "320"
-ensure_config_key VISION_INTERVAL_SECONDS "0.50"
-ensure_config_key VISION_OBJECT_MOTION_GATE "0"
-ensure_config_key VISION_CPU_THREADS "2"
-ensure_config_key VISION_MAX_DETECTIONS "15"
-ensure_config_key VISION_MOTION_GATE "1"
-ensure_config_key VISION_MOTION_THRESHOLD "0.02"
-ensure_config_key VISION_FORCE_INFERENCE_SECONDS "5"
 ensure_config_key RAMP_SERVO_0_GPIO_BCM "12"
 ensure_config_key RAMP_SERVO_1_GPIO_BCM "18"
 ensure_config_key RAMP_SERVO_0_REVERSED "0"
@@ -527,7 +482,7 @@ cat > "$AUTOSTART_DIR/stem-robot-kiosk.desktop" <<EOF
 Type=Application
 Version=1.0
 Name=3TSahur Robot Dashboard
-Comment=Resizable 3TSahur and LARP robot controls
+Comment=Resizable 3TSahur robot controls
 Exec=$APP_DIR/installer/kiosk.sh
 Path=$APP_DIR
 Terminal=false
