@@ -22,9 +22,8 @@ single-file prototype.
 ## Mecanum motor mapping
 
 The Pi mecanum GPIO pin pairs remain the same as the partner base. Physical
-testing showed that both installed left motors have opposite polarity, so the
-forward/reverse order is now front-left `6/5` and rear-left `19/16`. The right
-side remains front-right `20/21` and rear-right `13/26`.
+testing established the forward/reverse order as front-left `5/6`, rear-left
+`19/16`, front-right `20/21`, and rear-right `26/13`.
 `robot_server/motor.py` and its simulation test enforce this assignment.
 
 ## Documentation and verification

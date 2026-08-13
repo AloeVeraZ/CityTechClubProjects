@@ -12,7 +12,7 @@ drivetrain design.
 
 | Subsystem | Partner baseline | Current 3TSahur/LARP implementation | Compatibility result |
 | --- | --- | --- | --- |
-| Mecanum GPIO layout | BCM FL `5/6`, RL `16/19`, FR `20/21`, RR `13/26` | Same pin pairs; left polarity is FL `6/5`, RL `19/16`; right remains FR `20/21`, RR `13/26` | Matches the installed left-motor orientation without rewiring GPIO. |
+| Mecanum GPIO layout | BCM FL `5/6`, RL `16/19`, FR `20/21`, RR `13/26` | Same pin pairs; verified polarity is FL `5/6`, RL `19/16`, FR `20/21`, RR `26/13` | Matches the installed motor orientations without rewiring GPIO. |
 | Mecanum mixer | Forward, strafe, rotation normalization | Same wheel mix and normalization | Same expected mecanum motion model. |
 | Direction reversal safety | One shared 15 ms zero-power dead-time | Same shared dead-time | Avoids sequential per-wheel reversal delays. |
 | Motor software safety | Locked drive path and 200 ms Pi watchdog | Same drive API and watchdog | A stale browser command stops rather than replays. |
