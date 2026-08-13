@@ -23,11 +23,11 @@ applying power. Do not put 5 V onto GPIO12 or GPIO18; Pi GPIO signals are 3.3 V.
 | Position | Servo 1 | Servo 2 |
 | --- | ---: | ---: |
 | Closed/startup | 0 degrees | 0 degrees |
-| Open | 100 degrees | 100 degrees |
+| Open | 120 degrees | 120 degrees |
 
 These are logical ramp angles. Servo 2 on physical pin 12 is mirrored in code:
-logical 0 degrees uses its 100-degree electrical position to pull in, and
-logical 100 degrees uses its 0-degree electrical position to push out. Servo 1
+logical 0 degrees uses its 120-degree electrical position to pull in, and
+logical 120 degrees uses its 0-degree electrical position to push out. Servo 1
 on physical pin 32 keeps the normal direction.
 
 Use **Open ramp** / **Close ramp** in the dashboard or press `R` while the
@@ -51,10 +51,12 @@ The installer uses Raspberry Pi OS packages when both are available. If the
 `pigpio` daemon has no APT installation candidate, it builds official pigpio
 v79 from source instead. It starts `pigpiod` and requires that daemon before
 starting the dashboard. The normal servo uses 1000 microseconds when closed and
-1556 microseconds when open. The reversed physical-pin-12 servo uses 1556
+1667 microseconds when open. The reversed physical-pin-12 servo uses 1667
 microseconds when closed and 1000 microseconds when open. `pigpio` continuously
 holds those pulses and times their edges independently of the dashboard's Linux
-process, avoiding software-PWM scheduling jitter.
+process, avoiding software-PWM scheduling jitter. The server serializes ramp
+commands and suppresses duplicate pulse writes, so a repeated button or API
+request cannot make the servo alternate between its two positions.
 
 ## Buck-converter checks
 

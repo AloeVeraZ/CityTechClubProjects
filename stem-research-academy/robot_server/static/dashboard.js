@@ -23,6 +23,7 @@
   let lastCameraRetryAt = 0;
   let activeRobotTab = '3tsahur';
   let actuatorState = {ramp: {state: 'closed', closed_angle: 0}};
+  let rampCommandPending = false;
   const scoutSequences = {a: 0, b: 0};
   const scoutStatusInFlight = {a: false, b: false};
   const visionEnabled = {'3tsahur': false, 'larp-a': false, 'larp-b': false};
@@ -402,7 +403,7 @@
     actuatorState = data || actuatorState;
     const ramp = actuatorState.ramp || {state: "closed", closed_angle: 0};
     const isOpen = ramp.state === "open";
-    const openLabel = Number.isFinite(Number(ramp.open_angle)) ? Number(ramp.open_angle) + "°" : "100°";
+    const openLabel = Number.isFinite(Number(ramp.open_angle)) ? Number(ramp.open_angle) + "°" : "120°";
     document.querySelector("#ramp-readout").value = isOpen ? "Open · " + openLabel : "Closed · 0°";
     const toggle = document.querySelector("#ramp-toggle");
     toggle.textContent = (isOpen ? "Close" : "Open") + " ramp · R";
@@ -413,6 +414,10 @@
   }
 
   async function toggleRamp() {
+    if (rampCommandPending) return;
+    rampCommandPending = true;
+    const toggle = document.querySelector("#ramp-toggle");
+    toggle.disabled = true;
     const next = actuatorState.ramp?.state === "open" ? "closed" : "open";
     try {
       const response = await fetch("/api/actuators/ramp", {
@@ -425,6 +430,9 @@
       showToast("Ramp " + next + (data.configured ? "" : " (awaiting driver connection)"));
     } catch (error) {
       showToast(error.message || "Ramp command unavailable");
+    } finally {
+      rampCommandPending = false;
+      toggle.disabled = false;
     }
   }
   function keyMotion(event, id) {

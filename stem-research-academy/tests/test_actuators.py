@@ -71,16 +71,27 @@ class ServoActuatorTests(unittest.TestCase):
 
         self.assertTrue(board.hardware)
         self.assertEqual(pi.modes, [(12, 1), (18, 1)])
-        self.assertEqual(pi.pulses, [(12, 1000), (18, 1556)])
+        self.assertEqual(pi.pulses, [(12, 1000), (18, 1667)])
         board.close()
 
-    def test_open_maps_to_100_degrees_with_pin_12_reversed(self):
+    def test_open_maps_to_120_degrees_with_pin_12_reversed(self):
         pi = FakePi()
         board = PigpioServoBoard(pigpio_module=FakePigpioModule(), pi_client=pi)
-        board.set_angle(0, 100)
-        board.set_angle(1, 100)
+        board.set_angle(0, 120)
+        board.set_angle(1, 120)
 
-        self.assertEqual(pi.pulses[-2:], [(12, 1556), (18, 1000)])
+        self.assertEqual(pi.pulses[-2:], [(12, 1667), (18, 1000)])
+        board.close()
+
+    def test_identical_held_pulse_is_not_rewritten(self):
+        pi = FakePi()
+        board = PigpioServoBoard(pigpio_module=FakePigpioModule(), pi_client=pi)
+        board.set_angle(1, 120)
+        pulse_count = len(pi.pulses)
+        board.set_angle(1, 120)
+
+        self.assertEqual(len(pi.pulses), pulse_count)
+        self.assertEqual(pi.pulses[-1], (18, 1000))
         board.close()
 
     def test_missing_pigpio_daemon_disables_hardware_safely(self):
@@ -91,14 +102,22 @@ class ServoActuatorTests(unittest.TestCase):
         self.assertIn("pigpiod is not running", board.error)
         self.assertTrue(pi.stopped)
 
-    def test_open_holds_both_ramp_servos_at_logical_100_degrees(self):
+    def test_open_holds_both_ramp_servos_at_logical_120_degrees(self):
         board = FakeServoBoard()
         controller = ActuatorController(board=board)
         result = controller.set_ramp("open")
 
-        self.assertEqual(board.angles, [(0, 100.0), (1, 100.0)])
+        self.assertEqual(board.angles, [(0, 120.0), (1, 120.0)])
         self.assertEqual(result["ramp"]["state"], "open")
-        self.assertEqual(result["channels"], {"0": 100.0, "1": 100.0})
+        self.assertEqual(result["channels"], {"0": 120.0, "1": 120.0})
+
+    def test_repeated_open_command_does_not_rewrite_servo_targets(self):
+        board = FakeServoBoard()
+        controller = ActuatorController(board=board)
+        controller.set_ramp("open")
+        controller.set_ramp("open")
+
+        self.assertEqual(board.angles, [(0, 120.0), (1, 120.0)])
 
     def test_closed_holds_both_ramp_servos_at_absolute_zero(self):
         board = FakeServoBoard()

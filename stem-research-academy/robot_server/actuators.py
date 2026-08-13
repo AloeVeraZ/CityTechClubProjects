@@ -10,7 +10,7 @@ class PigpioServoBoard:
     """Drive two hobby servos with DMA-timed pigpio pulses."""
 
     CLOSED_ANGLE = 0.0
-    OPEN_ANGLE = 100.0
+    OPEN_ANGLE = 120.0
 
     def __init__(self, pigpio_module=None, pi_client=None) -> None:
         self.minimum_us = int(os.environ.get("RAMP_SERVO_MIN_PULSE_US", "1000"))
@@ -33,6 +33,7 @@ class PigpioServoBoard:
         self._pigpio = pigpio_module
         self._pi = pi_client
         self._lock = threading.Lock()
+        self._held_pulses: dict[int, int] = {}
 
         try:
             if self._pigpio is None:
@@ -78,10 +79,13 @@ class PigpioServoBoard:
         return self._pulse_width(servo_angle)
 
     def _write_pulse(self, pin: int, pulse_width_us: int) -> None:
+        if self._held_pulses.get(pin) == pulse_width_us:
+            return
         self._require_success(
             self._pi.set_servo_pulsewidth(pin, pulse_width_us),
             f"set GPIO{pin} servo pulse",
         )
+        self._held_pulses[pin] = pulse_width_us
 
     def set_angle(self, channel: int, angle: float) -> None:
         if channel not in self.pins:
@@ -95,6 +99,7 @@ class PigpioServoBoard:
         for pin in self.pins.values():
             try:
                 self._pi.set_servo_pulsewidth(pin, 0)
+                self._held_pulses.pop(pin, None)
             except (AttributeError, OSError, RuntimeError):
                 pass
         try:
@@ -105,7 +110,7 @@ class PigpioServoBoard:
 
 
 class ActuatorController:
-    """Hold both ramp servos at logical 0 degrees or 100 degrees."""
+    """Hold both ramp servos at logical 0 degrees or 120 degrees."""
 
     RAMP_STATES = {"open", "closed"}
     CLOSED_ANGLE = PigpioServoBoard.CLOSED_ANGLE
@@ -113,6 +118,7 @@ class ActuatorController:
 
     def __init__(self, board: PigpioServoBoard | None = None) -> None:
         self._lock = threading.Lock()
+        self._command_lock = threading.Lock()
         self._board = board or PigpioServoBoard()
         self._ramp = "closed"
         self._channel_angles = {0: self.CLOSED_ANGLE, 1: self.CLOSED_ANGLE}
@@ -138,17 +144,22 @@ class ActuatorController:
         state_value = str(state).lower()
         if state_value not in self.RAMP_STATES:
             raise ValueError("Ramp state must be 'open' or 'closed'")
-        target_angle = self.OPEN_ANGLE if state_value == "open" else self.CLOSED_ANGLE
-        if self._board.hardware:
-            try:
-                self._board.set_angle(0, target_angle)
-                self._board.set_angle(1, target_angle)
-            except (OSError, RuntimeError, ValueError) as error:
-                self._board.error = f"Ramp movement failed: {error}"
-                self._board.hardware = False
-        with self._lock:
-            self._ramp = state_value
-            self._channel_angles = {0: target_angle, 1: target_angle}
+        with self._command_lock:
+            with self._lock:
+                unchanged = state_value == self._ramp
+            if unchanged:
+                return self.snapshot()
+            target_angle = self.OPEN_ANGLE if state_value == "open" else self.CLOSED_ANGLE
+            if self._board.hardware:
+                try:
+                    self._board.set_angle(0, target_angle)
+                    self._board.set_angle(1, target_angle)
+                except (OSError, RuntimeError, ValueError) as error:
+                    self._board.error = f"Ramp movement failed: {error}"
+                    self._board.hardware = False
+            with self._lock:
+                self._ramp = state_value
+                self._channel_angles = {0: target_angle, 1: target_angle}
         return self.snapshot()
 
     def close(self) -> None:

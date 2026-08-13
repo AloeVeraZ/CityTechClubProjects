@@ -38,7 +38,7 @@ header numbers so the connections are unambiguous.
 
 GPIO12 and GPIO18 carry 3.3 V control signals; never connect either servo's
 red 5 V wire to a GPIO signal pin. Both servos start at logical 0 degrees, open
-to 100 degrees, return to logical 0 degrees when closed, and continuously hold
+to 120 degrees, return to logical 0 degrees when closed, and continuously hold
 the selected position. The physical-pin-12 servo is reversed in software so
 closed pulls in and open pushes out; physical pin 32 retains its normal
 direction.
