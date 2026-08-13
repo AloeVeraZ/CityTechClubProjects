@@ -10,7 +10,7 @@ class PigpioServoBoard:
     """Drive two hobby servos with DMA-timed pigpio pulses."""
 
     CLOSED_ANGLE = 0.0
-    OPEN_ANGLE = 30.0
+    OPEN_ANGLE = 100.0
 
     def __init__(self, pigpio_module=None, pi_client=None) -> None:
         self.minimum_us = int(os.environ.get("RAMP_SERVO_MIN_PULSE_US", "1000"))
@@ -18,6 +18,15 @@ class PigpioServoBoard:
         self.pins = {
             0: int(os.environ.get("RAMP_SERVO_0_GPIO_BCM", "12")),
             1: int(os.environ.get("RAMP_SERVO_1_GPIO_BCM", "18")),
+        }
+        self.reversed_channels = {
+            channel
+            for channel in self.pins
+            if os.environ.get(
+                f"RAMP_SERVO_{channel}_REVERSED",
+                "1" if channel == 1 else "0",
+            ).strip().lower()
+            in {"1", "true", "yes", "on"}
         }
         self.hardware = False
         self.error: str | None = None
@@ -35,9 +44,9 @@ class PigpioServoBoard:
             self._validate_configuration()
             if not getattr(self._pi, "connected", False):
                 raise OSError("pigpiod is not running")
-            for pin in self.pins.values():
+            for channel, pin in self.pins.items():
                 self._require_success(self._pi.set_mode(pin, self._pigpio.OUTPUT), "set GPIO mode")
-                self._write_pulse(pin, self._pulse_width(self.CLOSED_ANGLE))
+                self._write_pulse(pin, self._channel_pulse_width(channel, self.CLOSED_ANGLE))
             self.hardware = True
         except (ImportError, OSError, RuntimeError, ValueError) as error:
             self.error = f"Stable servo timing unavailable: {error}"
@@ -59,6 +68,15 @@ class PigpioServoBoard:
         angle = max(0.0, min(180.0, float(angle)))
         return round(self.minimum_us + (self.maximum_us - self.minimum_us) * angle / 180.0)
 
+    def _channel_pulse_width(self, channel: int, logical_angle: float) -> int:
+        logical_angle = max(self.CLOSED_ANGLE, min(self.OPEN_ANGLE, float(logical_angle)))
+        servo_angle = (
+            self.OPEN_ANGLE - logical_angle
+            if channel in self.reversed_channels
+            else logical_angle
+        )
+        return self._pulse_width(servo_angle)
+
     def _write_pulse(self, pin: int, pulse_width_us: int) -> None:
         self._require_success(
             self._pi.set_servo_pulsewidth(pin, pulse_width_us),
@@ -69,7 +87,7 @@ class PigpioServoBoard:
         if channel not in self.pins:
             raise ValueError(f"Ramp servo channel {channel} is unavailable")
         with self._lock:
-            self._write_pulse(self.pins[channel], self._pulse_width(angle))
+            self._write_pulse(self.pins[channel], self._channel_pulse_width(channel, angle))
 
     def close(self) -> None:
         if self._pi is None:
@@ -87,7 +105,7 @@ class PigpioServoBoard:
 
 
 class ActuatorController:
-    """Hold both ramp servos at absolute 0° or absolute 30°."""
+    """Hold both ramp servos at logical 0 degrees or 100 degrees."""
 
     RAMP_STATES = {"open", "closed"}
     CLOSED_ANGLE = PigpioServoBoard.CLOSED_ANGLE

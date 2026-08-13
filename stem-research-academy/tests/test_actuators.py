@@ -55,6 +55,8 @@ class ServoActuatorTests(unittest.TestCase):
         self.assertIn("systemctl enable pigpiod.service", installer)
         self.assertIn("RAMP_SERVO_0_GPIO_BCM=12", installer)
         self.assertIn("RAMP_SERVO_1_GPIO_BCM=18", installer)
+        self.assertIn("RAMP_SERVO_0_REVERSED=0", installer)
+        self.assertIn("RAMP_SERVO_1_REVERSED=1", installer)
         self.assertIn("pigpiod.service", service)
         self.assertIn("ExecStart=@PIGPIOD_BIN@", daemon_service)
 
@@ -63,22 +65,22 @@ class ServoActuatorTests(unittest.TestCase):
         mandatory_batch = installer.split("apt_get install -y \\", 1)[1].split("\n\n", 1)[0]
         self.assertNotIn("pigpio", mandatory_batch)
 
-    def test_pigpio_initializes_and_holds_both_servos_at_absolute_zero(self):
+    def test_pigpio_initializes_both_servos_closed_with_pin_12_reversed(self):
         pi = FakePi()
         board = PigpioServoBoard(pigpio_module=FakePigpioModule(), pi_client=pi)
 
         self.assertTrue(board.hardware)
         self.assertEqual(pi.modes, [(12, 1), (18, 1)])
-        self.assertEqual(pi.pulses, [(12, 1000), (18, 1000)])
+        self.assertEqual(pi.pulses, [(12, 1000), (18, 1556)])
         board.close()
 
-    def test_30_degrees_maps_to_a_stable_1167_microsecond_pulse(self):
+    def test_open_maps_to_100_degrees_with_pin_12_reversed(self):
         pi = FakePi()
         board = PigpioServoBoard(pigpio_module=FakePigpioModule(), pi_client=pi)
-        board.set_angle(0, 30)
-        board.set_angle(1, 30)
+        board.set_angle(0, 100)
+        board.set_angle(1, 100)
 
-        self.assertEqual(pi.pulses[-2:], [(12, 1167), (18, 1167)])
+        self.assertEqual(pi.pulses[-2:], [(12, 1556), (18, 1000)])
         board.close()
 
     def test_missing_pigpio_daemon_disables_hardware_safely(self):
@@ -89,14 +91,14 @@ class ServoActuatorTests(unittest.TestCase):
         self.assertIn("pigpiod is not running", board.error)
         self.assertTrue(pi.stopped)
 
-    def test_open_holds_both_ramp_servos_at_30_degrees(self):
+    def test_open_holds_both_ramp_servos_at_logical_100_degrees(self):
         board = FakeServoBoard()
         controller = ActuatorController(board=board)
         result = controller.set_ramp("open")
 
-        self.assertEqual(board.angles, [(0, 30.0), (1, 30.0)])
+        self.assertEqual(board.angles, [(0, 100.0), (1, 100.0)])
         self.assertEqual(result["ramp"]["state"], "open")
-        self.assertEqual(result["channels"], {"0": 30.0, "1": 30.0})
+        self.assertEqual(result["channels"], {"0": 100.0, "1": 100.0})
 
     def test_closed_holds_both_ramp_servos_at_absolute_zero(self):
         board = FakeServoBoard()

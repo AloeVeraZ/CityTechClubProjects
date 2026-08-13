@@ -402,7 +402,7 @@
     actuatorState = data || actuatorState;
     const ramp = actuatorState.ramp || {state: "closed", closed_angle: 0};
     const isOpen = ramp.state === "open";
-    const openLabel = Number.isFinite(Number(ramp.open_angle)) ? Number(ramp.open_angle) + "°" : "30°";
+    const openLabel = Number.isFinite(Number(ramp.open_angle)) ? Number(ramp.open_angle) + "°" : "100°";
     document.querySelector("#ramp-readout").value = isOpen ? "Open · " + openLabel : "Closed · 0°";
     const toggle = document.querySelector("#ramp-toggle");
     toggle.textContent = (isOpen ? "Close" : "Open") + " ramp · R";

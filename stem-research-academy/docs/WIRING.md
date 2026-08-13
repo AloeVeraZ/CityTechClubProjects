@@ -37,9 +37,11 @@ header numbers so the connections are unambiguous.
 | Common reference | Ground jumper | Buck-converter ground to Pi ground, physical pin 6 or 14 |
 
 GPIO12 and GPIO18 carry 3.3 V control signals; never connect either servo's
-red 5 V wire to a GPIO signal pin. Both servos start at 0 degrees, open to 30
-degrees, return to 0 degrees when closed, and continuously hold the selected
-position.
+red 5 V wire to a GPIO signal pin. Both servos start at logical 0 degrees, open
+to 100 degrees, return to logical 0 degrees when closed, and continuously hold
+the selected position. The physical-pin-12 servo is reversed in software so
+closed pulls in and open pushes out; physical pin 32 retains its normal
+direction.
 
 The common-ground jumper is mandatory: without it, the 3.3 V servo signals do
 not have a stable electrical reference and the servos can jitter unpredictably.
