@@ -50,7 +50,7 @@ cleanup() {
         rm -rf -- "$TEMP_CHECKOUT"
     fi
     if [ -n "$PIGPIO_BUILD_DIR" ] && [ -d "$PIGPIO_BUILD_DIR" ]; then
-        rm -rf -- "$PIGPIO_BUILD_DIR"
+        sudo rm -rf -- "$PIGPIO_BUILD_DIR" || true
     fi
     if [ -n "$STAGED_APP_DIR" ] && [ -d "$STAGED_APP_DIR" ]; then
         rm -rf -- "$STAGED_APP_DIR"
@@ -92,6 +92,12 @@ apt_has_candidate() {
 }
 
 install_pigpio() {
+    if command -v pigpiod >/dev/null 2>&1 && \
+       python3 -c 'import pigpio' >/dev/null 2>&1; then
+        say "pigpio is already installed; skipping its download and build."
+        return 0
+    fi
+
     if apt_has_candidate pigpio && apt_has_candidate python3-pigpio; then
         say "Installing pigpio from the Raspberry Pi OS package repository..."
         apt_get install -y pigpio python3-pigpio
@@ -105,7 +111,10 @@ install_pigpio() {
         tar -xzf "$PIGPIO_BUILD_DIR/pigpio-v79.tar.gz" -C "$PIGPIO_BUILD_DIR"
         make -C "$PIGPIO_BUILD_DIR/pigpio-79" -j"$(nproc)"
         sudo make -C "$PIGPIO_BUILD_DIR/pigpio-79" install
-        rm -rf -- "$PIGPIO_BUILD_DIR"
+        # `sudo make install` can leave root-owned Python build files here.
+        # Remove the exact mktemp directory with sudo so successful installs
+        # cannot fail during cleanup with "Permission denied".
+        sudo rm -rf -- "$PIGPIO_BUILD_DIR"
         PIGPIO_BUILD_DIR=""
     fi
 
