@@ -28,11 +28,17 @@ class VisionManager:
     ) -> None:
         self._sources = sources
         self._should_pause = should_pause or (lambda: False)
-        self.interval = max(0.2, float(os.environ.get("VISION_INTERVAL_SECONDS", "0.5")))
-        self.confidence = float(os.environ.get("VISION_CONFIDENCE", "0.45"))
+        self.interval = max(0.2, float(os.environ.get("VISION_PERSON_INTERVAL_SECONDS", "0.35")))
+        # A partial upper torso often scores below the old 0.45 threshold.
+        # Keep this person-specific key independent from legacy installations
+        # that may still carry VISION_CONFIDENCE=0.45.
+        self.confidence = float(os.environ.get("VISION_PERSON_CONFIDENCE", "0.20"))
         self.image_size = int(os.environ.get("VISION_IMAGE_SIZE", "320"))
         self.model_path = os.environ.get("VISION_MODEL", "yolo11n_ncnn_model")
         self.motion_gate = _environment_flag("VISION_MOTION_GATE", True)
+        # Person detection is continuous while enabled and the robot is
+        # stationary. The outer worker still pauses completely during driving.
+        self.person_motion_gate = _environment_flag("VISION_PERSON_MOTION_GATE", False)
         self.motion_threshold = max(0.001, float(os.environ.get("VISION_MOTION_THRESHOLD", "0.02")))
         self.force_inference_seconds = max(
             1.0, float(os.environ.get("VISION_FORCE_INFERENCE_SECONDS", "5"))
@@ -61,7 +67,8 @@ class VisionManager:
             "landmark_error": None,
             "landmarks": [],
             "landmark_skipped": False,
-            "motion_gate": self.motion_gate,
+            "motion_gate": self.person_motion_gate,
+            "confidence_threshold": self.confidence,
             "motion_score": None,
             "inference_skipped": False,
             "inference_ms": None,
@@ -165,7 +172,12 @@ class VisionManager:
     def _detect_people(self, frame) -> list[dict]:
         model = self._load_model()
         result = model(
-            frame, classes=[0], conf=self.confidence, imgsz=self.image_size, verbose=False
+            frame,
+            classes=[0],
+            conf=self.confidence,
+            imgsz=self.image_size,
+            max_det=10,
+            verbose=False,
         )[0]
         detections = []
         for box in result.boxes:
@@ -237,11 +249,12 @@ class VisionManager:
         if people_enabled:
             started_at = time.monotonic()
             try:
-                score = self._motion_score(source, frame, cv2) if self.motion_gate else 1.0
+                score = self._motion_score(source, frame, cv2) if self.person_motion_gate else 1.0
                 force = started_at - self._last_inference_at[source] >= self.force_inference_seconds
-                skip = self.motion_gate and score < self.motion_threshold and not force
+                skip = self.person_motion_gate and score < self.motion_threshold and not force
                 update.update(
-                    motion_gate=self.motion_gate,
+                    motion_gate=self.person_motion_gate,
+                    confidence_threshold=self.confidence,
                     motion_score=round(score, 4),
                     inference_skipped=skip,
                 )

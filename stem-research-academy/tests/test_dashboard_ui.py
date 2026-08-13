@@ -111,7 +111,8 @@ class DashboardTabTests(unittest.TestCase):
         self.assertIn('>YOLO off · C</button>', TEMPLATE)
         self.assertIn('data-snapshot="3tsahur"', TEMPLATE)
         self.assertIn('PERSON DETECTED', SCRIPT)
-        self.assertIn('YOLO active · no person detected', SCRIPT)
+        self.assertIn('YOLO active · no person', SCRIPT)
+        self.assertIn('confidence_threshold', SCRIPT)
         self.assertIn('PERSON ${Math.round(box.confidence * 100)}%', SCRIPT)
 
     def test_only_mecanum_drive_heartbeat_remains(self):

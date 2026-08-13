@@ -73,7 +73,6 @@ echo "Downloading pretrained weights and exporting NCNN at ${IMAGE_SIZE}px..."
 import os
 from pathlib import Path
 
-import numpy as np
 from ultralytics import YOLO
 
 model = YOLO(os.environ["MODEL_NAME"])
@@ -82,12 +81,16 @@ exported = Path(model.export(format="ncnn", imgsz=image_size, batch=1, device="c
 if not exported.is_dir():
     raise RuntimeError(f"NCNN export directory was not created: {exported}")
 
-# Load the exported runtime and perform one offline inference. This catches an
-# incomplete NCNN install before the dashboard service is changed.
+# Load the exported runtime and prove that it can detect COCO class 0 (person)
+# on Ultralytics' official example image before changing the dashboard service.
 ncnn_model = YOLO(str(exported))
-ncnn_model(np.zeros((image_size, image_size, 3), dtype=np.uint8),
-           classes=[0], conf=0.45, imgsz=image_size, verbose=False)
-print(f"Vision model export and synthetic inference passed: {exported.resolve()}")
+result = ncnn_model(
+    "https://ultralytics.com/images/bus.jpg",
+    classes=[0], conf=0.20, imgsz=image_size, max_det=10, verbose=False,
+)[0]
+if not any(int(class_id) == 0 for class_id in result.boxes.cls.tolist()):
+    raise RuntimeError("YOLO11n NCNN loaded but failed its person-detection check")
+print(f"Vision model export and person-detection check passed: {exported.resolve()}")
 PY
 )
 
@@ -107,6 +110,9 @@ if ! set_config_key VISION_VENV "$VISION_ENV" || \
    ! set_config_key VISION_MODEL "$MODEL_DIR" || \
    ! set_config_key VISION_CPU_THREADS "2" || \
    ! set_config_key VISION_IMAGE_SIZE "$IMAGE_SIZE" || \
+   ! set_config_key VISION_PERSON_CONFIDENCE "0.20" || \
+   ! set_config_key VISION_PERSON_INTERVAL_SECONDS "0.35" || \
+   ! set_config_key VISION_PERSON_MOTION_GATE "0" || \
    ! set_config_key VISION_INTERVAL_SECONDS "0.5" || \
    ! set_config_key VISION_MOTION_GATE "1" || \
    ! set_config_key VISION_MOTION_THRESHOLD "0.02" || \
@@ -135,4 +141,4 @@ fi
 rm -f -- "$config_backup"
 
 echo "Optional vision setup complete and dashboard health check passed."
-echo "Open a robot tab and select Vision off (or press C) to enable detection."
+echo "Press C or select YOLO off in the dashboard to enable person detection."

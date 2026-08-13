@@ -229,11 +229,13 @@
       return;
     }
     const detections = data.detections || [];
+    const inferenceTime = Number.isFinite(Number(data.inference_ms)) ? ` · ${Math.round(Number(data.inference_ms))} ms` : '';
+    const threshold = Number.isFinite(Number(data.confidence_threshold)) ? ` · ${Math.round(Number(data.confidence_threshold) * 100)}% threshold` : '';
     label.textContent = data.inference_skipped
       ? 'YOLO active · waiting for motion'
       : detections.length
-        ? `PERSON DETECTED · ${detections.length}`
-        : 'YOLO active · no person detected';
+        ? `PERSON DETECTED · ${detections.length}${inferenceTime}`
+        : `YOLO active · no person${inferenceTime}${threshold}`;
     const bounds = canvas.getBoundingClientRect();
     canvas.width = Math.max(1, Math.round(bounds.width));
     canvas.height = Math.max(1, Math.round(bounds.height));

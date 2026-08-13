@@ -115,11 +115,10 @@ Use these initial settings for the Pi 4:
 | Model | `yolo11n_ncnn_model` | Smallest YOLO11 detection model. |
 | Input size | `320` | Reduces CPU load compared with 640px inference. |
 | Classes | `[0]` | Limits detection to people. |
-| Confidence | `0.45` | Reasonable initial balance; tune only after observing your own space. |
-| Inference rate | 2–5 FPS | Video can remain smooth while the Pi has time for controls. |
+| Person confidence | `0.20` | Improves detection of partial people and upper torsos. |
+| Inference interval | `0.35` seconds | Checks continuously while stationary without blocking controls. |
 | Vision sources | One active tab/feed | Avoids competing inference, video, and Wi-Fi workloads. |
-| Motion gate | enabled; `0.02` changed-pixel threshold | Avoids repeated YOLO calls in static scenes. |
-| Forced refresh | every 5 seconds | Still checks for stationary people. |
+| Person motion gate | disabled | A stationary person continues to be checked. |
 
 The included implementation runs inference in a separate worker and never waits in a motor-command request path. If you enable more than one feed, the worker samples them in turn; for the best Pi 4 responsiveness, leave vision enabled on only the tab you are watching.
 
@@ -133,6 +132,9 @@ VISION_MOTION_THRESHOLD=0.02
 VISION_FORCE_INFERENCE_SECONDS=5
 VISION_INTERVAL_SECONDS=0.5
 VISION_CPU_THREADS=2
+VISION_PERSON_CONFIDENCE=0.20
+VISION_PERSON_INTERVAL_SECONDS=0.35
+VISION_PERSON_MOTION_GATE=0
 EVIDENCE_MAX_ITEMS=100
 EVIDENCE_QUEUE_SIZE=12
 HEALTH_INTERVAL_SECONDS=10

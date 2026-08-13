@@ -14,6 +14,24 @@ class _Frame:
 
 
 class VisionEfficiencyTests(unittest.TestCase):
+    def test_person_detection_defaults_to_low_threshold_without_motion_gating(self):
+        with patch.dict("os.environ", {}, clear=True):
+            manager = VisionManager({"camera": lambda: _Frame()})
+
+        self.assertEqual(manager.confidence, 0.20)
+        self.assertFalse(manager.person_motion_gate)
+
+    def test_stationary_person_frames_are_inferred_continuously(self):
+        manager = VisionManager({"camera": lambda: _Frame()})
+        manager._last_inference_at["camera"] = time.monotonic()
+        with patch.dict("sys.modules", {"cv2": object()}), patch.object(
+            manager, "_motion_score", return_value=0.0
+        ), patch.object(manager, "_detect_people", return_value=[]) as detect:
+            manager._run_one("camera", people_enabled=True, landmarks_enabled=False)
+
+        detect.assert_called_once()
+        self.assertFalse(manager.snapshot("camera")["inference_skipped"])
+
     def test_disabling_never_starts_the_optional_worker(self):
         manager = VisionManager({"camera": lambda: _Frame()})
         state = manager.set_enabled("camera", False)
@@ -32,6 +50,7 @@ class VisionEfficiencyTests(unittest.TestCase):
 
     def test_motion_gate_skips_yolo_until_periodic_refresh(self):
         manager = VisionManager({"camera": lambda: _Frame()})
+        manager.person_motion_gate = True
         manager._last_inference_at["camera"] = time.monotonic()
         with patch.dict("sys.modules", {"cv2": object()}), patch.object(
             manager, "_motion_score", return_value=0.001
@@ -45,6 +64,7 @@ class VisionEfficiencyTests(unittest.TestCase):
 
     def test_motion_gate_forces_periodic_static_scene_inference(self):
         manager = VisionManager({"camera": lambda: _Frame()})
+        manager.person_motion_gate = True
         manager._last_inference_at["camera"] = 0
         with patch.dict("sys.modules", {"cv2": object()}), patch.object(
             manager, "_motion_score", return_value=0.001
@@ -104,6 +124,8 @@ class VisionInstallerTests(unittest.TestCase):
         self.assertIn('MODEL_NAME="yolo11n.pt"', installer)
         self.assertIn('model.export(format="ncnn"', installer)
         self.assertIn("classes=[0]", installer)
+        self.assertIn("ultralytics.com/images/bus.jpg", installer)
+        self.assertIn("person-detection check passed", installer)
 
     def test_launcher_bounds_optional_runtime_threads_and_requires_model(self):
         root = Path(__file__).parents[1]
