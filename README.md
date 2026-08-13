@@ -40,8 +40,8 @@
   <tr>
     <td width="50%" align="center" valign="top">
       <h3>STEM Research Academy Robot Lab</h3>
-      <p>A Raspberry Pi hotspot and browser control station for one mecanum robot and two ECHO differential-drive camera robots.</p>
-      <p><strong>Included:</strong> Mecanum control, ECHO scout firmware, C270 streaming, three-robot HUD, hotspot setup, tests, and a rerunnable Pi installer.</p>
+      <p>A six-week robotics learning project for approximately 400 students, centered on a Raspberry Pi mecanum robot.</p>
+      <p><strong>Included:</strong> Mecanum control, Logitech camera streaming, ramp servos, hotspot setup, tests, documentation, and a rerunnable Pi installer.</p>
       <p><a href="stem-research-academy/README.md"><strong>View the project</strong></a></p>
     </td>
   </tr>
@@ -73,7 +73,7 @@ Both robots went through a few versions. The videos below show what changed alon
 
 ## What is included
 
-The self balancing robot folder has code and CAD files, the crab crawler folder has CAD files, and the STEM Research Academy folder has the multi-robot control station. Each folder also has a README with more information.
+The self balancing robot folder has code and CAD files, the crab crawler folder has CAD files, and the STEM Research Academy folder contains the large Raspberry Pi robot. Each folder also has a README with more information.
 
 ## What we learned
 

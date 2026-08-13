@@ -1,10 +1,9 @@
 import importlib
-import os
 import time
 import unittest
 from unittest.mock import patch
 
-from robot_server.app import _env_first, app, drive, drive_sequences, scout_registry, scout_sequences
+from robot_server.app import app, drive, drive_sequences
 
 app_module = importlib.import_module("robot_server.app")
 
@@ -17,9 +16,7 @@ class ServerTests(unittest.TestCase):
     def tearDown(self):
         drive.stop()
         app_module.last_drive_at = 0
-        app_module.last_scout_motion_at.update(a=0, b=0)
         drive_sequences.clear()
-        scout_sequences.clear()
 
     @staticmethod
     def current_command(**values):
@@ -31,25 +28,16 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.get_json()["ok"])
 
-    def test_partner_environment_names_remain_compatible(self):
-        with patch.dict(os.environ, {"SCOUT_A_HOST": "partner-a.local"}, clear=True):
-            self.assertEqual(_env_first("LARP_A_HOST", "SCOUT_A_HOST", default="larp-a.local"), "partner-a.local")
-        with patch.dict(os.environ, {"LARP_A_HOST": "larp-a.local", "SCOUT_A_HOST": "partner-a.local"}, clear=True):
-            self.assertEqual(_env_first("LARP_A_HOST", "SCOUT_A_HOST"), "larp-a.local")
-
-    def test_status_exposes_optional_feature_health_without_blocking_control(self):
+    def test_status_exposes_big_robot_hardware(self):
         response = self.client.get("/api/status")
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
+        self.assertEqual(data["name"], "3TSahur")
         self.assertIn(data["camera_profile"], {"control", "balanced", "detail"})
         self.assertEqual(data["camera_mode"], "automatic")
         self.assertIn("camera_name", data)
-        self.assertIn("vision", data)
-        self.assertIn("3tsahur", data["vision"])
-        self.assertEqual(set(data["vision"]), {"3tsahur"})
         self.assertIn("system_health", data)
-        self.assertIn("evidence", data)
-        self.assertIn("camera_restart_count", data)
+        self.assertIn("actuators", data)
 
     def test_drive_command(self):
         response = self.client.post(
@@ -64,7 +52,11 @@ class ServerTests(unittest.TestCase):
         response = self.client.post("/api/drive", json=self.current_command(forward="fast"))
         self.assertEqual(response.status_code, 400)
 
-    def test_stale_big_robot_command_is_ignored(self):
+    def test_non_finite_drive_command(self):
+        response = self.client.post("/api/drive", json=self.current_command(forward="NaN"))
+        self.assertEqual(response.status_code, 400)
+
+    def test_stale_command_is_ignored(self):
         self.client.post(
             "/api/drive",
             json=self.current_command(forward=0, session="test", sequence=2),
@@ -76,15 +68,9 @@ class ServerTests(unittest.TestCase):
         self.assertTrue(response.get_json()["stale"])
         self.assertEqual(drive.last_command["forward"], 0)
 
-    def test_non_finite_drive_command(self):
-        response = self.client.post("/api/drive", json=self.current_command(forward="NaN"))
-        self.assertEqual(response.status_code, 400)
-
-    def test_expired_big_robot_command_cannot_replay(self):
+    def test_expired_command_cannot_replay(self):
         drive.drive(1, 0, 0, 0.5)
-        response = self.client.post(
-            "/api/drive", json={"forward": 1, "expires_at_ms": 1}
-        )
+        response = self.client.post("/api/drive", json={"forward": 1, "expires_at_ms": 1})
         self.assertEqual(response.status_code, 409)
         self.assertTrue(response.get_json()["expired"])
         self.assertEqual(drive.last_command["forward"], 0)
@@ -97,13 +83,10 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(response.status_code, 409)
         self.assertEqual(drive.last_command["forward"], 0)
 
-    def test_dashboard_renders_only_the_3tsahur_mecanum_robot(self):
+    def test_dashboard_renders_only_the_large_robot(self):
         response = self.client.get("/")
         self.assertIn(b'data-robot-panel="3tsahur"', response.data)
         self.assertIn(b'data-stream-for="3tsahur"', response.data)
-        self.assertNotIn(b'data-robot-panel="larp-a"', response.data)
-        self.assertNotIn(b'data-robot-panel="larp-b"', response.data)
-        self.assertNotIn(b"LARP Scout", response.data)
         self.assertIn(b"3TSahur", response.data)
 
     def test_ramp_accepts_two_positions_without_drive_changes(self):
@@ -113,38 +96,8 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(drive.last_command["forward"], 0)
 
     def test_ramp_rejects_invalid_values(self):
-        self.assertEqual(self.client.post("/api/actuators/ramp", json={"state": "sideways"}).status_code, 400)
-
-    def test_unknown_vision_source_is_rejected_without_affecting_drive(self):
-        response = self.client.get("/api/vision/unknown")
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(drive.last_command["forward"], 0)
-
-    @patch("robot_server.app.vision.set_landmarks_enabled", return_value={"landmarks_enabled": True})
-    def test_landmark_mode_is_optional_and_isolated_from_drive(self, set_landmarks):
-        response = self.client.post("/api/landmarks/3tsahur", json={"enabled": True})
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.get_json()["landmarks_enabled"])
-        set_landmarks.assert_called_once_with("3tsahur", True)
-        self.assertEqual(drive.last_command["forward"], 0)
-
-    @patch("robot_server.app.evidence_store.submit", return_value={"id": "queued", "status": "queued"})
-    @patch("robot_server.app._snapshot_bytes", return_value=b"\xff\xd8test\xff\xd9")
-    def test_evidence_capture_queues_disk_work_outside_request(self, snapshot, submit):
-        response = self.client.post("/api/evidence/3tsahur", json={"note": "doorway"})
-        self.assertEqual(response.status_code, 202)
-        self.assertEqual(response.get_json()["evidence"]["status"], "queued")
-        snapshot.assert_called_once_with("3tsahur")
-        submit.assert_called_once()
-        self.assertEqual(drive.last_command["forward"], 0)
-
-    @patch("robot_server.app._snapshot_bytes")
-    def test_evidence_capture_is_rejected_while_driving(self, snapshot):
-        self.client.post("/api/drive", json=self.current_command(forward=1))
-        response = self.client.post("/api/evidence/3tsahur")
-        self.assertEqual(response.status_code, 409)
-        self.assertTrue(response.get_json()["control_active"])
-        snapshot.assert_not_called()
+        response = self.client.post("/api/actuators/ramp", json={"state": "sideways"})
+        self.assertEqual(response.status_code, 400)
 
     @patch("robot_server.app.camera.configure")
     def test_camera_profile_isolated_from_drive(self, configure):
@@ -156,14 +109,17 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(drive.last_command["forward"], 1)
 
     def test_invalid_camera_profile_is_rejected(self):
-        self.assertEqual(self.client.post("/api/camera/profile", json={"profile": "unsafe"}).status_code, 400)
+        response = self.client.post("/api/camera/profile", json={"profile": "unsafe"})
+        self.assertEqual(response.status_code, 400)
 
-    def test_timeline_is_bounded_and_does_not_require_hardware(self):
-        created = self.client.post("/api/events", json={"kind": "test", "source": "test", "message": "timeline ok"})
+    def test_activity_log_is_bounded_and_hardware_independent(self):
+        created = self.client.post(
+            "/api/events",
+            json={"kind": "test", "source": "test", "message": "activity ok"},
+        )
         self.assertEqual(created.status_code, 200)
         listed = self.client.get("/api/events")
-        self.assertEqual(listed.status_code, 200)
-        self.assertTrue(any(event["message"] == "timeline ok" for event in listed.get_json()["events"]))
+        self.assertTrue(any(event["message"] == "activity ok" for event in listed.get_json()["events"]))
 
     @patch("robot_server.app._snapshot_bytes", return_value=None)
     def test_unavailable_snapshot_does_not_affect_drive(self, snapshot):
@@ -171,73 +127,8 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(response.status_code, 503)
         self.assertEqual(drive.last_command["forward"], 0)
 
-    @patch("robot_server.app.scout_registry.record", return_value={
-        "id": "a", "ip": "10.42.0.31", "last_seen": 1.0,
-        "rssi": -51, "uptime_ms": 1200, "transport": "http",
-    })
-    def test_scout_can_register_its_dhcp_address(self, record):
-        response = self.client.get(
-            "/api/scouts/register?id=A&rssi=-51&uptime_ms=1200",
-            environ_base={"REMOTE_ADDR": "10.42.0.31"},
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.get_json()["registered"])
-        record.assert_called_once_with("a", "10.42.0.31", -51, 1200, "http")
-
-    def test_scout_registration_rejects_unknown_id(self):
-        response = self.client.get("/api/scouts/register?id=Z")
-        self.assertEqual(response.status_code, 400)
-
-    @patch("robot_server.app._scout_request", return_value={"id": "A", "motion": True, "motion_level": 42.5})
-    def test_scout_status_proxy(self, scout_request):
-        with patch("robot_server.app.scout_registry.snapshot", return_value={"ip": "10.42.0.20"}):
-            response = self.client.get("/api/scouts/a/status")
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.get_json()["online"])
-        self.assertTrue(response.get_json()["motion"])
-        self.assertEqual(response.get_json()["motion_level"], 42.5)
-        scout_request.assert_called_once_with("a", "/status")
-
-    @patch("robot_server.app._scout_request", return_value={"ok": True})
-    def test_scout_drive_proxy_clamps_values(self, scout_request):
-        with patch("robot_server.app.scout_registry.snapshot", return_value={"ip": "10.42.0.21"}):
-            response = self.client.post(
-                "/api/scouts/b/drive",
-                json=self.current_command(x=500, y=-500, speed=35),
-            )
-        self.assertEqual(response.status_code, 200)
-        scout_request.assert_called_once_with(
-            "b", "/drive", {"x": 100, "y": -100, "speed": 35}
-        )
-
-    @patch("robot_server.app._scout_request", return_value={"ok": True})
-    def test_stale_scout_command_is_not_forwarded(self, scout_request):
-        with patch("robot_server.app.scout_registry.snapshot", return_value={"ip": "10.42.0.20"}):
-            self.client.post(
-                "/api/scouts/a/drive",
-                json=self.current_command(x=0, y=0, session="test", sequence=2),
-            )
-            response = self.client.post(
-                "/api/scouts/a/drive",
-                json=self.current_command(x=0, y=100, session="test", sequence=1),
-            )
-        self.assertTrue(response.get_json()["stale"])
-        self.assertEqual(scout_request.call_count, 1)
-
-    @patch("robot_server.app._scout_request", side_effect=OSError("must not be called"))
-    def test_offline_scout_status_is_safe(self, scout_request):
-        response = self.client.get("/api/scouts/a/status")
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(response.get_json()["online"])
-        scout_request.assert_not_called()
-
-    @patch("robot_server.app._scout_request", side_effect=OSError("must not be called"))
-    def test_offline_scout_drive_fails_fast(self, scout_request):
-        response = self.client.post(
-            "/api/scouts/a/drive", json=self.current_command(x=0, y=100)
-        )
-        self.assertEqual(response.status_code, 409)
-        scout_request.assert_not_called()
+    def test_snapshot_accepts_only_the_large_robot_camera(self):
+        self.assertEqual(self.client.post("/api/snapshots/other").status_code, 404)
 
 
 if __name__ == "__main__":

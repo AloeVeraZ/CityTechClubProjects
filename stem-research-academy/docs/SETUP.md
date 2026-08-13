@@ -1,23 +1,19 @@
-# 3TSahur/LARP setup guide
+# 3TSahur setup guide
 
-## 1. Prepare hardware safely
+## 1. Prepare the hardware safely
 
-Keep the 3TSahur wheels raised. Connect a physical motor-power switch and fuse.
-Connect a shared ground between the Pi, both drivers, and motor supply. Do not
-power drive motors from the Pi's 5 V rail.
+Keep all four wheels raised. Connect a physical motor-power switch and a
+correctly rated fuse. Connect a shared ground between the Raspberry Pi, both
+motor drivers, and the motor supply. Never power the drive motors from the
+Raspberry Pi 5 V rail.
 
-Wire the Pi exactly as [WIRING.md](WIRING.md) specifies and attach the Logitech
-C270.
+Wire the Pi exactly as [WIRING.md](WIRING.md) specifies, connect the ramp servos
+to their regulated 5 V supply, and attach the Logitech USB camera.
 
 ## 2. Install on the Raspberry Pi
 
-Use a current Raspberry Pi OS image with internet access. Clone this repository
+Use a current Raspberry Pi OS image with internet access. Clone the repository
 and run the installer as the normal Pi user:
-
-If `sudo` first reports `unable to resolve host`, repair the local hostname and
-`/etc/hosts` mismatch with the paste-ready block in [README: Fix a Pi hostname
-warning before installing](../README.md#fix-a-pi-hostname-warning-before-installing),
-then return here. That warning is unrelated to Git/GitHub.
 
 ```bash
 git clone https://github.com/AloeVeraZ/CityTechClubProjects.git
@@ -25,35 +21,26 @@ cd CityTechClubProjects/stem-research-academy
 bash installer/install.sh
 ```
 
-The installer configures the `3TSahur-Swarm` 2.4 GHz hotspot, sets the host to
-`3tsahur`, starts the dashboard after boot, and reboots. Connect an operator
-device to the hotspot and browse to `http://10.42.0.1`.
+The installer configures the existing `3TSahur-Swarm` 2.4 GHz hotspot, sets the
+hostname to `3tsahur`, starts the dashboard at boot, and reboots. Connect an
+operator device to the hotspot and open `http://10.42.0.1`.
 
-## 3. Configure optional network camera addresses
+## 3. Validate without driving on the floor
 
-The default mDNS URLs are `http://larp-a-cam.local/stream` and
-`http://larp-b-cam.local/stream`. If your network does not resolve mDNS, edit
-`/etc/stem-research-academy/config.env` and set `LARP_A_CAMERA_URL` and
-`LARP_B_CAMERA_URL` to each camera's DHCP address, then restart:
-
-```bash
-sudo systemctl restart stem-robot-dashboard
-```
-
-## 4. Validate without driving
-
-Open the dashboard and confirm all three camera panels and both LARP heartbeat
-indicators. With wheels raised and low speed selected, test forward/reverse,
-strafe, and rotation. Release each key/button and verify the motors stop. Only
-perform a ground test after every direction is correct.
+1. Confirm that the dashboard loads and the Logitech camera stream appears.
+2. Confirm that GPIO, camera, and servo status appear in the system panel.
+3. Keep the wheels raised and select a low speed.
+4. Test forward, backward, left strafe, right strafe, and both rotations.
+5. Release each key and verify that all four motors stop.
+6. Test the ramp with its linkage disconnected or clear of obstructions.
+7. Verify that `Space`, `Esc`, focus loss, and the watchdog stop the drivetrain.
+8. Perform a floor test only after every direction and stop path is correct.
 
 ## Nginx validation during an update
 
-The installer resolves Nginx at `/usr/sbin/nginx` when it is not present in the
-normal user's `PATH`, validates the generated dashboard proxy before changing
-the active sites, and avoids IPv6/default-server declarations that can conflict
-with another Raspberry Pi OS site. If validation still fails, the complete
-Nginx diagnostic is printed and the new dashboard site link is removed. Repair
-the reported existing site or reinstall the package with
-`sudo apt-get install --reinstall nginx-light`, then rerun the same installer
-command.
+The installer resolves Nginx at `/usr/sbin/nginx` when it is not in the normal
+user's `PATH`, validates the generated dashboard proxy before changing active
+sites, and avoids declarations that conflict with the Raspberry Pi OS default
+site. If validation fails, the installer prints the diagnostic and removes the
+new site link. Repair the reported site or reinstall the package with
+`sudo apt-get install --reinstall nginx-light`, then rerun the installer.
