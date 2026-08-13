@@ -94,11 +94,15 @@ class MecanumDrive:
 
     @staticmethod
     def mix(forward: float, strafe: float, rotate: float) -> dict[str, float]:
+        # The installed chassis' longitudinal axis is opposite the original
+        # partner convention. Invert only forward/backward here so the
+        # physically verified strafe and rotation directions stay unchanged.
+        longitudinal = -forward
         wheels = {
-            "front_left": forward + strafe + rotate,
-            "front_right": forward - strafe - rotate,
-            "rear_left": forward - strafe + rotate,
-            "rear_right": forward + strafe - rotate,
+            "front_left": longitudinal + strafe + rotate,
+            "front_right": longitudinal - strafe - rotate,
+            "rear_left": longitudinal - strafe + rotate,
+            "rear_right": longitudinal + strafe - rotate,
         }
         scale = max(1.0, *(abs(value) for value in wheels.values()))
         return {name: value / scale for name, value in wheels.items()}

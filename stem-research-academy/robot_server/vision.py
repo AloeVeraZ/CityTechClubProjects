@@ -86,6 +86,18 @@ class VisionManager:
         with self._lock:
             if source not in self._states:
                 raise KeyError(source)
+            if enabled:
+                # The Pi control hub runs at most one YOLO source. Enabling a
+                # new camera disables the previous one before the worker wakes.
+                for other_source in self._sources:
+                    if other_source == source:
+                        continue
+                    self._enabled[other_source] = False
+                    self._states[other_source].update(
+                        enabled=False, available=None, error=None, detections=[],
+                        motion_score=None, inference_skipped=False, inference_ms=None,
+                    )
+                    self._previous_gray.pop(other_source, None)
             self._enabled[source] = enabled
             state = self._states[source]
             state["enabled"] = enabled
@@ -95,8 +107,10 @@ class VisionManager:
                     inference_skipped=False, inference_ms=None,
                 )
                 self._previous_gray.pop(source, None)
-            self._ensure_thread_locked()
-        self._wake.set()
+            if enabled:
+                self._ensure_thread_locked()
+        if self._thread is not None:
+            self._wake.set()
         return self.snapshot(source)
 
     def set_landmarks_enabled(self, source: str, enabled: bool) -> dict:

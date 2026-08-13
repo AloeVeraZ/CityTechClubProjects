@@ -56,6 +56,12 @@ class MecanumMixTests(unittest.TestCase):
     def test_forward_moves_every_wheel_forward(self):
         self.assertEqual(
             MecanumDrive.mix(1, 0, 0),
+            {"front_left": -1, "front_right": -1, "rear_left": -1, "rear_right": -1},
+        )
+
+    def test_backward_moves_every_wheel_in_the_opposite_direction(self):
+        self.assertEqual(
+            MecanumDrive.mix(-1, 0, 0),
             {"front_left": 1, "front_right": 1, "rear_left": 1, "rear_right": 1},
         )
 
@@ -68,16 +74,40 @@ class MecanumMixTests(unittest.TestCase):
     def test_combined_commands_are_normalized(self):
         result = MecanumDrive.mix(1, 1, 1)
         self.assertLessEqual(max(abs(value) for value in result.values()), 1)
-        self.assertEqual(result["front_left"], 1)
+        self.assertEqual(result["front_right"], -1)
 
-    def test_forward_uses_the_physically_verified_pin_directions(self):
+    def test_forward_uses_the_inverted_longitudinal_pin_directions(self):
         gpio = FakeGPIO()
         drive = MecanumDrive(gpio_module=gpio)
         drive.drive(1, 0, 0, 0.75)
-        for forward_pin in (5, 19, 20, 26):
-            self.assertEqual(gpio.pwms[forward_pin].duty, 75)
         for reverse_pin in (6, 16, 21, 13):
-            self.assertFalse(gpio.pwms[reverse_pin].running)
+            self.assertEqual(gpio.pwms[reverse_pin].duty, 75)
+        for forward_pin in (5, 19, 20, 26):
+            self.assertFalse(gpio.pwms[forward_pin].running)
+        self.assertEqual(sum(pwm.running for pwm in gpio.pwms.values()), 4)
+        drive.close()
+
+    def test_rotation_drives_all_four_motors_at_75_percent(self):
+        gpio = FakeGPIO()
+        drive = MecanumDrive(gpio_module=gpio)
+        drive.drive(0, 0, 1, 0.75)
+
+        for active_pin in (5, 19, 21, 13):
+            self.assertEqual(gpio.pwms[active_pin].duty, 75)
+        for inactive_pin in (6, 16, 20, 26):
+            self.assertFalse(gpio.pwms[inactive_pin].running)
+        self.assertEqual(sum(pwm.running for pwm in gpio.pwms.values()), 4)
+        drive.close()
+
+    def test_opposite_rotation_drives_all_four_motors_at_75_percent(self):
+        gpio = FakeGPIO()
+        drive = MecanumDrive(gpio_module=gpio)
+        drive.drive(0, 0, -1, 0.75)
+
+        for active_pin in (6, 16, 20, 26):
+            self.assertEqual(gpio.pwms[active_pin].duty, 75)
+        for inactive_pin in (5, 19, 21, 13):
+            self.assertFalse(gpio.pwms[inactive_pin].running)
         self.assertEqual(sum(pwm.running for pwm in gpio.pwms.values()), 4)
         drive.close()
 

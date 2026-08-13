@@ -110,6 +110,15 @@ class DashboardTabTests(unittest.TestCase):
         self.assertIn(".actuator-card", STYLES)
         self.assertIn("grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr) auto;", STYLES)
 
+    def test_q_and_e_are_pure_four_wheel_rotations_at_75_percent(self):
+        self.assertIn("const rotate = Number(bigPressed.has('q')) - Number(bigPressed.has('e'))", SCRIPT)
+        self.assertIn("if (rotate) return {forward: 0, strafe: 0, rotate, speed: 0.75};", SCRIPT)
+        self.assertIn("Q/E four-wheel rotate at 75%", TEMPLATE)
+
+    def test_enabling_yolo_updates_other_camera_toggles_to_off(self):
+        self.assertIn("Object.keys(visionEnabled).filter(other => other !== source)", SCRIPT)
+        self.assertIn("renderVision(other, {enabled: false", SCRIPT)
+
     def test_auxiliary_scout_status_traffic_yields_to_drive_traffic(self):
         self.assertIn("if (scoutPressed[id].size) return;", SCRIPT)
         self.assertIn("}, 5000);", SCRIPT)

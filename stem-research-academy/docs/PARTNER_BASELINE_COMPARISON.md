@@ -8,12 +8,12 @@ reviewed at commit `404c7e855bd88b0f8c1601eb4b4b0e43404b78dd` on
 `b16a5057ba6fd84da6fa77e9955ec039f2b2a885`. It is not a replacement
 drivetrain design.
 
-## Retained exactly from the tested baseline
+## Baseline architecture and calibrated drivetrain
 
 | Subsystem | Partner baseline | Current 3TSahur/LARP implementation | Compatibility result |
 | --- | --- | --- | --- |
 | Mecanum GPIO layout | BCM FL `5/6`, RL `16/19`, FR `20/21`, RR `13/26` | Same pin pairs; verified polarity is FL `5/6`, RL `19/16`, FR `20/21`, RR `26/13` | Matches the installed motor orientations without rewiring GPIO. |
-| Mecanum mixer | Forward, strafe, rotation normalization | Same wheel mix and normalization | Same expected mecanum motion model. |
+| Mecanum mixer | Forward, strafe, rotation normalization | Longitudinal component inverted after physical testing; strafe/rotation signs and normalization retained | Corrects W/S without changing the verified turn directions. |
 | Direction reversal safety | One shared 15 ms zero-power dead-time | Same shared dead-time | Avoids sequential per-wheel reversal delays. |
 | Motor software safety | Locked drive path and 200 ms Pi watchdog | Same drive API and watchdog | A stale browser command stops rather than replays. |
 | Browser command strategy | Latest-command-only channel, 300 ms expiry, sequence checks, urgent stop abort | Retained | This is the partner method that prevents command backlog. |

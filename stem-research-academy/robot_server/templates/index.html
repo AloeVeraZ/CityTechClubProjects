@@ -72,7 +72,7 @@
             <span class="key" data-key="s">S<small>back</small></span>
             <span class="key" data-key="d">D<small>right</small></span>
           </div>
-          <p class="hint">WASD drive · Q/E rotate · Space stops 3TSahur</p>
+          <p class="hint">WASD drive · Q/E four-wheel rotate at 75% · Space stops 3TSahur</p>
           <button class="stop-button" id="stop" type="button">Stop 3TSahur · all 4 motors</button>
         </div>
         <section class="actuator-card ramp-card" aria-label="3TSahur ramp controls">
@@ -142,6 +142,6 @@
     </section>
   </main>
   <div class="toast" id="toast" role="status">Controls disconnected — motors stopped</div>
-  <script src="{{ url_for('static', filename='dashboard.js', v=10) }}"></script>
+  <script src="{{ url_for('static', filename='dashboard.js', v=11) }}"></script>
 </body>
 </html>

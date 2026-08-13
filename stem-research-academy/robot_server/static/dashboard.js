@@ -143,10 +143,14 @@
   };
 
   function bigVector() {
+    const rotate = Number(bigPressed.has('q')) - Number(bigPressed.has('e'));
+    // Q/E are fixed, pure pivots. Translation is intentionally suppressed so
+    // every wheel receives the same 75% magnitude during a keyboard turn.
+    if (rotate) return {forward: 0, strafe: 0, rotate, speed: 0.75};
     return {
       forward: Number(bigPressed.has('w')) - Number(bigPressed.has('s')),
       strafe: Number(bigPressed.has('a')) - Number(bigPressed.has('d')),
-      rotate: Number(bigPressed.has('q')) - Number(bigPressed.has('e')),
+      rotate: 0,
       speed: Number(speed.value) / 100
     };
   }
@@ -374,6 +378,12 @@
     try {
       const response = await fetch(`/api/vision/${source}`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({enabled}), cache: 'no-store'});
       if (!response.ok) throw new Error(`request failed: ${response.status}`);
+      if (enabled) {
+        Object.keys(visionEnabled).filter(other => other !== source).forEach(other => {
+          visionEnabled[other] = false;
+          renderVision(other, {enabled: false, available: null, detections: []});
+        });
+      }
       renderVision(source, await response.json());
       showToast(`${source === '3tsahur' ? '3TSahur' : source === 'larp-a' ? 'LARP Scout A' : 'LARP Scout B'} vision ${enabled ? 'enabled' : 'disabled'}`);
     } catch (_) {

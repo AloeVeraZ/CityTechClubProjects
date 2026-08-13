@@ -38,7 +38,7 @@ After the reboot, run the optional installer as the Pi's normal user, without
 `sudo`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/install-vision.sh | bash
+curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/curl-install-vision.sh | bash
 ```
 
 The installer follows Ultralytics' Pi deployment pattern: it installs
@@ -59,7 +59,11 @@ updates therefore retain vision, and normal driving does not need internet.
 
 ## Enable or disable vision in the dashboard
 
-Open a robot tab and press `C`, or select its **Vision off · C** button. The control is per camera: 3TSahur's C270, LARP Scout A, and LARP Scout B each keep their own state. When enabled, the dashboard overlays current `person` boxes and confidence scores; press `C` again to immediately stop future inference for that selected feed.
+Open a robot tab and press `C`, or select its **Vision off · C** button. When
+enabled, the dashboard overlays current `person` boxes and confidence scores;
+press `C` again to immediately stop future inference for that selected feed.
+Only one camera may run YOLO at a time. Enabling it on another robot
+automatically disables the previous feed.
 
 Vision is deliberately disabled after a dashboard restart. A missing model, missing `ultralytics`/`ncnn` package, unavailable camera, or unreachable LARP stream reports as **Vision unavailable** in the video pane. Those conditions do not disable driving, emergency stop, the motor watchdog, camera streaming, or CSI status.
 
@@ -128,6 +132,7 @@ VISION_MOTION_GATE=1
 VISION_MOTION_THRESHOLD=0.02
 VISION_FORCE_INFERENCE_SECONDS=5
 VISION_INTERVAL_SECONDS=0.5
+VISION_CPU_THREADS=2
 EVIDENCE_MAX_ITEMS=100
 EVIDENCE_QUEUE_SIZE=12
 HEALTH_INTERVAL_SECONDS=10

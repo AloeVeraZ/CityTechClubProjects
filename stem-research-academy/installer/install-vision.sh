@@ -104,7 +104,13 @@ restore_dashboard_config() {
 }
 
 if ! set_config_key VISION_VENV "$VISION_ENV" || \
-   ! set_config_key VISION_MODEL "$MODEL_DIR"; then
+   ! set_config_key VISION_MODEL "$MODEL_DIR" || \
+   ! set_config_key VISION_CPU_THREADS "2" || \
+   ! set_config_key VISION_IMAGE_SIZE "$IMAGE_SIZE" || \
+   ! set_config_key VISION_INTERVAL_SECONDS "0.5" || \
+   ! set_config_key VISION_MOTION_GATE "1" || \
+   ! set_config_key VISION_MOTION_THRESHOLD "0.02" || \
+   ! set_config_key VISION_FORCE_INFERENCE_SECONDS "5"; then
     restore_dashboard_config
     fail "the persistent dashboard configuration could not be updated."
 fi

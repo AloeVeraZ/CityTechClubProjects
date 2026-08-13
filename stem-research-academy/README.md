@@ -134,7 +134,7 @@ extends that base for the 3TSahur/LARP swarm.
 
 | Area | Partner-base behavior retained | 3TSahur/LARP changes |
 | --- | --- | --- |
-| Drivetrain | Python mecanum drive and GPIO architecture | Names changed only; exact BCM mapping remains `5/6`, `16/19`, `20/21`, `13/26`. |
+| Drivetrain | Python mecanum drive and GPIO architecture | BCM pin pairs retained; installed polarity and longitudinal direction calibrated in software. |
 | Deployment | Hotspot, service, kiosk, installer/update rollback | 3TSahur names, local operator workflow, beginner setup/checklists. |
 | Dashboard | Responsive browser controls | Three visible robot workspaces, one scroll-selected stream, bottom health/timeline, gamepad/dead-man controls. |
 | Scouts | ECHO drive/control foundations | LARP A/B identities, Wi-Fi recovery, heartbeats, CSI display/calibration, separate camera feeds. |
@@ -168,7 +168,7 @@ camera/mission features remain extensions.
 | Pi model/runtime | Raspberry Pi OS, Python system packages, system-site venv | Same package strategy; adds nginx and optional isolated vision tooling. |
 | Application/config paths | `~/STEMResearchAcademy`; `/etc/stem-research-academy/config.env` | Same paths; staged replacement uses the existing service rather than running a second app. |
 | systemd services | `stem-robot-dashboard`, `stem-robot-hotspot` | Same unit names and executable paths; target replaces their definitions and health-checks port 8080. |
-| Mecanum GPIO/PWM | BCM `5/6`, `16/19`, `20/21`, `13/26`; 1 kHz | Exact mapping/frequency retained; mixer and 15 ms shared reversal dead-time retained. |
+| Mecanum GPIO/PWM | BCM `5/6`, `16/19`, `20/21`, `13/26`; 1 kHz | Pin pairs/frequency retained; longitudinal axis calibrated; 15 ms shared reversal dead-time retained. |
 | Browser/Pi safety | 300 ms command expiry, sequence rejection, 200 ms watchdog | Retained; unchanged PWM heartbeats are skipped without skipping watchdog refresh. |
 | Scout API/discovery | `/drive`, `/stop`, `/status`, HTTP registration and UDP heartbeat | Endpoints and discovery payloads retained; timeout is reduced from 200 ms to configurable 120 ms. |
 | Partner persistent keys | `SCOUT_A/B_HOST`, `ESP32_ONE/TWO_STREAM_URL` | Accepted at runtime and migrated into `LARP_A/B_HOST` and `LARP_A/B_CAMERA_URL` on install. |
@@ -474,7 +474,7 @@ start from the isolated vision runtime. Then run this separate command as the
 normal Pi user (do **not** add `sudo`):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/install-vision.sh | bash
+curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/curl-install-vision.sh | bash
 ```
 
 The command checks for 64-bit Raspberry Pi OS and 3 GB of free space, creates
@@ -488,7 +488,9 @@ normal application updates.
 After it prints `dashboard health check passed`, open a robot tab and select
 **Vision off** or press `C`. Start with one camera and keep the wheels raised
 for the first test. Vision is lazy and motion-gated: when its toggle is off, no
-model is loaded and no inference competes with robot control.
+model or worker is started and no inference competes with robot control.
+Enabling a camera automatically disables YOLO on the other feeds. The launcher
+also caps the optional runtime at two native compute threads.
 
 Verify the installation or collect the exact error with:
 

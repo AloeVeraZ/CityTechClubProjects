@@ -14,6 +14,22 @@ class _Frame:
 
 
 class VisionEfficiencyTests(unittest.TestCase):
+    def test_disabling_never_starts_the_optional_worker(self):
+        manager = VisionManager({"camera": lambda: _Frame()})
+        state = manager.set_enabled("camera", False)
+
+        self.assertIsNone(manager._thread)
+        self.assertFalse(state["enabled"])
+
+    def test_enabling_one_yolo_source_disables_the_previous_source(self):
+        manager = VisionManager({"one": lambda: _Frame(), "two": lambda: _Frame()})
+        with patch.object(manager, "_ensure_thread_locked"):
+            manager.set_enabled("one", True)
+            manager.set_enabled("two", True)
+
+        self.assertFalse(manager.snapshot("one")["enabled"])
+        self.assertTrue(manager.snapshot("two")["enabled"])
+
     def test_motion_gate_skips_yolo_until_periodic_refresh(self):
         manager = VisionManager({"camera": lambda: _Frame()})
         manager._last_inference_at["camera"] = time.monotonic()
@@ -76,6 +92,27 @@ class HealthTests(unittest.TestCase):
             state = monitor.snapshot()
         self.assertEqual(state["status"], "starting")
         self.assertEqual(state["camera_frame_age_seconds"], 0.25)
+
+
+class VisionInstallerTests(unittest.TestCase):
+    def test_one_command_installer_selects_yolo11n_coco_ncnn(self):
+        root = Path(__file__).parents[1]
+        bootstrap = (root / "installer" / "curl-install-vision.sh").read_text(encoding="utf-8")
+        installer = (root / "installer" / "install-vision.sh").read_text(encoding="utf-8")
+
+        self.assertIn("installer/install-vision.sh", bootstrap)
+        self.assertIn('MODEL_NAME="yolo11n.pt"', installer)
+        self.assertIn('model.export(format="ncnn"', installer)
+        self.assertIn("classes=[0]", installer)
+
+    def test_launcher_bounds_optional_runtime_threads_and_requires_model(self):
+        root = Path(__file__).parents[1]
+        launcher = (root / "installer" / "start-dashboard.sh").read_text(encoding="utf-8")
+
+        self.assertIn('VISION_MODEL_PATH="${VISION_MODEL:-}"', launcher)
+        self.assertIn('VISION_CPU_THREADS="${VISION_CPU_THREADS:-2}"', launcher)
+        self.assertIn('export OMP_NUM_THREADS="$VISION_CPU_THREADS"', launcher)
+        self.assertIn('[ -e "$VISION_MODEL_PATH" ]', launcher)
 
 
 if __name__ == "__main__":

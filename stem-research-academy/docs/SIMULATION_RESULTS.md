@@ -19,8 +19,9 @@ working directory: all 32 of its tests passed.
 | `test_swarm_compatibility.py` | simultaneous 3TSahur, LARP A, and LARP B route compatibility plus local control-path queue check | pass |
 
 The test harness uses fake GPIO/PWM implementations and mocked network/camera
-interfaces. It verifies the partner-base forward pins `5, 16, 20, 13` and
-reverse pins `6, 19, 21, 26` for the four mecanum wheels.
+interfaces. It verifies the installed PWM pairs, inverted longitudinal axis,
+unchanged strafe/turn signs, and equal 75% output on all four motors for both
+Q and E rotations.
 
 The latency pass confirms that an unchanged held command performs zero
 additional Pi PWM starts or duty-cycle changes. The LARP firmware similarly

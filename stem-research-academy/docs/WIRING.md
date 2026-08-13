@@ -4,7 +4,7 @@ The 3TSahur mecanum chassis uses two DC 3–18 V, 10 A dual H-bridge motor
 drivers. This table intentionally matches the partner repository's original
 mecanum assignment. All numbers below are Raspberry Pi **BCM GPIO** numbers.
 
-| Wheel | Driver input pair | Forward | Reverse |
+| Wheel | Driver input pair | Positive PWM leg | Negative PWM leg |
 | --- | --- | ---: | ---: |
 | Front left | Driver 1 IN1 / IN2 | GPIO 5 | GPIO 6 |
 | Rear left | Driver 1 IN3 / IN4 | GPIO 19 | GPIO 16 |
@@ -12,10 +12,11 @@ mecanum assignment. All numbers below are Raspberry Pi **BCM GPIO** numbers.
 | Rear right | Driver 2 IN3 / IN4 | GPIO 26 | GPIO 13 |
 
 This is encoded in `robot_server/motor.py` and tested in
-`tests/test_motor.py`. Rear-left and rear-right are polarity-swapped in software
-for the installed motor orientations. Do not connect one GPIO to more than one
-driver input: independent channels are required for mecanum strafe and
-rotation.
+`tests/test_motor.py`. The installed chassis needs its longitudinal axis
+inverted, so `W` drives the negative PWM legs (GPIO 6, 16, 21, and 13), while
+`S` drives the positive legs (GPIO 5, 19, 20, and 26). Strafe polarity is
+unchanged. `Q` and `E` are pure rotations: each drives all four motors at 75%
+magnitude. Do not connect one GPIO to more than one driver input.
 
 Before the first ground test, connect all logic and motor grounds, power motors
 from their rated external supply, add a suitable fuse/power switch, and test
