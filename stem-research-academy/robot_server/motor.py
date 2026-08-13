@@ -14,11 +14,12 @@ class MotorPins:
     reverse: int
 
 
-# BCM numbering. This wheel assignment intentionally matches the partner
-# integration base. Do not share a GPIO input between driver boards.
+# BCM numbering. The left-side pairs are intentionally polarity-swapped to
+# match the installed motors; the right-side polarity remains unchanged.
+# Do not share a GPIO input between driver boards.
 DEFAULT_MOTOR_PINS = {
-    "front_left": MotorPins(5, 6),       # Driver 1, Motor A
-    "rear_left": MotorPins(16, 19),      # Driver 1, Motor B
+    "front_left": MotorPins(6, 5),       # Driver 1, Motor A (reversed)
+    "rear_left": MotorPins(19, 16),      # Driver 1, Motor B (reversed)
     "front_right": MotorPins(20, 21),    # Driver 2, Motor A
     "rear_right": MotorPins(13, 26),     # Driver 2, Motor B (wired reversed)
 }

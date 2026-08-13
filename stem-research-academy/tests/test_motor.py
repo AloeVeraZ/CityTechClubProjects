@@ -70,13 +70,13 @@ class MecanumMixTests(unittest.TestCase):
         self.assertLessEqual(max(abs(value) for value in result.values()), 1)
         self.assertEqual(result["front_left"], 1)
 
-    def test_supplied_forward_pin_directions(self):
+    def test_forward_uses_reversed_left_and_unchanged_right_pin_directions(self):
         gpio = FakeGPIO()
         drive = MecanumDrive(gpio_module=gpio)
         drive.drive(1, 0, 0, 0.75)
-        for forward_pin in (5, 16, 20, 13):
+        for forward_pin in (6, 19, 20, 13):
             self.assertEqual(gpio.pwms[forward_pin].duty, 75)
-        for reverse_pin in (6, 19, 21, 26):
+        for reverse_pin in (5, 16, 21, 26):
             self.assertFalse(gpio.pwms[reverse_pin].running)
         self.assertEqual(sum(pwm.running for pwm in gpio.pwms.values()), 4)
         drive.close()
