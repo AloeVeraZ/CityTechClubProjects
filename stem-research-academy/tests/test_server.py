@@ -46,6 +46,7 @@ class ServerTests(unittest.TestCase):
         self.assertIn("camera_name", data)
         self.assertIn("vision", data)
         self.assertIn("3tsahur", data["vision"])
+        self.assertEqual(set(data["vision"]), {"3tsahur"})
         self.assertIn("system_health", data)
         self.assertIn("evidence", data)
         self.assertIn("camera_restart_count", data)

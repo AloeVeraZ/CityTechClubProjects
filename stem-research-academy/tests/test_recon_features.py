@@ -14,20 +14,48 @@ class _Frame:
 
 
 class VisionEfficiencyTests(unittest.TestCase):
-    def test_person_detection_defaults_to_low_threshold_without_motion_gating(self):
+    def test_installed_model_auto_enables_detection_at_startup(self):
+        with TemporaryDirectory() as directory:
+            config = Path(directory) / "model.cfg"
+            weights = Path(directory) / "model.weights"
+            config.write_text("model", encoding="utf-8")
+            weights.write_bytes(b"weights")
+            environment = {
+                "VISION_MODEL_CONFIG": str(config),
+                "VISION_MODEL_WEIGHTS": str(weights),
+                "VISION_AUTO_ENABLE": "1",
+            }
+            with patch.dict("os.environ", environment, clear=True), patch.object(
+                VisionManager, "_ensure_thread_locked"
+            ) as ensure_worker:
+                manager = VisionManager({"camera": lambda: _Frame()})
+
+        self.assertTrue(manager.snapshot("camera")["enabled"])
+        ensure_worker.assert_called_once()
+
+    def test_missing_model_stays_disabled_at_startup(self):
+        with patch.dict("os.environ", {"VISION_AUTO_ENABLE": "1"}, clear=True):
+            manager = VisionManager({"camera": lambda: _Frame()})
+
+        self.assertFalse(manager.snapshot("camera")["enabled"])
+        self.assertIsNone(manager._thread)
+
+    def test_object_detection_defaults_to_low_threshold_without_motion_gating(self):
         with patch.dict("os.environ", {}, clear=True):
             manager = VisionManager({"camera": lambda: _Frame()})
 
         self.assertEqual(manager.confidence, 0.20)
-        self.assertFalse(manager.person_motion_gate)
+        self.assertFalse(manager.object_motion_gate)
+        self.assertIn("person", manager.detected_classes)
+        self.assertIn("cell phone", manager.detected_classes)
 
     def test_stationary_person_frames_are_inferred_continuously(self):
         manager = VisionManager({"camera": lambda: _Frame()})
         manager._last_inference_at["camera"] = time.monotonic()
         with patch.dict("sys.modules", {"cv2": object()}), patch.object(
             manager, "_motion_score", return_value=0.0
-        ), patch.object(manager, "_detect_people", return_value=[]) as detect:
-            manager._run_one("camera", people_enabled=True, landmarks_enabled=False)
+        ), patch.object(manager, "_detect_objects", return_value=[]) as detect:
+            manager._run_one("camera", objects_enabled=True, landmarks_enabled=False)
 
         detect.assert_called_once()
         self.assertFalse(manager.snapshot("camera")["inference_skipped"])
@@ -50,12 +78,12 @@ class VisionEfficiencyTests(unittest.TestCase):
 
     def test_motion_gate_skips_yolo_until_periodic_refresh(self):
         manager = VisionManager({"camera": lambda: _Frame()})
-        manager.person_motion_gate = True
+        manager.object_motion_gate = True
         manager._last_inference_at["camera"] = time.monotonic()
         with patch.dict("sys.modules", {"cv2": object()}), patch.object(
             manager, "_motion_score", return_value=0.001
-        ), patch.object(manager, "_detect_people") as detect:
-            manager._run_one("camera", people_enabled=True, landmarks_enabled=False)
+        ), patch.object(manager, "_detect_objects") as detect:
+            manager._run_one("camera", objects_enabled=True, landmarks_enabled=False)
 
         state = manager.snapshot("camera")
         self.assertTrue(state["available"])
@@ -64,12 +92,12 @@ class VisionEfficiencyTests(unittest.TestCase):
 
     def test_motion_gate_forces_periodic_static_scene_inference(self):
         manager = VisionManager({"camera": lambda: _Frame()})
-        manager.person_motion_gate = True
+        manager.object_motion_gate = True
         manager._last_inference_at["camera"] = 0
         with patch.dict("sys.modules", {"cv2": object()}), patch.object(
             manager, "_motion_score", return_value=0.001
-        ), patch.object(manager, "_detect_people", return_value=[]) as detect:
-            manager._run_one("camera", people_enabled=True, landmarks_enabled=False)
+        ), patch.object(manager, "_detect_objects", return_value=[]) as detect:
+            manager._run_one("camera", objects_enabled=True, landmarks_enabled=False)
 
         detect.assert_called_once()
         self.assertFalse(manager.snapshot("camera")["inference_skipped"])
@@ -80,7 +108,7 @@ class VisionEfficiencyTests(unittest.TestCase):
         with patch.dict("sys.modules", {"cv2": object()}), patch.object(
             manager, "_motion_score", return_value=0.001
         ), patch.object(manager, "_detect_landmarks") as detect:
-            manager._run_one("camera", people_enabled=False, landmarks_enabled=True)
+            manager._run_one("camera", objects_enabled=False, landmarks_enabled=True)
 
         state = manager.snapshot("camera")
         self.assertTrue(state["landmarks_available"])
@@ -115,26 +143,32 @@ class HealthTests(unittest.TestCase):
 
 
 class VisionInstallerTests(unittest.TestCase):
-    def test_one_command_installer_selects_yolo11n_coco_ncnn(self):
+    def test_one_command_installer_selects_offline_yolov4_tiny_coco(self):
         root = Path(__file__).parents[1]
         bootstrap = (root / "installer" / "curl-install-vision.sh").read_text(encoding="utf-8")
         installer = (root / "installer" / "install-vision.sh").read_text(encoding="utf-8")
 
         self.assertIn("installer/install-vision.sh", bootstrap)
-        self.assertIn('MODEL_NAME="yolo11n.pt"', installer)
-        self.assertIn('model.export(format="ncnn"', installer)
-        self.assertIn("classes=[0]", installer)
-        self.assertIn("ultralytics.com/images/bus.jpg", installer)
+        self.assertIn("yolov4-tiny.weights", installer)
+        self.assertIn("readNetFromDarknet", installer)
+        self.assertIn("sha256sum --check --status", installer)
         self.assertIn("person-detection check passed", installer)
+        self.assertIn('set_config_key VISION_AUTO_ENABLE "1"', installer)
+        self.assertNotIn("ultralytics", installer.lower())
 
-    def test_launcher_bounds_optional_runtime_threads_and_requires_model(self):
+    def test_launcher_bounds_native_runtime_threads_without_second_venv(self):
         root = Path(__file__).parents[1]
         launcher = (root / "installer" / "start-dashboard.sh").read_text(encoding="utf-8")
 
-        self.assertIn('VISION_MODEL_PATH="${VISION_MODEL:-}"', launcher)
         self.assertIn('VISION_CPU_THREADS="${VISION_CPU_THREADS:-2}"', launcher)
         self.assertIn('export OMP_NUM_THREADS="$VISION_CPU_THREADS"', launcher)
-        self.assertIn('[ -e "$VISION_MODEL_PATH" ]', launcher)
+        self.assertIn('exec "$BASE_PYTHON" -m robot_server.app', launcher)
+        self.assertNotIn("VISION_VENV", launcher)
+
+    def test_dashboard_service_has_one_gigabyte_hard_limit(self):
+        root = Path(__file__).parents[1]
+        service = (root / "installer" / "systemd" / "stem-robot-dashboard.service").read_text(encoding="utf-8")
+        self.assertIn("MemoryMax=1G", service)
 
 
 if __name__ == "__main__":

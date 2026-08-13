@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-command YOLO11n/COCO bootstrap for an installed 3TSahur Pi hub.
+# One-command offline YOLOv4-tiny bootstrap for an installed 3TSahur Pi hub.
 set -Eeuo pipefail
 
 REPO_URL="${STEM_REPO_URL:-https://github.com/AloeVeraZ/CityTechClubProjects.git}"
@@ -29,7 +29,7 @@ command -v curl >/dev/null 2>&1 || {
     exit 1
 }
 
-echo "Downloading the optional YOLO11n COCO installer from ${REPO_BRANCH}..."
+echo "Downloading the compact offline object-detector installer from ${REPO_BRANCH}..."
 curl --fail --location --retry 3 --retry-delay 2 --silent --show-error \
     "$INSTALLER_URL" -o "$TEMP_INSTALLER"
 bash "$TEMP_INSTALLER"

@@ -1,4 +1,4 @@
-"""3TSahur hotspot dashboard for its two LARP reconnaissance scouts."""
+"""3TSahur mecanum robot hotspot dashboard."""
 
 from __future__ import annotations
 
@@ -101,11 +101,7 @@ def _scout_frame(scout_id: str):
     return _fetch_scout_jpeg(scout_id, timeout=0.4)
 
 
-vision = VisionManager({
-    "3tsahur": camera.latest_jpeg,
-    "larp-a": lambda: _scout_frame("a"),
-    "larp-b": lambda: _scout_frame("b"),
-}, should_pause=_control_is_active)
+vision = VisionManager({"3tsahur": camera.latest_jpeg}, should_pause=_control_is_active)
 events: deque[dict] = deque(maxlen=120)
 event_lock = threading.Lock()
 snapshot_dir = Path(os.environ.get("SNAPSHOT_DIR", "/tmp/3tsahur-snapshots"))
@@ -191,7 +187,7 @@ def create_app() -> Flask:
             uptime_seconds=round(time.monotonic(), 1),
             command=drive.last_command,
             actuators=actuators.snapshot(),
-            vision={source: vision.snapshot(source) for source in ("3tsahur", "larp-a", "larp-b")},
+            vision={"3tsahur": vision.snapshot("3tsahur")},
             system_health=system_health.snapshot(),
             evidence=evidence_store.snapshot(),
             server_time_ms=round(time.time() * 1000),

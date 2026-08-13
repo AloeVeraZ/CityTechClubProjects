@@ -1,5 +1,5 @@
 [Unit]
-Description=3TSahur mecanum hub and LARP scout dashboard
+Description=3TSahur mecanum robot dashboard
 Requires=pigpiod.service
 After=network.target pigpiod.service
 
@@ -13,6 +13,9 @@ ExecStart=/bin/bash @APP_DIR@/installer/start-dashboard.sh @APP_DIR@
 Restart=always
 RestartSec=2
 TimeoutStopSec=5
+# Hard ceiling requested for the entire dashboard, camera, and detector. The
+# 24 MB YOLOv4-tiny model normally stays far below this bound.
+MemoryMax=1G
 
 [Install]
 WantedBy=multi-user.target

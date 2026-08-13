@@ -39,7 +39,7 @@ class DashboardTabTests(unittest.TestCase):
         self.assertIn("key === 'c'", SCRIPT)
         self.assertIn("toggleVision('3tsahur')", SCRIPT)
         self.assertIn("/api/vision/${source}", SCRIPT)
-        self.assertIn("YOLO unavailable: model or runtime is not installed", SCRIPT)
+        self.assertIn("Offline detector unavailable: model files are not installed", SCRIPT)
         self.assertIn(".vision-overlay", STYLES)
 
     def test_recon_features_are_optional_and_control_aware(self):
@@ -102,18 +102,24 @@ class DashboardTabTests(unittest.TestCase):
         self.assertIn("if (rotate) return {forward: 0, strafe: 0, rotate, speed: 0.75};", SCRIPT)
         self.assertIn("Q/E four-wheel rotate at 75%", TEMPLATE)
 
-    def test_yolo_state_has_only_the_hub_source(self):
+    def test_detector_state_has_only_the_hub_source(self):
         self.assertIn("const visionEnabled = {'3tsahur': false};", SCRIPT)
+        self.assertIn("refreshVision(source, true)", SCRIPT)
         self.assertNotIn("'larp-a'", SCRIPT)
         self.assertNotIn("'larp-b'", SCRIPT)
 
-    def test_recon_ui_is_only_yolo_person_detection_and_snapshot(self):
-        self.assertIn('>YOLO off · C</button>', TEMPLATE)
+    def test_recon_ui_is_only_offline_detection_and_snapshot(self):
+        self.assertIn('>Detection off · C</button>', TEMPLATE)
         self.assertIn('data-snapshot="3tsahur"', TEMPLATE)
-        self.assertIn('PERSON DETECTED', SCRIPT)
-        self.assertIn('YOLO active · no person', SCRIPT)
+        self.assertIn('DETECTED', SCRIPT)
+        self.assertIn('Detection active · no objects', SCRIPT)
         self.assertIn('confidence_threshold', SCRIPT)
-        self.assertIn('PERSON ${Math.round(box.confidence * 100)}%', SCRIPT)
+        self.assertIn("String(box.label || 'object').toUpperCase()", SCRIPT)
+
+    def test_boxes_follow_the_camera_cover_crop(self):
+        self.assertIn('const coverScale = Math.max(', SCRIPT)
+        self.assertIn('const offsetX = (canvas.width - renderedWidth) / 2;', SCRIPT)
+        self.assertIn('const offsetY = (canvas.height - renderedHeight) / 2;', SCRIPT)
 
     def test_only_mecanum_drive_heartbeat_remains(self):
         self.assertIn("if (bigPressed.size) sendBig(true)", SCRIPT)

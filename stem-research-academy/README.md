@@ -56,8 +56,8 @@ that support mDNS, but `10.42.0.1` is the dependable direct address.
 | Scout control | Send direction commands to LARP Scout A and B independently over Wi-Fi. |
 | Safety | Stop stale commands automatically; includes sequence checks, watchdogs, and a kill-all control. |
 | Deployment | Configure a Pi hotspot, dashboard service, local touchscreen/display kiosk, and mDNS address. |
-| Optional AI vision | Prepare pretrained YOLO11 Nano person detection for the selected C270 or LARP camera feed. |
-| Efficient reconnaissance | Motion-gate person inference, recognize optional ArUco landmarks, and save JPEG-plus-telemetry evidence bundles. |
+| Optional AI vision | Draw local boxes for people and 79 other COCO categories with compact YOLOv4-tiny/OpenCV. |
+| Efficient reconnaissance | Run one 320px offline detector under a 1 GB service memory ceiling. |
 | Mission tools | Keep a bounded event timeline, monitor Pi health/camera recovery, save per-camera snapshots, calibrate LARP CSI baselines, and use browser gamepads/dead-man control. |
 | Control protection | Yield analysis and auxiliary polling while moving; pause video automatically only if measured command latency degrades. |
 
@@ -97,7 +97,7 @@ normal operation requires cloud access.
    keeps only the robot camera nearest the viewport open. Test `Space`/`Esc`
    before floor operation.
 5. **Enable optional analysis last.** Use CSI calibration with the scene clear,
-   then enable YOLO only for the selected camera when its performance is
+   then enable offline detection only for the selected camera when its performance is
    acceptable.
 
 ### What happens when the system runs
@@ -118,7 +118,7 @@ normal operation requires cloud access.
 flowchart LR
     A["Boot Pi hub"] --> B["Join local hotspot"] --> C["Verify C270 and one LARP stream"]
     C --> D["Raised-wheel stop and direction test"] --> E["Calibrate CSI"]
-    E --> F["Enable optional YOLO / gamepad"] --> G["Ground test at low speed"]
+    E --> F["Enable offline detection / gamepad"] --> G["Ground test at low speed"]
 ```
 
 For the next field session, use the step-by-step
@@ -138,7 +138,7 @@ extends that base for the 3TSahur/LARP swarm.
 | Deployment | Hotspot, service, kiosk, installer/update rollback | 3TSahur names, local operator workflow, beginner setup/checklists. |
 | Dashboard | Responsive browser controls | Three visible robot workspaces, one scroll-selected stream, bottom health/timeline, gamepad/dead-man controls. |
 | Scouts | ECHO drive/control foundations | LARP A/B identities, Wi-Fi recovery, heartbeats, CSI display/calibration, separate camera feeds. |
-| Vision | No optional hub inference workflow | Per-feed YOLO11 Nano toggles, overlays, snapshots, and failure isolation. |
+| Vision | No optional hub inference workflow | Offline YOLOv4-tiny COCO boxes, snapshots, and failure isolation. |
 | Validation | Original functional test foundation | Expanded simulation coverage, API expiry/sequence checks, feature-isolation checks, and timing results. |
 
 ```mermaid
@@ -148,7 +148,7 @@ flowchart TB
     Retained --> Scouts["LARP Scout A / B\nECHO · ESP32-CAM · CSI"]
     Hub --> Dashboard["One-page operator dashboard\nleft cameras · right controls · bottom telemetry"]
     Scouts --> Dashboard
-    Dashboard --> Optional["Optional YOLO · snapshots · gamepad · dead-man"]
+    Dashboard --> Optional["Offline detection · snapshots · gamepad · dead-man"]
 ```
 
 Read [docs/CHANGES_FROM_ORIGINAL.md](docs/CHANGES_FROM_ORIGINAL.md) for the
@@ -267,11 +267,8 @@ The dashboard works with mouse/touch controls and the following keyboard shortcu
 | 3TSahur | `A` / `D` | Strafe left / right |
 | 3TSahur | `Q` / `E` | Rotate left / right |
 | 3TSahur | `Space` | Stop the hub drivetrain |
-| LARP Scout A | Arrow keys | Forward, reverse, left, right |
-| LARP Scout B | `I` / `K` / `J` / `L` | Forward, reverse, left, right |
-| Selected 3TSahur/LARP camera | `C` | Toggle motion-gated person detection |
-| Selected 3TSahur or LARP A camera | `L` | Toggle ArUco landmark recognition; use the button on LARP B because `L` steers it |
-| All robots | `Esc` | Emergency kill-all |
+| 3TSahur | `C` | Toggle offline 80-class object detection |
+| 3TSahur | `Esc` | Emergency stop |
 
 Commands are deliberately short-lived. Releasing a key, losing the client connection, or letting the watchdog expire stops the affected robot.
 
@@ -291,7 +288,7 @@ Commands are deliberately short-lived. Releasing a key, losing the client connec
 
 - [ ] Current 64-bit Raspberry Pi OS with internet available for initial installation.
 - [ ] Run `bash installer/install.sh` as the normal Pi user. It installs Python, Flask, OpenCV, V4L2 tools, NetworkManager, Avahi, and required GPIO support.
-- [ ] Optional YOLO: follow [docs/VISION_SETUP.md](docs/VISION_SETUP.md) to install the isolated persistent runtime and export `yolo11n_ncnn_model`.
+- [ ] Optional detection: follow [docs/VISION_SETUP.md](docs/VISION_SETUP.md) to install the checksum-verified 24 MB local model.
 - [ ] Optional landmarks: confirm the installed OpenCV build exposes `cv2.aruco`; the dashboard reports an isolated warning if it does not.
 
 ### 3TSahur hub
@@ -466,66 +463,50 @@ backup above or rerun the partner repository's installer. See the [partner
 baseline comparison](docs/PARTNER_BASELINE_COMPARISON.md) for the retained
 motor architecture and the exact configuration differences.
 
-### Optional one-command YOLO install
+### Optional one-command offline object detection
 
 First install or update the base hub with the normal one-line installer above
-and let the Pi reboot. This is required because older dashboard services cannot
-start from the isolated vision runtime. Then run this separate command as the
-normal Pi user (do **not** add `sudo`):
+and let the Pi reboot. Then run this command as the normal Pi user (do **not**
+add `sudo`):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/curl-install-vision.sh | bash
 ```
 
-The command checks for 64-bit Raspberry Pi OS and 3 GB of free space, creates
-`~/.local/share/stem-research-academy/vision/.vision-venv`, installs the
-Ultralytics export dependencies and NCNN, downloads the COCO-pretrained
-`yolo11n.pt`, exports a 320px `yolo11n_ncnn_model`, and runs a synthetic NCNN
-inference before restarting the dashboard. It also writes the absolute runtime
-and model paths to `/etc/stem-research-academy/config.env`, so both survive
-normal application updates.
+The command downloads checksum-verified YOLOv4-tiny COCO files, loads them with
+the existing system OpenCV runtime, and proves a real person detection before
+restarting the dashboard. It installs no second Python environment. The 24 MB
+weights recognize 80 common object categories and work without internet after
+installation.
 
-After it prints `dashboard health check passed`, open a robot tab and select
-**Vision off** or press `C`. Start with one camera and keep the wheels raised
-for the first test. Vision is lazy and motion-gated: when its toggle is off, no
-model or worker is started and no inference competes with robot control.
-Enabling a camera automatically disables YOLO on the other feeds. The launcher
-also caps the optional runtime at two native compute threads.
+After it reports success, select **Detection off** or press `C`. The worker is
+lazy, capped at two native compute threads, pauses while driving, and the whole
+dashboard service has a hard `MemoryMax=1G` ceiling.
 
 Verify the installation or collect the exact error with:
 
 ```bash
 sudo systemctl status stem-robot-dashboard --no-pager
-grep -E '^VISION_(VENV|MODEL)=' /etc/stem-research-academy/config.env
-~/.local/share/stem-research-academy/vision/.vision-venv/bin/python - <<'PY'
-import os
-from ultralytics import YOLO
-
-model_path = os.path.expanduser("~/.local/share/stem-research-academy/vision/yolo11n_ncnn_model")
-YOLO(model_path)
-print("YOLO11 Nano NCNN runtime is ready:", model_path)
-PY
+grep -E '^VISION_(MODEL_CONFIG|MODEL_WEIGHTS)=' /etc/stem-research-academy/config.env
+systemctl show stem-robot-dashboard.service -p MemoryCurrent -p MemoryMax
 ```
 
-If the button reports **Vision unavailable**, run:
+If the button reports **Offline object detector unavailable**, run:
 
 ```bash
 sudo journalctl -u stem-robot-dashboard -n 80 --no-pager
 ```
 
-YOLO remains optional: do not install it until the base dashboard, cameras,
-and controls have passed their physical checks. It is never required for motor
-control or LARP operation.
+Detection remains optional and is never required for motor control.
 
 ### Manual vision install
 
 Use this alternative if the repository is already installed locally and you
 prefer to run the reviewed script from disk instead of piping it from GitHub.
 
-- Current 64-bit Raspberry Pi OS; complete the base installation first.
-- Stable power, at least 3 GB free storage, and temporary internet for the
-  one-time package/model download and conversion.
-- A connected C270 or a verified LARP ESP32-CAM MJPEG stream.
+- Complete the base installation first.
+- Provide temporary internet only for the one-time 24 MB model download.
+- Connect the C270 and run as the normal Pi user, never as `root`.
 - Install as the normal Pi user in a separate environment—never as `root` and
   never into the dashboard's system Python packages.
 
@@ -534,12 +515,8 @@ cd ~/STEMResearchAcademy
 bash installer/install-vision.sh
 ```
 
-The complete [pretrained vision setup guide](docs/VISION_SETUP.md) includes
-the C270 visual test, LARP feed prerequisites, safe performance settings,
-offline-use notes, and a hardware validation checklist. Upstream references:
-[YOLO11 models](https://docs.ultralytics.com/models/yolo11/),
-[NCNN export](https://docs.ultralytics.com/integrations/ncnn/), and
-[Raspberry Pi deployment](https://docs.ultralytics.com/guides/raspberry-pi/).
+The complete [offline vision setup guide](docs/VISION_SETUP.md) includes model
+verification, performance settings, the memory check, and troubleshooting.
 
 ## Tests and simulation evidence
 
@@ -555,12 +532,12 @@ pip install -r requirements.txt
 python -m unittest discover -s tests -v
 ```
 
-The current target desktop simulation ran **78 tests successfully**; the
+The current target desktop simulation ran **84 tests successfully**; the
 independently checked partner baseline ran **32 tests successfully**. The target
 suite covers dashboard/UI,
 mecanum mixing, camera discovery/recovery/profile isolation, firmware invariants,
 scout registry, Flask control APIs, mission events, snapshots, bounded evidence,
-cached health telemetry, motion-gated vision, landmarks, and optional-feature
+cached health telemetry, offline object detection, landmarks, and optional-feature
 failure handling. Repeated held-command heartbeats are also verified to
 refresh the watchdog without rewriting unchanged Pi or LARP motor outputs.
 Hardware validation is still required for motor

@@ -212,50 +212,56 @@
     const peopleOn = Boolean(data.enabled ?? visionEnabled[source]);
     visionEnabled[source] = peopleOn;
     button.setAttribute('aria-pressed', String(peopleOn));
-    button.textContent = `${peopleOn ? 'YOLO on' : 'YOLO off'} · C`;
+    button.textContent = `${peopleOn ? 'Detection on' : 'Detection off'} · C`;
     if (!peopleOn) {
-      label.textContent = 'YOLO person detection off';
+      label.textContent = 'Detection off';
       clearVisionOverlay(source);
       return;
     }
     if (data.available === false) {
-      label.textContent = data.error || 'YOLO unavailable: model or runtime is not installed';
+      label.textContent = data.error || 'Offline detector unavailable: model files are not installed';
       clearVisionOverlay(source);
       return;
     }
     if (data.available == null) {
-      label.textContent = 'Starting YOLO person detection…';
+      label.textContent = 'Starting offline object detection…';
       clearVisionOverlay(source);
       return;
     }
     const detections = data.detections || [];
     const inferenceTime = Number.isFinite(Number(data.inference_ms)) ? ` · ${Math.round(Number(data.inference_ms))} ms` : '';
     const threshold = Number.isFinite(Number(data.confidence_threshold)) ? ` · ${Math.round(Number(data.confidence_threshold) * 100)}% threshold` : '';
+    const people = detections.filter(box => box.label === 'person').length;
     label.textContent = data.inference_skipped
-      ? 'YOLO active · waiting for motion'
+      ? 'Detection active · waiting for motion'
       : detections.length
-        ? `PERSON DETECTED · ${detections.length}${inferenceTime}`
-        : `YOLO active · no person${inferenceTime}${threshold}`;
+        ? `DETECTED · ${detections.length} object${detections.length === 1 ? '' : 's'} · ${people} person${people === 1 ? '' : 's'}${inferenceTime}`
+        : `Detection active · no objects${inferenceTime}${threshold}`;
     const bounds = canvas.getBoundingClientRect();
     canvas.width = Math.max(1, Math.round(bounds.width));
     canvas.height = Math.max(1, Math.round(bounds.height));
     const context = canvas.getContext('2d');
     context.clearRect(0, 0, canvas.width, canvas.height);
     if (!data.frame_width || !data.frame_height) return;
-    const scaleX = canvas.width / data.frame_width;
-    const scaleY = canvas.height / data.frame_height;
+    // The camera uses object-fit: cover. Apply the same crop and scale to the
+    // overlay so boxes stay on top of the visible objects at every viewport.
+    const coverScale = Math.max(canvas.width / data.frame_width, canvas.height / data.frame_height);
+    const renderedWidth = data.frame_width * coverScale;
+    const renderedHeight = data.frame_height * coverScale;
+    const offsetX = (canvas.width - renderedWidth) / 2;
+    const offsetY = (canvas.height - renderedHeight) / 2;
     context.strokeStyle = '#b9ff38'; context.fillStyle = '#b9ff38'; context.lineWidth = 2;
     context.font = '700 12px ui-monospace, monospace';
     detections.forEach(box => {
-      const x = box.x1 * scaleX, y = box.y1 * scaleY;
-      const width = (box.x2 - box.x1) * scaleX, height = (box.y2 - box.y1) * scaleY;
+      const x = offsetX + box.x1 * coverScale, y = offsetY + box.y1 * coverScale;
+      const width = (box.x2 - box.x1) * coverScale, height = (box.y2 - box.y1) * coverScale;
       context.strokeRect(x, y, width, height);
-      context.fillText(`PERSON ${Math.round(box.confidence * 100)}%`, x + 3, Math.max(13, y - 5));
+      context.fillText(`${String(box.label || 'object').toUpperCase()} ${Math.round(box.confidence * 100)}%`, x + 3, Math.max(13, y - 5));
     });
   }
 
-  async function refreshVision(source) {
-    if (anyRobotMoving() || !visionEnabled[source] || visionInFlight[source]) return;
+  async function refreshVision(source, readStartupState = false) {
+    if (anyRobotMoving() || (!readStartupState && !visionEnabled[source]) || visionInFlight[source]) return;
     visionInFlight[source] = true;
     try {
       const response = await fetch(`/api/vision/${source}`, {cache: 'no-store'});
@@ -445,6 +451,7 @@
   window.setInterval(applyControlPriority, 250);
   window.setInterval(() => { const pad = navigator.getGamepads?.()[0]; if (!pad) return; const held = Boolean(pad.buttons[0]?.pressed); if (deadman.checked && !held) { delete document.body.dataset.deadman; if (gamepadWasMoving) killBig(); gamepadWasMoving = false; lastGamepadSignature = ''; return; } if (deadman.checked) document.body.dataset.deadman = 'held'; const forward = Math.abs(pad.axes[1] || 0) > .18 ? -(pad.axes[1] || 0) : 0; const strafe = Math.abs(pad.axes[0] || 0) > .18 ? pad.axes[0] : 0; const rotate = Math.abs(pad.axes[2] || 0) > .18 ? pad.axes[2] : 0; const moving = Boolean(forward || strafe || rotate); const command = {forward, strafe, rotate, speed: Number(speed.value) / 100}; const signature = JSON.stringify(command); const now = performance.now(); if (moving && (signature !== lastGamepadSignature || now - lastGamepadSentAt >= 80)) { sendBig(true, command); lastGamepadSignature = signature; lastGamepadSentAt = now; } else if (!moving && gamepadWasMoving) { sendBig(true, {forward: 0, strafe: 0, rotate: 0, speed: 0}, true); lastGamepadSignature = ''; } gamepadWasMoving = moving; }, 100);
   renderCameraSelection();
+  selectedCameras.forEach(source => refreshVision(source, true));
   refreshStatus();
   refreshEvents();
 })();

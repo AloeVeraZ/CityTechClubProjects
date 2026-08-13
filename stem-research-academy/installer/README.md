@@ -14,13 +14,14 @@ bash installer/install.sh
 It intentionally reboots when complete. See [../docs/SETUP.md](../docs/SETUP.md)
 for preparation, flashing order, and safety checks.
 
-After the base install and reboot, install the optional COCO-pretrained YOLO11n
-NCNN runtime with:
+After the base install and reboot, install compact 80-class offline object
+detection with:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/curl-install-vision.sh | bash
 ```
 
-The dashboard launcher selects that isolated runtime automatically. The model
-stays unloaded until an operator enables Vision with the dashboard button or
-the `C` key.
+The installer downloads checksum-verified YOLOv4-tiny COCO weights and validates
+a real person detection through the same system OpenCV runtime used by the
+camera. No second Python environment or internet connection is required after
+installation. Press `C` to enable or disable boxes.

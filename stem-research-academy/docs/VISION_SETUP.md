@@ -1,164 +1,104 @@
-# Pretrained vision setup (Raspberry Pi 4)
+# Offline object detection (Raspberry Pi 4)
 
-This guide prepares the 3TSahur Raspberry Pi for **pretrained person detection**. It uses Ultralytics YOLO11 Nano (`yolo11n`), whose standard weights are trained on the COCO dataset. No dataset collection, labeling, or training is required.
+The 3TSahur dashboard uses **YOLOv4-tiny COCO through OpenCV DNN**. Recognition
+runs locally after a one-time model download. It does not require Wi-Fi or
+internet during operation and does not install Ultralytics, PyTorch, NCNN, or a
+second Python environment.
 
-> Current repository status: vision is optional and starts only after an operator enables it for a camera. It runs in an isolated background worker; it does not change the motor GPIO mapping, LARP firmware, or control service.
+The compact weights are about 24 MB and recognize 80 COCO categories, including
+people, bottles, chairs, backpacks, cell phones, laptops, cars, and animals.
+The dashboard service has a systemd `MemoryMax=1G` hard ceiling. The detector
+normally operates far below that limit because one 320x320 frame is processed
+at a time.
 
-## What the model does
+## Install
 
-The included COCO weights recognize 80 common object categories. For this project, begin with COCO class `0` (`person`) only. The model returns confidence-scored bounding boxes that can be drawn onto a camera frame. Treat the output as an operator aid, not a safety decision or proof of identity.
-
-Relevant upstream documentation:
-
-- [YOLO11 pretrained models](https://docs.ultralytics.com/models/yolo11/)
-- [Ultralytics NCNN export](https://docs.ultralytics.com/integrations/ncnn/)
-- [Ultralytics Raspberry Pi deployment guidance](https://docs.ultralytics.com/guides/raspberry-pi/)
-
-## Prerequisites
-
-- Raspberry Pi 4 Model B (4 GB) running a current **64-bit Raspberry Pi OS**.
-- The normal 3TSahur installation completed first. It provides Python 3, OpenCV, the Logitech C270 setup, and the dashboard service.
-- A stable internet connection for the one-time Python package, model-weight, and NCNN export downloads. Normal driving and existing camera streaming do not need internet after setup.
-- At least 3 GB of free storage and a stable Pi power supply. ML packages and model conversion use more space and CPU than the base dashboard.
-- The C270 connected and visible as `/dev/video0` (or the configured camera device). Use `v4l2-ctl --list-devices` to check.
-
-Do not run model installation as `root`, and do not install the ML packages into `/usr/lib/python3`. The separate environment below keeps the established dashboard dependencies unchanged.
-
-## Install YOLO11 Nano and NCNN
-
-Update the base application first and let the Pi reboot. This installs the
-dashboard launcher that can select the optional runtime while retaining a safe
-fallback to the base runtime:
+First update the base application and let the Pi reboot:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/curl-install.sh | STEM_SKIP_OS_UPGRADE=1 bash
 ```
 
-After the reboot, run the optional installer as the Pi's normal user, without
-`sudo`:
+Then run the object-detector installer once, while internet is temporarily
+available:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/curl-install-vision.sh | bash
 ```
 
-The installer follows Ultralytics' Pi deployment pattern: it installs
-`ultralytics[export]` in an isolated environment, downloads `yolo11n.pt`, and
-exports NCNN for faster ARM inference. It uses `imgsz=320`, batch size 1, and
-CPU export for this Pi 4 control workload. It then loads the exported model and
-runs a synthetic frame through NCNN before restarting the dashboard.
+The installer:
 
-The first package install and model export can take several minutes. If it
-fails due to storage pressure, stop, free space, and retry—do not delete the
-robot project or `/etc/stem-research-academy/config.env`.
+- downloads the 24 MB YOLOv4-tiny weights and matching configuration;
+- checks SHA-256 hashes before installing either file;
+- loads the model with the Pi dashboard's existing OpenCV runtime;
+- verifies a real `person` detection on a local test image;
+- restarts the dashboard and confirms its health endpoint responds.
 
-The runtime and model are stored under
-`~/.local/share/stem-research-academy/vision/`, outside the replace-on-update
-application directory. The installer records their absolute paths as
-`VISION_VENV` and `VISION_MODEL` in the persistent config. Normal application
-updates therefore retain vision, and normal driving does not need internet.
+After this completes, normal recognition is fully offline. Model files persist
+under `~/.local/share/stem-research-academy/vision/` across application updates.
 
-## Enable or disable vision in the dashboard
+## Use
 
-Open a robot tab and press `C`, or select its **Vision off · C** button. When
-enabled, the dashboard overlays current `person` boxes and confidence scores;
-press `C` again to immediately stop future inference for that selected feed.
-Only one camera may run YOLO at a time. Enabling it on another robot
-automatically disables the previous feed.
+When the model files are installed, detection starts automatically with the
+dashboard service. Boxes show the object label and confidence percentage. Press
+`C`, or select **Detection on · C**, to turn detection off; press it again to
+restart detection.
 
-Vision is deliberately disabled after a dashboard restart. A missing model, missing `ultralytics`/`ncnn` package, unavailable camera, or unreachable LARP stream reports as **Vision unavailable** in the video pane. Those conditions do not disable driving, emergency stop, the motor watchdog, camera streaming, or CSI status.
+Recognition runs in a background worker and pauses while drive heartbeats are
+active. Motor requests, emergency stop, and the watchdog never wait for model
+inference. Static people and objects are still checked continuously whenever
+the robot is stopped.
 
-Person inference is motion-gated by default. The worker still performs a forced
-inference every five seconds so a stationary person is not ignored, but it skips
-the expensive model call between those checks when the 160x120 frame-difference
-score is low. The existing boxes remain visible until the next forced refresh.
-
-The adjacent **Markers off · L** control enables lightweight 4x4 ArUco marker
-recognition without loading YOLO. Press `L` on the 3TSahur or LARP A tab; on
-LARP B use the button because `L` remains its right-turn key. Marker recognition
-is also off after restart and reports a local warning if the installed OpenCV
-package lacks `cv2.aruco`.
-
-## Verify the Logitech C270 and create a visual preview
-
-This one-frame check writes a labelled image to `/tmp` without touching the dashboard service or motor controls:
+## Default Pi settings
 
 ```bash
-~/.local/share/stem-research-academy/vision/.vision-venv/bin/python - <<'PY'
-import cv2
-from pathlib import Path
-from ultralytics import YOLO
-
-camera = cv2.VideoCapture(0)
-if not camera.isOpened():
-    raise RuntimeError("C270 could not be opened. Check CAMERA_DEVICE and USB power.")
-
-ok, frame = camera.read()
-camera.release()
-if not ok:
-    raise RuntimeError("C270 opened but did not return a frame.")
-
-model = YOLO(str(Path.home() / ".local/share/stem-research-academy/vision/yolo11n_ncnn_model"))
-results = model(frame, classes=[0], conf=0.45, imgsz=320, verbose=False)
-cv2.imwrite("/tmp/3tsahur-yolo-preview.jpg", results[0].plot())
-print("Saved /tmp/3tsahur-yolo-preview.jpg")
-PY
-```
-
-Open `/tmp/3tsahur-yolo-preview.jpg` on the Pi display. A person in view should have a labelled bounding box. An image with no box is valid when no person meets the confidence threshold.
-
-## Performance and safe operating settings
-
-Use these initial settings for the Pi 4:
-
-| Setting | Start with | Why |
-| --- | --- | --- |
-| Model | `yolo11n_ncnn_model` | Smallest YOLO11 detection model. |
-| Input size | `320` | Reduces CPU load compared with 640px inference. |
-| Classes | `[0]` | Limits detection to people. |
-| Person confidence | `0.20` | Improves detection of partial people and upper torsos. |
-| Inference interval | `0.35` seconds | Checks continuously while stationary without blocking controls. |
-| Vision sources | One active tab/feed | Avoids competing inference, video, and Wi-Fi workloads. |
-| Person motion gate | disabled | A stationary person continues to be checked. |
-
-The included implementation runs inference in a separate worker and never waits in a motor-command request path. If you enable more than one feed, the worker samples them in turn; for the best Pi 4 responsiveness, leave vision enabled on only the tab you are watching.
-
-The worker also pauses before starting another analysis cycle whenever the hub
-or either scout is receiving motion heartbeats. These optional environment
-settings can be placed in `/etc/stem-research-academy/config.env`:
-
-```bash
-VISION_MOTION_GATE=1
-VISION_MOTION_THRESHOLD=0.02
-VISION_FORCE_INFERENCE_SECONDS=5
-VISION_INTERVAL_SECONDS=0.5
+VISION_MODEL_CONFIG=$HOME/.local/share/stem-research-academy/vision/yolov4-tiny.cfg
+VISION_MODEL_WEIGHTS=$HOME/.local/share/stem-research-academy/vision/yolov4-tiny.weights
+VISION_AUTO_ENABLE=1
+VISION_CLASSES=
+VISION_CONFIDENCE=0.20
+VISION_IMAGE_SIZE=320
+VISION_INTERVAL_SECONDS=0.50
+VISION_OBJECT_MOTION_GATE=0
 VISION_CPU_THREADS=2
-VISION_PERSON_CONFIDENCE=0.20
-VISION_PERSON_INTERVAL_SECONDS=0.35
-VISION_PERSON_MOTION_GATE=0
-EVIDENCE_MAX_ITEMS=100
-EVIDENCE_QUEUE_SIZE=12
-HEALTH_INTERVAL_SECONDS=10
+VISION_MAX_DETECTIONS=15
 ```
 
-The **Evidence** button captures the selected JPEG and queues a background
-JPEG/JSON pair containing the analysis state, scout heartbeats, command state,
-and cached health telemetry. The queue and retention counts are bounded; the
-dashboard refuses capture while a robot is moving so it cannot compete with
-control traffic.
-
-## Benchmark before enabling it during driving
-
-Run the repository tests first:
+An empty `VISION_CLASSES` enables all 80 COCO categories. To restrict detection,
+provide a comma-separated subset, for example:
 
 ```bash
-cd ~/STEMResearchAcademy
-.venv/bin/python -m unittest discover -s tests -v
+VISION_CLASSES=person,bottle,chair,cell phone,backpack
 ```
 
-Then, with wheels raised, run the preview repeatedly while a second device uses the dashboard. Verify that controls stay responsive and that `Space` and `Esc` immediately stop motion. Start at 2 FPS and 320px; lower the inference rate or disable vision if control, Wi-Fi, temperature, or power stability is affected.
+Restart after configuration changes:
 
-The existing simulation suite validates application control paths, not camera-to-model speed on physical Pi hardware. Measure final performance on the deployed Pi with the actual C270 and one actual ESP32-CAM feed.
+```bash
+sudo systemctl restart stem-robot-dashboard.service
+```
 
-## Optional future additions
+## Verify or troubleshoot
 
-After basic person detection is stable, the model can be connected to the currently selected dashboard tab to display its latest labelled frame and status. A tracker such as ByteTrack can be evaluated later if persistent object IDs are useful, but initial deployment should use detection alone to minimize overhead. See the [Ultralytics tracking guide](https://docs.ultralytics.com/modes/track/).
+Confirm the two model files and memory limit:
+
+```bash
+grep -E '^VISION_(MODEL_CONFIG|MODEL_WEIGHTS|CONFIDENCE|IMAGE_SIZE)=' /etc/stem-research-academy/config.env
+systemctl show stem-robot-dashboard.service -p MemoryCurrent -p MemoryMax
+```
+
+When detection is enabled, the UI shows one of these states:
+
+- `DETECTED` with the object count and inference time;
+- `Detection active · no objects` when the model ran but found nothing above 20%;
+- `Offline object detector unavailable: ...` with the exact missing-file or runtime error.
+
+For service errors:
+
+```bash
+sudo journalctl -u stem-robot-dashboard.service -n 80 --no-pager
+```
+
+The computer-vision output is an operator aid, not a safety sensor or identity
+system. Run first hardware tests with the wheels raised.
+
+References: [OpenCV DNN supports Darknet YOLO models](https://github.com/opencv/opencv/wiki/Deep-Learning-in-OpenCV), and the [YOLOv4-tiny COCO release](https://github.com/hank-ai/darknet).

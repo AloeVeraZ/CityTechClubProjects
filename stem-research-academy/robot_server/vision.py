@@ -1,8 +1,8 @@
-"""Optional, failure-isolated visual reconnaissance for the dashboard.
+"""Offline, failure-isolated object recognition for the dashboard.
 
-OpenCV and Ultralytics remain lazy imports. One daemon worker handles both
-person detection and inexpensive ArUco landmark discovery, and neither runs
-unless an operator explicitly enables it.
+The detector uses OpenCV's native DNN engine with a small YOLOv4-tiny model.
+It has no cloud dependency and shares the OpenCV installation already used by
+the USB camera. One daemon worker keeps inference out of motor request paths.
 """
 
 from __future__ import annotations
@@ -11,6 +11,90 @@ import os
 import threading
 import time
 from typing import Callable
+
+
+COCO_CLASSES = (
+    "person",
+    "bicycle",
+    "car",
+    "motorbike",
+    "aeroplane",
+    "bus",
+    "train",
+    "truck",
+    "boat",
+    "traffic light",
+    "fire hydrant",
+    "stop sign",
+    "parking meter",
+    "bench",
+    "bird",
+    "cat",
+    "dog",
+    "horse",
+    "sheep",
+    "cow",
+    "elephant",
+    "bear",
+    "zebra",
+    "giraffe",
+    "backpack",
+    "umbrella",
+    "handbag",
+    "tie",
+    "suitcase",
+    "frisbee",
+    "skis",
+    "snowboard",
+    "sports ball",
+    "kite",
+    "baseball bat",
+    "baseball glove",
+    "skateboard",
+    "surfboard",
+    "tennis racket",
+    "bottle",
+    "wine glass",
+    "cup",
+    "fork",
+    "knife",
+    "spoon",
+    "bowl",
+    "banana",
+    "apple",
+    "sandwich",
+    "orange",
+    "broccoli",
+    "carrot",
+    "hot dog",
+    "pizza",
+    "donut",
+    "cake",
+    "chair",
+    "sofa",
+    "pottedplant",
+    "bed",
+    "diningtable",
+    "toilet",
+    "tvmonitor",
+    "laptop",
+    "mouse",
+    "remote",
+    "keyboard",
+    "cell phone",
+    "microwave",
+    "oven",
+    "toaster",
+    "sink",
+    "refrigerator",
+    "book",
+    "clock",
+    "vase",
+    "scissors",
+    "teddy bear",
+    "hair drier",
+    "toothbrush",
+)
 
 
 def _environment_flag(name: str, default: bool) -> bool:
@@ -28,17 +112,22 @@ class VisionManager:
     ) -> None:
         self._sources = sources
         self._should_pause = should_pause or (lambda: False)
-        self.interval = max(0.2, float(os.environ.get("VISION_PERSON_INTERVAL_SECONDS", "0.35")))
-        # A partial upper torso often scores below the old 0.45 threshold.
-        # Keep this person-specific key independent from legacy installations
-        # that may still carry VISION_CONFIDENCE=0.45.
-        self.confidence = float(os.environ.get("VISION_PERSON_CONFIDENCE", "0.20"))
-        self.image_size = int(os.environ.get("VISION_IMAGE_SIZE", "320"))
-        self.model_path = os.environ.get("VISION_MODEL", "yolo11n_ncnn_model")
+        self.interval = max(0.25, float(os.environ.get("VISION_INTERVAL_SECONDS", "0.50")))
+        self.confidence = min(0.95, max(0.05, float(os.environ.get("VISION_CONFIDENCE", "0.20"))))
+        self.model_config = os.path.expanduser(os.environ.get("VISION_MODEL_CONFIG", ""))
+        self.model_weights = os.path.expanduser(os.environ.get("VISION_MODEL_WEIGHTS", ""))
+        self.auto_enable = _environment_flag("VISION_AUTO_ENABLE", True)
+        self.image_size = max(224, min(416, int(os.environ.get("VISION_IMAGE_SIZE", "320"))))
+        self.cpu_threads = max(1, min(4, int(os.environ.get("VISION_CPU_THREADS", "2"))))
+        self.max_detections = max(1, min(30, int(os.environ.get("VISION_MAX_DETECTIONS", "15"))))
+        selected_classes = {
+            value.strip().lower()
+            for value in os.environ.get("VISION_CLASSES", "").split(",")
+            if value.strip()
+        }
+        self.detected_classes = selected_classes or set(COCO_CLASSES)
         self.motion_gate = _environment_flag("VISION_MOTION_GATE", True)
-        # Person detection is continuous while enabled and the robot is
-        # stationary. The outer worker still pauses completely during driving.
-        self.person_motion_gate = _environment_flag("VISION_PERSON_MOTION_GATE", False)
+        self.object_motion_gate = _environment_flag("VISION_OBJECT_MOTION_GATE", False)
         self.motion_threshold = max(0.001, float(os.environ.get("VISION_MOTION_THRESHOLD", "0.02")))
         self.force_inference_seconds = max(
             1.0, float(os.environ.get("VISION_FORCE_INFERENCE_SECONDS", "5"))
@@ -55,6 +144,16 @@ class VisionManager:
         self._thread: threading.Thread | None = None
         self._model = None
         self._model_error: str | None = None
+        if self.auto_enable and self._model_files_installed():
+            auto_source = next(iter(self._sources), None)
+            if auto_source is not None:
+                self.set_enabled(auto_source, True)
+
+    def _model_files_installed(self) -> bool:
+        return all(
+            path and os.path.isfile(path) and os.path.getsize(path) > 0
+            for path in (self.model_config, self.model_weights)
+        )
 
     def _new_state(self) -> dict:
         return {
@@ -67,7 +166,9 @@ class VisionManager:
             "landmark_error": None,
             "landmarks": [],
             "landmark_skipped": False,
-            "motion_gate": self.person_motion_gate,
+            "backend": "opencv-yolov4-tiny",
+            "model_name": "YOLOv4-tiny (COCO 80)",
+            "motion_gate": self.object_motion_gate,
             "confidence_threshold": self.confidence,
             "motion_score": None,
             "inference_skipped": False,
@@ -94,7 +195,7 @@ class VisionManager:
             if source not in self._states:
                 raise KeyError(source)
             if enabled:
-                # The Pi control hub runs at most one YOLO source. Enabling a
+                # The Pi control hub runs at most one detector source. Enabling a
                 # new camera disables the previous one before the worker wakes.
                 for other_source in self._sources:
                     if other_source == source:
@@ -135,18 +236,27 @@ class VisionManager:
         self._wake.set()
         return self.snapshot(source)
 
-    def _load_model(self):
+    def _load_model(self, cv2):
         if self._model is not None:
             return self._model
         if self._model_error:
             raise RuntimeError(self._model_error)
         try:
-            from ultralytics import YOLO  # type: ignore
-
-            self._model = YOLO(self.model_path)
+            if not self.model_config or not os.path.isfile(self.model_config):
+                raise RuntimeError(f"model definition is missing: {self.model_config or 'VISION_MODEL_CONFIG is unset'}")
+            if not self.model_weights or not os.path.isfile(self.model_weights):
+                raise RuntimeError(f"model weights are missing: {self.model_weights or 'VISION_MODEL_WEIGHTS is unset'}")
+            cv2.setNumThreads(self.cpu_threads)
+            network = cv2.dnn.readNetFromDarknet(self.model_config, self.model_weights)
+            network.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
+            network.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+            self._model = cv2.dnn_DetectionModel(network)
+            self._model.setInputParams(
+                size=(self.image_size, self.image_size), scale=1 / 255.0, swapRB=True
+            )
             return self._model
         except Exception as error:
-            self._model_error = f"YOLO unavailable: {error}"
+            self._model_error = f"Offline object detector unavailable: {error}"
             raise RuntimeError(self._model_error) from error
 
     @staticmethod
@@ -169,30 +279,41 @@ class VisionManager:
         changed = cv2.countNonZero(cv2.threshold(difference, 18, 255, cv2.THRESH_BINARY)[1])
         return changed / float(gray.shape[0] * gray.shape[1])
 
-    def _detect_people(self, frame) -> list[dict]:
-        model = self._load_model()
-        result = model(
-            frame,
-            classes=[0],
-            conf=self.confidence,
-            imgsz=self.image_size,
-            max_det=10,
-            verbose=False,
-        )[0]
+    def _detect_objects(self, frame, cv2) -> list[dict]:
+        model = self._load_model(cv2)
+        class_ids, confidences, boxes = model.detect(
+            frame, confThreshold=self.confidence, nmsThreshold=0.40
+        )
+        height, width = frame.shape[:2]
         detections = []
-        for box in result.boxes:
-            x1, y1, x2, y2 = (round(float(value), 1) for value in box.xyxy[0].tolist())
+        for raw_class_id, raw_confidence, raw_box in zip(class_ids, confidences, boxes):
+            confidence = float(raw_confidence)
+            class_id = int(raw_class_id)
+            if confidence < self.confidence or not (0 <= class_id < len(COCO_CLASSES)):
+                continue
+            label = COCO_CLASSES[class_id]
+            if label not in self.detected_classes:
+                continue
+            raw_x, raw_y, raw_width, raw_height = (float(value) for value in raw_box)
+            x1 = max(0.0, min(float(width), raw_x))
+            y1 = max(0.0, min(float(height), raw_y))
+            x2 = max(0.0, min(float(width), raw_x + raw_width))
+            y2 = max(0.0, min(float(height), raw_y + raw_height))
+            if x2 - x1 < 3 or y2 - y1 < 3:
+                continue
             detections.append(
                 {
-                    "label": "person",
-                    "confidence": round(float(box.conf[0]), 3),
-                    "x1": x1,
-                    "y1": y1,
-                    "x2": x2,
-                    "y2": y2,
+                    "label": label,
+                    "confidence": round(confidence, 3),
+                    "x1": round(x1, 1),
+                    "y1": round(y1, 1),
+                    "x2": round(x2, 1),
+                    "y2": round(y2, 1),
                 }
             )
-        return detections
+            if len(detections) >= self.max_detections:
+                break
+        return sorted(detections, key=lambda item: item["confidence"], reverse=True)
 
     @staticmethod
     def _detect_landmarks(frame, cv2) -> list[dict]:
@@ -224,7 +345,7 @@ class VisionManager:
             )
         return landmarks
 
-    def _run_one(self, source: str, people_enabled: bool, landmarks_enabled: bool) -> None:
+    def _run_one(self, source: str, objects_enabled: bool, landmarks_enabled: bool) -> None:
         now_ms = round(time.time() * 1000)
         try:
             import cv2  # type: ignore
@@ -237,7 +358,7 @@ class VisionManager:
         except Exception as error:
             with self._lock:
                 update = {"updated_at_ms": now_ms}
-                if people_enabled:
+                if objects_enabled:
                     update.update(available=False, error=str(error), detections=[])
                 if landmarks_enabled:
                     update.update(landmarks_available=False, landmark_error=str(error), landmarks=[])
@@ -246,20 +367,20 @@ class VisionManager:
 
         update = {"updated_at_ms": now_ms, "frame_width": width, "frame_height": height}
         score = None
-        if people_enabled:
+        if objects_enabled:
             started_at = time.monotonic()
             try:
-                score = self._motion_score(source, frame, cv2) if self.person_motion_gate else 1.0
+                score = self._motion_score(source, frame, cv2) if self.object_motion_gate else 1.0
                 force = started_at - self._last_inference_at[source] >= self.force_inference_seconds
-                skip = self.person_motion_gate and score < self.motion_threshold and not force
+                skip = self.object_motion_gate and score < self.motion_threshold and not force
                 update.update(
-                    motion_gate=self.person_motion_gate,
+                    motion_gate=self.object_motion_gate,
                     confidence_threshold=self.confidence,
                     motion_score=round(score, 4),
                     inference_skipped=skip,
                 )
                 if not skip:
-                    update["detections"] = self._detect_people(frame)
+                    update["detections"] = self._detect_objects(frame, cv2)
                     self._last_inference_at[source] = time.monotonic()
                 update.update(
                     available=True,
@@ -315,10 +436,10 @@ class VisionManager:
                 self._wake.wait(timeout=0.1)
                 self._wake.clear()
                 continue
-            for source, people_enabled, landmarks_enabled in active:
+            for source, objects_enabled, landmarks_enabled in active:
                 if self._stop.is_set() or self._should_pause():
                     break
-                self._run_one(source, people_enabled, landmarks_enabled)
+                self._run_one(source, objects_enabled, landmarks_enabled)
             self._wake.wait(timeout=self.interval)
             self._wake.clear()
 
