@@ -1,56 +1,30 @@
 import pathlib
-import time
 import unittest
-from unittest.mock import patch
 
-from robot_server.actuators import ActuatorController, DirectGPIOServoBoard
+from robot_server.actuators import ActuatorController, PigpioServoBoard
 
 
-class FakePWM:
-    def __init__(self, pin, frequency):
-        self.pin = pin
-        self.frequency = frequency
-        self.started = []
-        self.duties = []
+class FakePigpioModule:
+    OUTPUT = 1
+
+
+class FakePi:
+    def __init__(self, connected=True):
+        self.connected = connected
+        self.modes = []
+        self.pulses = []
         self.stopped = False
 
-    def start(self, duty):
-        self.started.append(duty)
+    def set_mode(self, pin, mode):
+        self.modes.append((pin, mode))
+        return 0
 
-    def ChangeDutyCycle(self, duty):
-        self.duties.append(duty)
+    def set_servo_pulsewidth(self, pin, pulse_width):
+        self.pulses.append((pin, pulse_width))
+        return 0
 
     def stop(self):
         self.stopped = True
-
-
-class FakeGPIO:
-    BCM = 11
-    OUT = 1
-    LOW = 0
-
-    def __init__(self):
-        self.mode = None
-        self.setups = []
-        self.pwms = {}
-        self.cleaned = []
-
-    def setwarnings(self, _enabled):
-        pass
-
-    def setmode(self, mode):
-        self.mode = mode
-
-    def setup(self, pin, mode, initial=None):
-        self.setups.append((pin, mode, initial))
-
-    def PWM(self, pin, frequency):
-        pwm = FakePWM(pin, frequency)
-        self.pwms[pin] = pwm
-        return pwm
-
-    def cleanup(self, pins):
-        self.cleaned.append(tuple(pins))
 
 
 class FakeServoBoard:
@@ -58,7 +32,6 @@ class FakeServoBoard:
         self.pins = {0: 12, 1: 18}
         self.hardware = True
         self.error = None
-        self.settle_seconds = 0.6
         self.angles = []
 
     def set_angle(self, channel, angle):
@@ -69,38 +42,44 @@ class FakeServoBoard:
 
 
 class ServoActuatorTests(unittest.TestCase):
-    def test_installer_has_direct_gpio_servo_configuration(self):
-        installer = (pathlib.Path(__file__).parents[1] / "installer" / "install.sh").read_text(encoding="utf-8")
-        self.assertIn("python3-rpi.gpio", installer)
+    def test_installer_has_pigpio_servo_timing(self):
+        root = pathlib.Path(__file__).parents[1]
+        installer = (root / "installer" / "install.sh").read_text(encoding="utf-8")
+        service = (root / "installer" / "systemd" / "stem-robot-dashboard.service").read_text(encoding="utf-8")
+        self.assertIn("python3-pigpio", installer)
+        self.assertIn("pigpio", installer)
+        self.assertIn("systemctl enable pigpiod.service", installer)
         self.assertIn("RAMP_SERVO_0_GPIO_BCM=12", installer)
         self.assertIn("RAMP_SERVO_1_GPIO_BCM=18", installer)
-        self.assertIn("RAMP_SERVO_SETTLE_SECONDS=0.6", installer)
+        self.assertIn("pigpiod.service", service)
 
-    def test_direct_gpio_initializes_both_servos_closed_at_zero_degrees(self):
-        gpio = FakeGPIO()
-        board = DirectGPIOServoBoard(gpio_module=gpio)
+    def test_pigpio_initializes_and_holds_both_servos_at_absolute_zero(self):
+        pi = FakePi()
+        board = PigpioServoBoard(pigpio_module=FakePigpioModule(), pi_client=pi)
 
         self.assertTrue(board.hardware)
-        self.assertEqual(gpio.mode, gpio.BCM)
-        self.assertEqual([item[0] for item in gpio.setups], [12, 18])
-        self.assertAlmostEqual(gpio.pwms[12].started[0], 5.0)
-        self.assertAlmostEqual(gpio.pwms[18].started[0], 5.0)
+        self.assertEqual(pi.modes, [(12, 1), (18, 1)])
+        self.assertEqual(pi.pulses, [(12, 1000), (18, 1000)])
         board.close()
 
-    def test_pwm_signal_is_released_after_servo_settles(self):
-        gpio = FakeGPIO()
-        with patch.dict("os.environ", {"RAMP_SERVO_SETTLE_SECONDS": "0.1"}):
-            board = DirectGPIOServoBoard(gpio_module=gpio)
+    def test_30_degrees_maps_to_a_stable_1167_microsecond_pulse(self):
+        pi = FakePi()
+        board = PigpioServoBoard(pigpio_module=FakePigpioModule(), pi_client=pi)
         board.set_angle(0, 30)
-        self.assertGreater(gpio.pwms[12].duties[-1], 0)
+        board.set_angle(1, 30)
 
-        time.sleep(0.14)
-
-        self.assertEqual(gpio.pwms[12].duties[-1], 0)
-        self.assertEqual(gpio.pwms[18].duties[-1], 0)
+        self.assertEqual(pi.pulses[-2:], [(12, 1167), (18, 1167)])
         board.close()
 
-    def test_open_moves_both_ramp_servos_to_30_degrees(self):
+    def test_missing_pigpio_daemon_disables_hardware_safely(self):
+        pi = FakePi(connected=False)
+        board = PigpioServoBoard(pigpio_module=FakePigpioModule(), pi_client=pi)
+
+        self.assertFalse(board.hardware)
+        self.assertIn("pigpiod is not running", board.error)
+        self.assertTrue(pi.stopped)
+
+    def test_open_holds_both_ramp_servos_at_30_degrees(self):
         board = FakeServoBoard()
         controller = ActuatorController(board=board)
         result = controller.set_ramp("open")
@@ -109,7 +88,7 @@ class ServoActuatorTests(unittest.TestCase):
         self.assertEqual(result["ramp"]["state"], "open")
         self.assertEqual(result["channels"], {"0": 30.0, "1": 30.0})
 
-    def test_closed_returns_both_ramp_servos_to_zero(self):
+    def test_closed_holds_both_ramp_servos_at_absolute_zero(self):
         board = FakeServoBoard()
         controller = ActuatorController(board=board)
         controller.set_ramp("open")

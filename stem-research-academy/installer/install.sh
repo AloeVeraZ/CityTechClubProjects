@@ -136,9 +136,11 @@ apt_get install -y \
     libnss-mdns \
     network-manager \
     nginx-light \
+    pigpio \
     python3 \
     python3-flask \
     python3-opencv \
+    python3-pigpio \
     python3-pip \
     python3-venv \
     util-linux \
@@ -325,10 +327,8 @@ VISION_CONFIDENCE=0.45
 VISION_INTERVAL_SECONDS=0.5
 RAMP_SERVO_0_GPIO_BCM=12
 RAMP_SERVO_1_GPIO_BCM=18
-RAMP_SERVO_FREQUENCY_HZ=50
 RAMP_SERVO_MIN_PULSE_US=1000
 RAMP_SERVO_MAX_PULSE_US=2000
-RAMP_SERVO_SETTLE_SECONDS=0.6
 EOF
     sudo install -m 0600 "$CONFIG_TEMP" "$CONFIG_FILE"
     rm -f "$CONFIG_TEMP"
@@ -376,10 +376,8 @@ ensure_config_key VISION_CONFIDENCE "0.45"
 ensure_config_key VISION_INTERVAL_SECONDS "0.5"
 ensure_config_key RAMP_SERVO_0_GPIO_BCM "12"
 ensure_config_key RAMP_SERVO_1_GPIO_BCM "18"
-ensure_config_key RAMP_SERVO_FREQUENCY_HZ "50"
 ensure_config_key RAMP_SERVO_MIN_PULSE_US "1000"
 ensure_config_key RAMP_SERVO_MAX_PULSE_US "2000"
-ensure_config_key RAMP_SERVO_SETTLE_SECONDS "0.6"
 
 # Hotspot credentials are installer-managed so firmware and Pi stay in sync.
 sudo sed -i -E \
@@ -441,6 +439,8 @@ getent group gpio >/dev/null && sudo usermod -aG gpio "$APP_USER" || true
 getent group video >/dev/null && sudo usermod -aG video "$APP_USER" || true
 sudo systemctl enable NetworkManager.service
 sudo systemctl enable avahi-daemon.service
+sudo systemctl enable pigpiod.service
+sudo systemctl start pigpiod.service
 sudo systemctl set-default graphical.target
 sudo systemctl enable lightdm.service 2>/dev/null || true
 sudo systemctl daemon-reload

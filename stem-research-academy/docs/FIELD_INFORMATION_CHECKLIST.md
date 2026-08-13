@@ -29,9 +29,7 @@ photos are useful when they include the connector labels and board markings.
 
 ## Ramp servos
 
-- [ ] Exact servo-driver board model, board photo, and data sheet/product link.
-- [ ] Driver bus/address details and its two intended channels: ramp-left and
-  ramp-right.
+- [ ] Confirm direct signal wiring on BCM GPIO12 and BCM GPIO18.
 - [ ] Servo make/model, operating voltage, travel range, and horn orientation.
 - [ ] Servo supply voltage/current rating, fuse/switch plan, and common-ground
   arrangement with the Pi.

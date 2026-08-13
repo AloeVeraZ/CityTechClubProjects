@@ -1,6 +1,7 @@
 [Unit]
 Description=3TSahur mecanum hub and LARP scout dashboard
-After=network.target
+Requires=pigpiod.service
+After=network.target pigpiod.service
 
 [Service]
 Type=simple

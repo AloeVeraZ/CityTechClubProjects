@@ -36,17 +36,16 @@ Persistent settings in `/etc/stem-research-academy/config.env` are:
 ```text
 RAMP_SERVO_0_GPIO_BCM=12
 RAMP_SERVO_1_GPIO_BCM=18
-RAMP_SERVO_FREQUENCY_HZ=50
 RAMP_SERVO_MIN_PULSE_US=1000
 RAMP_SERVO_MAX_PULSE_US=2000
-RAMP_SERVO_SETTLE_SECONDS=0.6
 ```
 
-The installer provides `python3-rpi.gpio`. The application starts both PWM
-signals at the 0-degree duty cycle. After every startup/open/close movement, it
-holds the requested signal for 0.6 seconds and then sets PWM duty to zero. This
-stops continuous software-PWM timing variation from making an idle servo hunt.
-The servo no longer actively resists external force after the signal releases.
+The installer provides `pigpio` and `python3-pigpio`, starts `pigpiod`, and
+requires that daemon before starting the dashboard. The application sends a
+continuous 1000 microsecond pulse for absolute 0 degrees and a continuous 1167
+microsecond pulse for 30 degrees. `pigpio` times the edges independently of the
+dashboard's Linux process, which lets both servos hold their selected position
+without software-PWM scheduling jitter.
 
 ## Buck-converter checks
 

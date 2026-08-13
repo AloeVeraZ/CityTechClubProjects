@@ -321,9 +321,10 @@ the ramp's two positions: **Closed** and **Open** (`R`). Servo 1 uses BCM GPIO
 12 (physical pin 32), and Servo 2 uses BCM GPIO18 (physical pin 12). Both
 initialize at 0 degrees when the service starts, move to 30 degrees when open,
 and return to 0 degrees when closed. Servo power comes from a 5 V buck
-converter whose ground must also connect to Pi ground. Each PWM command is
-released after a 0.6-second settling interval to prevent idle servo jitter. See
-the [direct servo pinout and safety notes](docs/3TSAHUR_AUXILIARY_ACTUATORS.md).
+converter whose ground must also connect to Pi ground. The `pigpio` daemon
+provides stable DMA-timed pulses continuously, so both servos hold the selected
+position without Linux software-PWM jitter. See the [direct servo pinout and
+safety notes](docs/3TSAHUR_AUXILIARY_ACTUATORS.md).
 
 ## Install on the Raspberry Pi
 

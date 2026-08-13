@@ -1,4 +1,4 @@
-"""Direct Raspberry Pi GPIO control for the two-position 3TSahur ramp."""
+"""Stable, continuously held ramp-servo positions using the pigpio daemon."""
 
 from __future__ import annotations
 
@@ -6,124 +6,96 @@ import os
 import threading
 
 
-class DirectGPIOServoBoard:
-    """Drive two hobby servos directly with 50 Hz RPi.GPIO software PWM."""
+class PigpioServoBoard:
+    """Drive two hobby servos with DMA-timed pigpio pulses."""
 
     CLOSED_ANGLE = 0.0
     OPEN_ANGLE = 30.0
 
-    def __init__(self, gpio_module=None) -> None:
-        self.frequency = int(os.environ.get("RAMP_SERVO_FREQUENCY_HZ", "50"))
+    def __init__(self, pigpio_module=None, pi_client=None) -> None:
         self.minimum_us = int(os.environ.get("RAMP_SERVO_MIN_PULSE_US", "1000"))
         self.maximum_us = int(os.environ.get("RAMP_SERVO_MAX_PULSE_US", "2000"))
-        self.settle_seconds = float(os.environ.get("RAMP_SERVO_SETTLE_SECONDS", "0.6"))
         self.pins = {
             0: int(os.environ.get("RAMP_SERVO_0_GPIO_BCM", "12")),
             1: int(os.environ.get("RAMP_SERVO_1_GPIO_BCM", "18")),
         }
         self.hardware = False
         self.error: str | None = None
-        self._gpio = gpio_module
-        self._pwms: dict[int, object] = {}
-        self._detach_timers: dict[int, threading.Timer] = {}
+        self._pigpio = pigpio_module
+        self._pi = pi_client
         self._lock = threading.Lock()
 
         try:
-            if self._gpio is None:
-                import RPi.GPIO as GPIO  # type: ignore
+            if self._pigpio is None:
+                import pigpio  # type: ignore
 
-                self._gpio = GPIO
+                self._pigpio = pigpio
+            if self._pi is None:
+                self._pi = self._pigpio.pi()
             self._validate_configuration()
-            self._gpio.setwarnings(False)
-            self._gpio.setmode(self._gpio.BCM)
-            for channel, pin in self.pins.items():
-                self._gpio.setup(pin, self._gpio.OUT, initial=self._gpio.LOW)
-                pwm = self._gpio.PWM(pin, self.frequency)
-                pwm.start(self._duty_cycle(self.CLOSED_ANGLE))
-                self._pwms[channel] = pwm
+            if not getattr(self._pi, "connected", False):
+                raise OSError("pigpiod is not running")
+            for pin in self.pins.values():
+                self._require_success(self._pi.set_mode(pin, self._pigpio.OUTPUT), "set GPIO mode")
+                self._write_pulse(pin, self._pulse_width(self.CLOSED_ANGLE))
             self.hardware = True
-            # Move both servos to zero at startup, then remove the continuously
-            # varying Linux software-PWM signal so the servos cannot hunt.
-            with self._lock:
-                for channel in self._pwms:
-                    self._schedule_detach_locked(channel)
         except (ImportError, OSError, RuntimeError, ValueError) as error:
-            self.error = f"Direct servo GPIO unavailable: {error}"
+            self.error = f"Stable servo timing unavailable: {error}"
             self.hardware = False
-            self._stop_pwm()
+            self.close()
 
     def _validate_configuration(self) -> None:
-        if not 40 <= self.frequency <= 100:
-            raise ValueError("RAMP_SERVO_FREQUENCY_HZ must be between 40 and 100")
         if not 400 <= self.minimum_us < self.maximum_us <= 3000:
             raise ValueError("Invalid ramp servo pulse-width range")
-        if not 0.1 <= self.settle_seconds <= 5:
-            raise ValueError("RAMP_SERVO_SETTLE_SECONDS must be between 0.1 and 5")
         if len(set(self.pins.values())) != 2:
             raise ValueError("Ramp servos must use two different GPIO pins")
 
-    def _duty_cycle(self, angle: float) -> float:
+    @staticmethod
+    def _require_success(result: object, action: str) -> None:
+        if isinstance(result, int) and result < 0:
+            raise OSError(f"pigpio could not {action} (error {result})")
+
+    def _pulse_width(self, angle: float) -> int:
         angle = max(0.0, min(180.0, float(angle)))
-        pulse_us = self.minimum_us + (self.maximum_us - self.minimum_us) * angle / 180.0
-        return pulse_us * self.frequency / 10_000.0
+        return round(self.minimum_us + (self.maximum_us - self.minimum_us) * angle / 180.0)
+
+    def _write_pulse(self, pin: int, pulse_width_us: int) -> None:
+        self._require_success(
+            self._pi.set_servo_pulsewidth(pin, pulse_width_us),
+            f"set GPIO{pin} servo pulse",
+        )
 
     def set_angle(self, channel: int, angle: float) -> None:
+        if channel not in self.pins:
+            raise ValueError(f"Ramp servo channel {channel} is unavailable")
         with self._lock:
-            if channel not in self._pwms:
-                raise ValueError(f"Ramp servo channel {channel} is unavailable")
-            timer = self._detach_timers.pop(channel, None)
-            if timer is not None:
-                timer.cancel()
-            self._pwms[channel].ChangeDutyCycle(self._duty_cycle(angle))
-            self._schedule_detach_locked(channel)
-
-    def _schedule_detach_locked(self, channel: int) -> None:
-        timer = threading.Timer(self.settle_seconds, self._detach_signal, args=(channel,))
-        timer.daemon = True
-        self._detach_timers[channel] = timer
-        timer.start()
-
-    def _detach_signal(self, channel: int) -> None:
-        with self._lock:
-            self._detach_timers.pop(channel, None)
-            pwm = self._pwms.get(channel)
-            if pwm is not None:
-                try:
-                    pwm.ChangeDutyCycle(0)
-                except RuntimeError:
-                    pass
-
-    def _stop_pwm(self) -> None:
-        for timer in list(self._detach_timers.values()):
-            timer.cancel()
-        self._detach_timers.clear()
-        for pwm in list(self._pwms.values()):
-            try:
-                pwm.ChangeDutyCycle(0)
-                pwm.stop()
-            except (AttributeError, RuntimeError):
-                pass
-        self._pwms.clear()
+            self._write_pulse(self.pins[channel], self._pulse_width(angle))
 
     def close(self) -> None:
-        self._stop_pwm()
-        if self._gpio is not None:
+        if self._pi is None:
+            return
+        for pin in self.pins.values():
             try:
-                self._gpio.cleanup(tuple(self.pins.values()))
-            except (AttributeError, RuntimeError):
+                self._pi.set_servo_pulsewidth(pin, 0)
+            except (AttributeError, OSError, RuntimeError):
                 pass
+        try:
+            self._pi.stop()
+        except (AttributeError, OSError, RuntimeError):
+            pass
+        self._pi = None
 
 
 class ActuatorController:
-    """Move both ramp servos between closed at 0° and open at 30°."""
+    """Hold both ramp servos at absolute 0° or absolute 30°."""
 
     RAMP_STATES = {"open", "closed"}
-    CLOSED_ANGLE = DirectGPIOServoBoard.CLOSED_ANGLE
-    OPEN_ANGLE = DirectGPIOServoBoard.OPEN_ANGLE
+    CLOSED_ANGLE = PigpioServoBoard.CLOSED_ANGLE
+    OPEN_ANGLE = PigpioServoBoard.OPEN_ANGLE
 
-    def __init__(self, board: DirectGPIOServoBoard | None = None) -> None:
+    def __init__(self, board: PigpioServoBoard | None = None) -> None:
         self._lock = threading.Lock()
-        self._board = board or DirectGPIOServoBoard()
+        self._board = board or PigpioServoBoard()
         self._ramp = "closed"
         self._channel_angles = {0: self.CLOSED_ANGLE, 1: self.CLOSED_ANGLE}
 
@@ -133,14 +105,14 @@ class ActuatorController:
             return {
                 "configured": configured,
                 "hardware": configured,
-                "reason": self._board.error or "Direct GPIO ramp servos ready",
+                "reason": self._board.error or "Stable pigpio servo pulses active",
                 "gpio_bcm": {str(channel): pin for channel, pin in self._board.pins.items()},
-                "signal_release_seconds": getattr(self._board, "settle_seconds", 0.6),
                 "channels": {str(channel): angle for channel, angle in self._channel_angles.items()},
                 "ramp": {
                     "state": self._ramp,
                     "closed_angle": self.CLOSED_ANGLE,
                     "open_angle": self.OPEN_ANGLE,
+                    "holding": configured,
                 },
             }
 

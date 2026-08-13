@@ -22,7 +22,7 @@ reverse only that motor's leads or swap only its `MotorPins` pair in code.
 
 ## Direct ramp-servo pinout
 
-The two ramp servos use direct 50 Hz signal output from otherwise-unused Pi
+The two ramp servos use stable `pigpio`-timed signals from otherwise-unused Pi
 GPIO pins. The code uses BCM numbering; the wiring table includes physical
 header numbers so the connections are unambiguous.
 
@@ -38,7 +38,8 @@ header numbers so the connections are unambiguous.
 
 GPIO12 and GPIO18 carry 3.3 V control signals; never connect either servo's
 red 5 V wire to a GPIO signal pin. Both servos start at 0 degrees, open to 30
-degrees, and return to 0 degrees when closed.
+degrees, return to 0 degrees when closed, and continuously hold the selected
+position.
 
 The common-ground jumper is mandatory: without it, the 3.3 V servo signals do
 not have a stable electrical reference and the servos can jitter unpredictably.
