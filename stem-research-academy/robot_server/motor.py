@@ -98,10 +98,16 @@ class MecanumDrive:
         # partner convention. Invert only forward/backward here so the
         # physically verified strafe and rotation directions stay unchanged.
         longitudinal = -forward
+        # Rotation is calibrated from the installed wheel directions. For a
+        # Q command the two front channels receive +rotate and the two rear
+        # channels receive -rotate. Because the rear motors are polarity-
+        # swapped in DEFAULT_MOTOR_PINS, this makes both physical left wheels
+        # travel together and both physical right wheels travel oppositely,
+        # producing the section-E center pivot. E is the exact inverse.
         wheels = {
             "front_left": longitudinal + strafe + rotate,
-            "front_right": longitudinal - strafe - rotate,
-            "rear_left": longitudinal - strafe + rotate,
+            "front_right": longitudinal - strafe + rotate,
+            "rear_left": longitudinal - strafe - rotate,
             "rear_right": longitudinal + strafe - rotate,
         }
         scale = max(1.0, *(abs(value) for value in wheels.values()))

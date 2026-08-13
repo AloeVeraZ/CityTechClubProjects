@@ -74,7 +74,7 @@ class MecanumMixTests(unittest.TestCase):
     def test_combined_commands_are_normalized(self):
         result = MecanumDrive.mix(1, 1, 1)
         self.assertLessEqual(max(abs(value) for value in result.values()), 1)
-        self.assertEqual(result["front_right"], -1)
+        self.assertEqual(result["rear_left"], -1)
 
     def test_forward_uses_the_inverted_longitudinal_pin_directions(self):
         gpio = FakeGPIO()
@@ -87,26 +87,34 @@ class MecanumMixTests(unittest.TestCase):
         self.assertEqual(sum(pwm.running for pwm in gpio.pwms.values()), 4)
         drive.close()
 
-    def test_rotation_drives_all_four_motors_at_75_percent(self):
+    def test_q_rotates_about_center_with_all_four_motors_at_75_percent(self):
         gpio = FakeGPIO()
         drive = MecanumDrive(gpio_module=gpio)
         drive.drive(0, 0, 1, 0.75)
 
-        for active_pin in (5, 19, 21, 13):
+        self.assertEqual(
+            MecanumDrive.mix(0, 0, 1),
+            {"front_left": 1, "front_right": 1, "rear_left": -1, "rear_right": -1},
+        )
+        for active_pin in (5, 20, 16, 13):
             self.assertEqual(gpio.pwms[active_pin].duty, 75)
-        for inactive_pin in (6, 16, 20, 26):
+        for inactive_pin in (6, 21, 19, 26):
             self.assertFalse(gpio.pwms[inactive_pin].running)
         self.assertEqual(sum(pwm.running for pwm in gpio.pwms.values()), 4)
         drive.close()
 
-    def test_opposite_rotation_drives_all_four_motors_at_75_percent(self):
+    def test_e_is_the_exact_opposite_center_rotation_at_75_percent(self):
         gpio = FakeGPIO()
         drive = MecanumDrive(gpio_module=gpio)
         drive.drive(0, 0, -1, 0.75)
 
-        for active_pin in (6, 16, 20, 26):
+        self.assertEqual(
+            MecanumDrive.mix(0, 0, -1),
+            {"front_left": -1, "front_right": -1, "rear_left": 1, "rear_right": 1},
+        )
+        for active_pin in (6, 21, 19, 26):
             self.assertEqual(gpio.pwms[active_pin].duty, 75)
-        for inactive_pin in (5, 19, 21, 13):
+        for inactive_pin in (5, 20, 16, 13):
             self.assertFalse(gpio.pwms[inactive_pin].running)
         self.assertEqual(sum(pwm.running for pwm in gpio.pwms.values()), 4)
         drive.close()

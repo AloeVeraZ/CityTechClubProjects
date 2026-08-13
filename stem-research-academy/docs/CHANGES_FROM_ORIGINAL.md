@@ -25,7 +25,8 @@ The Pi mecanum GPIO pin pairs remain the same as the partner base. Physical
 testing established the PWM pair order as front-left `5/6`, rear-left `19/16`,
 front-right `20/21`, and rear-right `26/13`. The longitudinal mixer component
 is inverted while the verified strafe and turn signs remain unchanged. Q/E
-keyboard rotation is a pure four-motor pivot at a fixed 75% output.
+keyboard rotation is a section-E center rotation using all four motors at a
+fixed 75% output, calibrated against the physical wheel directions.
 `robot_server/motor.py` and its simulation test enforce this assignment.
 
 ## Documentation and verification

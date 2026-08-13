@@ -15,8 +15,12 @@ This is encoded in `robot_server/motor.py` and tested in
 `tests/test_motor.py`. The installed chassis needs its longitudinal axis
 inverted, so `W` drives the negative PWM legs (GPIO 6, 16, 21, and 13), while
 `S` drives the positive legs (GPIO 5, 19, 20, and 26). Strafe polarity is
-unchanged. `Q` and `E` are pure rotations: each drives all four motors at 75%
-magnitude. Do not connect one GPIO to more than one driver input.
+unchanged. `Q` and `E` use the image's section-E center rotation, not a
+two-wheel/rear-axis pivot: both physical wheels on one side travel together,
+the opposite side travels in reverse, and all four receive 75% magnitude. For
+`E`, the active PWM legs are FL GPIO6, FR GPIO21, RL GPIO19, and RR GPIO26;
+`Q` uses the opposite leg of every motor. Do not connect one GPIO to more than
+one driver input.
 
 Before the first ground test, connect all logic and motor grounds, power motors
 from their rated external supply, add a suitable fuse/power switch, and test
