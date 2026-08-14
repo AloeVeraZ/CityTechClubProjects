@@ -1,80 +1,141 @@
 # Crab Crawler Walking Robot
 
-<p>
-  <a href="https://angelojamesny.com/crabcrawler"><img alt="Project page" src="https://img.shields.io/badge/project-walking%20robot-6f42c1?style=flat-square"></a>
-  <img alt="Controller: ESP32 CAM" src="https://img.shields.io/badge/controller-ESP32%20CAM-00979d?style=flat-square">
-  <img alt="Motion: servo walking" src="https://img.shields.io/badge/motion-servo%20walking-f39c12?style=flat-square">
-  <a href="../LICENSE.md"><img alt="License: CC BY 4.0" src="https://img.shields.io/badge/license-CC%20BY%204.0-f1c40f?style=flat-square"></a>
-</p>
+### Three generations of servo walking, printed-frame iteration, and wireless control
 
-This project is a small four leg robot that walks using servos. We made three versions to improve the frame, wiring, and controls.
+[![Status](https://img.shields.io/badge/status-complete-16c784?style=flat-square)](#results)
+[![Controller](https://img.shields.io/badge/controller-ESP32--CAM-00979d?style=flat-square)](#control-system)
+[![Motion](https://img.shields.io/badge/motion-servo%20walking-f39c12?style=flat-square)](#control-system)
+[![CAD](https://img.shields.io/badge/CAD-Fusion%20360%20%2B%20STEP-ff8a00?style=flat-square)](cad/)
+[![License](https://img.shields.io/badge/license-CC%20BY%204.0-f1c40f?style=flat-square)](../LICENSE.md)
 
-## Project goals
+[![Crab crawler walking robot](https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=1200,h=675,fit=crop/A85rnnzK6qs5qxKB/img_20260515_125209039-aa3XkdHF9OBnSOx5.jpg)](https://angelojamesny.com/crabcrawler)
 
-* Make a walking robot with regular hobby servos.
-* Use 3D printed parts that are easy to change.
-* Keep the wiring simple with a servo driver board.
-* Try wireless control and live video with an ESP32 CAM.
-* Use the project to practice robotics and programming.
+This project is a compact four-leg robot that walks by sequencing hobby
+servos. Three versions were built to improve the body size, frame strength,
+wiring layout, and wireless control experience.
 
-## Main parts
+[Project overview](#project-overview) · [Development path](#development-path) · [Open the CAD](cad/) · [Watch the videos](#build-videos) · [Read before building](#before-building)
 
-| Part | What we used |
-|---|---|
-| Movement | Four legs moved by servos |
+---
+
+## Project Overview
+
+| System | Implementation |
+| --- | --- |
+| Movement | Four servo-driven legs |
 | First controller | Arduino Nano |
-| Later controller | ESP32 CAM |
-| Servo control | Servo driver board |
-| Frame | Custom 3D printed parts |
-| Extra features | Wireless control and live video |
+| Later controller | ESP32-CAM |
+| Servo control | Multi-channel servo-driver board |
+| Structure | Custom 3D-printed frames |
+| Added capability | Wireless driving panel and live camera feed |
+| Repository | Final and early CAD files plus project documentation |
 
-## Versions
+The project began as a simple walking test and developed into a smaller
+wireless robot. Each revision addressed a physical issue found in the previous
+build rather than hiding the unsuccessful parts of the process.
 
-### Version 1: Arduino prototype
+## Development Path
 
-The first version used an Arduino Nano, a servo driver, and a large printed body. It helped us test the walking motion. The body was too big, and some servos broke under the weight.
+### 01 / Arduino Prototype
 
-### Version 2: Small ESP32 CAM version
+[![Crab crawler Arduino prototype video](https://i.ytimg.com/vi_webp/WJB2is0cYr0/hqdefault.webp)](https://www.youtube.com/watch?v=WJB2is0cYr0)
 
-The second version used an ESP32 CAM and a smaller frame. It added wireless control and live video. The frame was too thin and broke during testing, and the wiring was crowded.
+The first version used an Arduino Nano, a servo driver, and a large printed
+body. It proved the basic walking sequence, but the heavy frame placed too much
+load on the servos.
 
-### Version 3: Stronger final version
+| Prototype | Result |
+| --- | --- |
+| Controller | Arduino Nano |
+| Frame | Large 3D-printed body |
+| Main lesson | The structure was too heavy for the selected servos |
 
-The third version kept the ESP32 CAM and made the frame thicker. It was stronger, walked more consistently, and had cleaner wiring.
+---
 
-## How it works
+### 02 / Small ESP32-CAM Robot
 
-The ESP32 CAM sends commands to the servo driver. The driver moves each leg servo in a pattern so the robot can walk. A battery powers the controller and servos.
+[![Small ESP32-CAM walking robot video](https://i.ytimg.com/vi_webp/dIKoLMmPl84/hqdefault.webp)](https://www.youtube.com/watch?v=dIKoLMmPl84)
 
-## CAD files
+The second version reduced the frame size and added an ESP32-CAM for wireless
+control and live video. The thinner structure saved weight but broke during
+testing, and the smaller body made wiring difficult.
 
-| Folder | Fusion file | STEP file | Description |
-|---|---|---|---|
-| [`cad/final/`](cad/final/) | `final.f3z` | `final.step` | Stronger final design |
-| [`cad/small/`](cad/small/) | `small.f3z` | `small.step` | Smaller early design |
+| Prototype | Result |
+| --- | --- |
+| Controller | ESP32-CAM |
+| Added feature | Wi-Fi control and camera stream |
+| Main lesson | Thin frame sections and crowded wiring reduced reliability |
 
-Read the [CAD notes](cad/README.md) before printing any parts.
+---
+
+### 03 / Stronger Final Version
+
+[![Final crab crawler robot video](https://i.ytimg.com/vi_webp/3YAVgb8yF3U/hqdefault.webp)](https://www.youtube.com/watch?v=3YAVgb8yF3U)
+
+The final version retained the wireless controller while thickening the frame
+and cleaning up the electronics layout. It walked more consistently and
+survived repeated testing better than the smaller prototype.
+
+| Final version | Configuration |
+| --- | --- |
+| Controller | ESP32-CAM |
+| Motion | Four servo-driven legs |
+| Structure | Reinforced printed frame |
+| Interface | Local wireless driving panel and video |
+
+## Control System
+
+The ESP32-CAM receives a movement command from the local driving panel and
+sends position targets to the servo-driver board. The driver moves the leg
+servos through a repeated gait sequence while the battery supplies the
+controller and servos.
+
+```mermaid
+flowchart LR
+    O["Operator browser"] -->|"Local Wi-Fi command"| E["ESP32-CAM"]
+    E --> S["Servo-driver board"]
+    S --> L["Four walking legs"]
+    E -->|"Live stream"| O
+```
+
+## CAD Collection
+
+The [`cad/`](cad/) folder contains editable Autodesk Fusion archives and STEP
+exports for the smaller prototype and the stronger final design.
+
+| Design | Fusion file | STEP file | Purpose |
+| --- | --- | --- | --- |
+| Final | `cad/final/final.f3z` | `cad/final/final.step` | Reinforced completed frame |
+| Small | `cad/small/small.f3z` | `cad/small/small.step` | Compact early prototype |
+
+[Open the CAD collection](cad/) · [Read the CAD guide](cad/README.md)
+
+## Build Videos
+
+| Arduino prototype | Small ESP32-CAM | Stronger final version |
+| --- | --- | --- |
+| [![Version 1](https://i.ytimg.com/vi_webp/WJB2is0cYr0/hqdefault.webp)](https://www.youtube.com/watch?v=WJB2is0cYr0) | [![Version 2](https://i.ytimg.com/vi_webp/dIKoLMmPl84/hqdefault.webp)](https://www.youtube.com/watch?v=dIKoLMmPl84) | [![Version 3](https://i.ytimg.com/vi_webp/3YAVgb8yF3U/hqdefault.webp)](https://www.youtube.com/watch?v=3YAVgb8yF3U) |
 
 ## Results
 
-* The final robot could walk using a simple servo pattern.
-* The ESP32 CAM added wireless control and live video.
-* The stronger frame worked better than the thin frame.
-* The project gave us practice with CAD, wiring, servos, and programming.
+- The final robot walked with a repeatable servo sequence.
+- The ESP32-CAM added wireless control and live video.
+- Reinforcing the frame improved durability and consistency.
+- The three versions preserve the design decisions made after real failures.
 
-## Before building
+## Before Building
 
-Check the size of your servos, controller, battery, and screws before printing. Make sure the legs move freely before turning the servos on. Printed parts may need small changes for your printer and hardware.
+Check the exact servo, controller, battery, screw, and servo-arm dimensions
+before printing. Confirm that every leg moves freely and that the power supply
+can handle several servos moving at once.
 
 > [!CAUTION]
-> Servos can move without warning. Keep your fingers away from the legs and unplug the power before changing parts or wires.
+> Servos can move without warning. Keep fingers away from the legs and unplug
+> the battery before changing printed parts, linkages, or wiring.
 
-## Links
+---
 
-* [Walking robot project page](https://angelojamesny.com/crabcrawler)
-* [Club projects page](https://angelojamesny.com/club-projects)
-* [Repository home](../README.md)
+[Project page](https://angelojamesny.com/crabcrawler) · [Club project collection](../README.md) · [City Tech AI & Automation Club](https://angelojamesny.com/club-projects)
 
-## License
-
-The original project work is available under [CC BY 4.0](../LICENSE.md). You can share or change it as long as you credit Angelo Demetroulakos, link to the license, and say what you changed.
+Original project work is available under [CC BY 4.0](../LICENSE.md). Third-party
+parts and models remain subject to their original terms.

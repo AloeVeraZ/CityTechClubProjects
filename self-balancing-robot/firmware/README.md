@@ -1,29 +1,47 @@
-# Firmware
+# Self Balancing Robot Firmware
 
-This folder has the main robot code and a few early tests.
+### Primary balance controllers and the experiments used to bring them up
 
-## Main code
+[![Language](https://img.shields.io/badge/language-Arduino%20C%2B%2B-00979d?style=flat-square&logo=arduino&logoColor=white)](#main-code)
+[![Control](https://img.shields.io/badge/control-PID-7c5cff?style=flat-square)](#main-code)
+[![Sensor](https://img.shields.io/badge/sensor-MPU6050-00a8e8?style=flat-square)](#test-code)
 
-| Sketch | Board | What it does |
-|---|---|---|
-| `arduino-nano/arduino-nano.ino` | Arduino Nano | Reads the sensor, runs PID control, and moves both motors |
-| `raspberry-pi-pico/raspberry-pi-pico.ino` | Raspberry Pi Pico | Calibrates the sensor, runs PID control, and tests motor correction |
+[Project overview](../README.md) · [Main code](#main-code) · [Experiments](#test-code) · [CAD collection](../cad/)
 
-## Test code
+---
 
-| Sketch | What it tests |
-|---|---|
-| `experiments/motor-test/motor-test.ino` | Runs both motors forward and backward |
-| `experiments/imu-serial/imu-serial.ino` | Shows the sensor readings in the Serial Plotter |
-| `experiments/pid-early/pid-early.ino` | An early version of the balancing code |
-| `experiments/pid-alternate/pid-alternate.ino` | Another PID and sensor test |
+## Main Code
 
-Each `.ino` file is inside its own sketch folder so it can open in the Arduino IDE. The experiment files are included to show some of the testing process.
+| Controller | Sketch | Purpose |
+| --- | --- | --- |
+| Arduino Nano | [`arduino-nano/arduino-nano.ino`](arduino-nano/arduino-nano.ino) | Read the IMU, run PID control, and command both motors |
+| Raspberry Pi Pico | [`raspberry-pi-pico/raspberry-pi-pico.ino`](raspberry-pi-pico/raspberry-pi-pico.ino) | Calibrate the sensor, run the balance loop, and test motor correction |
 
-## Before uploading
+## Test Code
 
-* Check the board, motor driver, sensor, and pin numbers.
-* Test the motor direction with the wheels off the table.
-* Keep the sensor still while it calibrates.
-* Start with a low motor power limit.
-* Adjust the balance angle and PID values for your own robot.
+| Experiment | Sketch | What it isolates |
+| --- | --- | --- |
+| 01 / Motor test | [`experiments/motor-test/motor-test.ino`](experiments/motor-test/motor-test.ino) | Forward and reverse motor direction |
+| 02 / IMU serial | [`experiments/imu-serial/imu-serial.ino`](experiments/imu-serial/imu-serial.ino) | Sensor readings in the Serial Plotter |
+| 03 / Early PID | [`experiments/pid-early/pid-early.ino`](experiments/pid-early/pid-early.ino) | First balance-control implementation |
+| 04 / Alternate PID | [`experiments/pid-alternate/pid-alternate.ino`](experiments/pid-alternate/pid-alternate.ino) | Second sensor and PID experiment |
+
+Each `.ino` file is in its own Arduino sketch folder so it can be opened and
+uploaded directly from the Arduino IDE.
+
+## Before Uploading
+
+> [!CAUTION]
+> Keep the wheels raised for the first test. A reversed motor or unstable PID
+> setting can move the robot immediately after startup.
+
+- Confirm the selected board, motor driver, IMU, and pin numbers.
+- Verify motor direction before enabling the balance loop.
+- Keep the sensor still while it calibrates.
+- Begin with a low motor-power limit.
+- Tune the balance angle and PID values for the physical robot.
+
+---
+
+Return to the [Self Balancing Robot project](../README.md) or the
+[club project collection](../../README.md).

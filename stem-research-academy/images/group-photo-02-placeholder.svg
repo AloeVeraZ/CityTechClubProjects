@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title description">
+  <title id="title">Group Photo 02 placeholder</title>
+  <desc id="description">Replace this placeholder with the second STEM Research Academy group photograph.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#155e75"/>
+    </linearGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" fill="none" stroke="#ffffff" stroke-opacity=".055"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="675" rx="28" fill="url(#background)"/>
+  <rect width="1200" height="675" rx="28" fill="url(#grid)"/>
+  <rect x="72" y="72" width="1056" height="531" rx="20" fill="none" stroke="#67e8f9" stroke-opacity=".4" stroke-width="2" stroke-dasharray="14 12"/>
+  <text x="96" y="132" fill="#67e8f9" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" letter-spacing="4">CITY TECH AI &amp; AUTOMATION CLUB</text>
+  <text x="96" y="330" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="70" font-weight="700">Group Photo 02</text>
+  <text x="96" y="382" fill="#cffafe" font-family="Arial, Helvetica, sans-serif" font-size="26">Design · manufacture · wire · program</text>
+  <text x="96" y="544" fill="#67e8f9" font-family="Arial, Helvetica, sans-serif" font-size="20" letter-spacing="2">REPLACE WITH THE SECOND FULL-GROUP PHOTO</text>
+</svg>

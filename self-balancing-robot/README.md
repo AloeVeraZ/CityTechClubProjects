@@ -1,78 +1,172 @@
-<p align="center">
-  <a href="https://angelojamesny.com/selfbalancing"><img alt="Project status: complete" src="https://img.shields.io/badge/status-complete-16c784?style=flat-square"></a>
-  <img alt="Control: PID" src="https://img.shields.io/badge/control-PID-7c5cff?style=flat-square">
-  <img alt="Sensor: MPU6050" src="https://img.shields.io/badge/sensor-MPU6050-00a8e8?style=flat-square">
-  <a href="../LICENSE.md"><img alt="License: CC BY 4.0" src="https://img.shields.io/badge/license-CC%20BY%204.0-f1c40f?style=flat-square"></a>
-</p>
-
 # Self Balancing Robot
 
-This is a two wheel robot that uses a sensor and motors to stay standing. We built it to learn how PID control works and to practice robotics.
+### Three controller generations of sensor feedback, PID tuning, and mechanical iteration
 
-The project uses common parts, so it was easier to test and change as we worked on it.
+[![Status](https://img.shields.io/badge/status-complete-16c784?style=flat-square)](#results)
+[![Control](https://img.shields.io/badge/control-PID-7c5cff?style=flat-square)](#control-system)
+[![Sensor](https://img.shields.io/badge/sensor-MPU6050-00a8e8?style=flat-square)](#control-system)
+[![CAD](https://img.shields.io/badge/CAD-Fusion%20360%20%2B%20STEP-ff8a00?style=flat-square)](cad/)
+[![Firmware](https://img.shields.io/badge/firmware-Arduino%20%2B%20Pico-00979d?style=flat-square)](firmware/)
+[![License](https://img.shields.io/badge/license-CC%20BY%204.0-f1c40f?style=flat-square)](../LICENSE.md)
 
-## Main parts
+[![Self balancing robot](https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=1200,h=675,fit=crop/A85rnnzK6qs5qxKB/img_20260514_162917008-GuGOQgTeFhg8mCtz.jpg)](https://angelojamesny.com/selfbalancing)
 
-| Part | What we used |
-|---|---|
-| Control | PID balance control |
-| Sensor | MPU6050 motion sensor |
+This project is a two-wheel robot that moves its wheels under its center of
+mass to remain upright. It was built as a practical way to learn inertial
+sensing, feedback control, PID tuning, motor direction, and mechanical design.
+
+[Project overview](#project-overview) · [Development path](#development-path) · [Open the CAD](cad/) · [Open the firmware](firmware/) · [Watch the videos](#build-videos)
+
+---
+
+## Project Overview
+
+| System | Implementation |
+| --- | --- |
+| Control | PID balance loop |
+| Sensor | MPU6050 inertial measurement unit |
 | Controllers | Arduino Nano, Arduino Uno, and Raspberry Pi Pico |
-| Motors | Two DC motors and a motor driver |
-| Frame | Custom 3D printed body and regular hardware |
-| Status | Finished, with early code kept for reference |
+| Drive | Two DC motors and a dual motor driver |
+| Structure | Custom 3D-printed body with standard hardware |
+| Repository | CAD exports, primary firmware, and preserved experiments |
+| Status | Completed; earlier versions remain for comparison |
 
-## How it works
+The same balance problem was tested with multiple controllers and mechanical
+layouts. Keeping the earlier versions makes the project useful as a record of
+how control behavior changed with hardware, loop timing, and PID values.
 
-The MPU6050 checks which way the robot is leaning. The controller uses that information to decide how fast and which way the wheels should move. Moving the wheels under the robot helps it stay upright.
+## Development Path
 
-## Versions
+### 01 / First Prototype
 
-* **Version 1: First prototype.** We used an Elegoo car frame to test the balancing code and see how the robot reacted.
-* **Version 2: Printed body.** We made a smaller custom frame and spent more time adjusting the PID values.
-* **Version 3: Pico controller.** We used a Raspberry Pi Pico to make the controls react faster and move more smoothly.
+[![Self balancing robot first prototype video](https://i.ytimg.com/vi_webp/-mdpzGmiDxs/hqdefault.webp)](https://www.youtube.com/watch?v=-mdpzGmiDxs)
 
-The folder also includes Arduino Nano and Arduino Uno code from other tests.
+The first build used an Elegoo car frame to prove that the MPU6050 readings,
+motor direction, and balance correction worked together.
 
-## Project files
+| Prototype | Purpose |
+| --- | --- |
+| Frame | Existing car chassis |
+| Main test | Sensor-to-motor correction |
+| Outcome | Established the first working balance loop |
 
-The `cad` folder has the 3D models. The `firmware` folder has the main Arduino and Pico code, plus a few experiments. Read the [CAD guide](cad/README.md) before printing and the [firmware guide](firmware/README.md) before uploading code.
+---
 
-## CAD note
+### 02 / Printed Body
+
+[![Self balancing robot printed body video](https://i.ytimg.com/vi_webp/whE-oMi1N7U/hqdefault.webp)](https://www.youtube.com/watch?v=whE-oMi1N7U)
+
+The second version moved to a smaller custom body. This build focused on
+component placement, center of mass, wheel spacing, and more careful PID
+tuning.
+
+| Prototype | Purpose |
+| --- | --- |
+| Frame | Custom 3D-printed body |
+| Main test | Mechanical layout and PID tuning |
+| Outcome | More compact robot with smoother correction |
+
+---
+
+### 03 / Raspberry Pi Pico Controller
+
+[![Self balancing robot Pico controller video](https://i.ytimg.com/vi_webp/JzyDli07yCE/hqdefault.webp)](https://www.youtube.com/watch?v=JzyDli07yCE)
+
+The final version used a Raspberry Pi Pico for faster, more consistent control
+timing. Arduino Nano and Uno experiments remain in the repository as part of
+the development record.
+
+| Final version | Configuration |
+| --- | --- |
+| Controller | Raspberry Pi Pico |
+| Sensor | MPU6050 |
+| Drive | Two DC motors |
+| Focus | Faster loop timing and smoother response |
+
+## Control System
+
+The MPU6050 measures the robot's tilt. The controller compares that measurement
+with the target balance angle, calculates a PID correction, and commands the
+motors in the direction needed to move the wheels under the robot.
+
+```mermaid
+flowchart LR
+    I["MPU6050 tilt"] --> C["PID controller"]
+    C --> D["Motor driver"]
+    D --> M["Left and right motors"]
+    M --> R["Robot angle changes"]
+    R --> I
+```
+
+## Project Files
+
+### CAD Collection
+
+The [`cad/`](cad/) folder includes editable Autodesk Fusion files and neutral
+STEP exports for three mechanical versions.
+
+| Design | Fusion file | STEP file |
+| --- | --- | --- |
+| Pico V1 | `cad/pico-v1/pico-cad-v1.f3z` | `cad/pico-v1/pico-cad-v1.step` |
+| Arduino Uno V2 | `cad/arduino-uno-v2/arduino-uno-cad-v2.f3z` | `cad/arduino-uno-v2/arduino-uno-cad-v2.step` |
+| Final reference | `cad/final-assembly/final-cad.f3d` | `cad/final-assembly/final-cad.step` |
+
+[Open the CAD collection](cad/) · [Read the CAD guide](cad/README.md)
 
 > [!WARNING]
-> The final CAD model is only a general reference. It is not an exact copy of every part on the real robot.
+> The final CAD assembly is a general reference, not an exact model of every
+> purchased component. Measure the wheels, motors, batteries, boards, holes,
+> and fasteners before printing parts.
 
-Some wheels, batteries, holders, and other parts are simple placeholders. Measure your own parts before printing or buying anything. Check the holes, wheel hubs, battery space, board space, and screws.
+### Firmware Collection
 
-## Uploading the code
+The [`firmware/`](firmware/) folder contains the main Arduino Nano and Pico
+programs plus motor, IMU, and early PID experiments.
 
-1. Install the Arduino IDE.
-2. Install the board support for your controller.
-3. Open the `.ino` file from its folder.
-4. Check every wire and pin before connecting motor power.
-5. Keep the wheels off the table for the first test.
-6. Adjust the target angle and PID values for your robot.
+| Code area | Purpose |
+| --- | --- |
+| `arduino-nano/` | Main Nano balance controller |
+| `raspberry-pi-pico/` | Main Pico balance controller |
+| `experiments/motor-test/` | Motor direction test |
+| `experiments/imu-serial/` | Sensor plotting and calibration |
+| `experiments/pid-early/` | Early balance loop |
+| `experiments/pid-alternate/` | Alternate PID implementation |
 
-> [!CAUTION]
-> The robot can move quickly or fall over. Keep your fingers away from the wheels and test it in a clear area.
+[Open the firmware collection](firmware/) · [Read the firmware guide](firmware/README.md)
+
+## Build Videos
+
+| First prototype | Printed body | Pico controller |
+| --- | --- | --- |
+| [![Version 1](https://i.ytimg.com/vi_webp/-mdpzGmiDxs/hqdefault.webp)](https://www.youtube.com/watch?v=-mdpzGmiDxs) | [![Version 2](https://i.ytimg.com/vi_webp/whE-oMi1N7U/hqdefault.webp)](https://www.youtube.com/watch?v=whE-oMi1N7U) | [![Version 3](https://i.ytimg.com/vi_webp/JzyDli07yCE/hqdefault.webp)](https://www.youtube.com/watch?v=JzyDli07yCE) |
+
+## Upload and Test
+
+1. Install the Arduino IDE and the board support for the selected controller.
+2. Open the matching `.ino` file from `firmware/`.
+3. Confirm the sensor, motor-driver, and motor pin assignments.
+4. Keep both wheels raised for the first motor-direction test.
+5. Keep the robot still during sensor calibration.
+6. Begin with a low motor-power limit.
+7. Tune the target angle and PID values for the physical build.
 
 ## Results
 
-* The robot was able to balance and move using sensor feedback.
-* We tested the same basic idea with different controllers.
-* Adjusting the PID values made the balancing smoother.
-* Reusing parts helped keep the project affordable.
+- The robot balanced and moved using MPU6050 feedback.
+- The same control idea was tested across Arduino and Pico hardware.
+- Mechanical changes and PID tuning improved the final response.
+- Earlier code and CAD versions preserve the development process.
 
-## Links
+## Safety
 
-* [Self balancing robot project page](https://angelojamesny.com/selfbalancing)
-* [Club projects page](https://angelojamesny.com/club-projects)
-* [Repository home](../README.md)
-* [Angelo's GitHub profile](https://github.com/TheTheAloe)
+> [!CAUTION]
+> The robot can move quickly or fall without warning. Keep fingers away from
+> the wheels, use a clear test area, and disconnect motor power before changing
+> wiring or mechanical parts.
 
-## License
+---
 
-The original project work is available under [CC BY 4.0](../LICENSE.md). You can share or change it as long as you credit Angelo Demetroulakos, link to the license, and say what you changed.
+[Project page](https://angelojamesny.com/selfbalancing) · [Club project collection](../README.md) · [City Tech AI & Automation Club](https://angelojamesny.com/club-projects)
 
-Parts made by other companies or creators still follow their original rules.
+Original project work is available under [CC BY 4.0](../LICENSE.md). Third-party
+parts and models remain subject to their original terms.

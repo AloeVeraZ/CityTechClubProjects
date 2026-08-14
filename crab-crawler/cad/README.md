@@ -1,21 +1,44 @@
-# Walking robot CAD
+# Crab Crawler CAD Collection
 
-This folder has two versions of the walking robot design.
+### Editable Fusion archives and portable STEP exports for two frame revisions
 
-| Design | Fusion file | STEP file |
-|---|---|---|
-| Stronger final design | `final/final.f3z` | `final/final.step` |
-| Smaller early design | `small/small.f3z` | `small/small.step` |
+[![CAD](https://img.shields.io/badge/CAD-Autodesk%20Fusion-ff8a00?style=flat-square)](#design-files)
+[![Formats](https://img.shields.io/badge/formats-F3Z%20%2B%20STEP-00979d?style=flat-square)](#file-formats)
 
-## File types
+[Project overview](../README.md) · [Final design](final/) · [Small prototype](small/)
 
-The `.f3z` files open in Autodesk Fusion and may include linked parts. The `.step` files can open in many other CAD programs, but they do not keep the full Fusion editing history.
+---
 
-## Before printing
+## Design Files
 
-* Check the size of your servos, controller, battery, and screws.
-* Look at the thicker joints and choose a good print direction.
-* Make sure the servo arms and legs can move freely.
-* Change the spacing if your printer or parts are a different size.
+| Revision | Fusion archive | STEP export | Purpose |
+| --- | --- | --- | --- |
+| 01 / Small prototype | [`small/small.f3z`](small/small.f3z) | [`small/small.step`](small/small.step) | Compact ESP32-CAM experiment |
+| 02 / Final design | [`final/final.f3z`](final/final.f3z) | [`final/final.step`](final/final.step) | Reinforced completed frame |
 
-The small design was an early version. The final design uses a thicker frame because the smaller frame broke during testing.
+The small design preserved the compact second-generation robot. The final
+design thickened the joints and frame sections that failed during testing.
+
+## File Formats
+
+| Format | Use |
+| --- | --- |
+| `.f3z` | Opens in Autodesk Fusion and can preserve linked design components |
+| `.step` | Opens in most CAD packages but does not preserve Fusion history |
+
+## Before Printing
+
+> [!IMPORTANT]
+> Measure the exact servos, controller, battery, screws, and servo arms before
+> printing. These files document the project build and may need adjustment for
+> different hardware or printer tolerances.
+
+- Check the thicker joints and choose a strong print orientation.
+- Confirm that the servo arms and legs can move through the full gait.
+- Leave enough clearance for wiring and connectors.
+- Test one leg before printing the complete frame.
+
+---
+
+Return to the [Crab Crawler project](../README.md) or the
+[club project collection](../../README.md).

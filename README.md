@@ -1,95 +1,187 @@
-<div align="center">
-
 # City Tech AI & Automation Club
 
-**This page shows two robotics projects made by students at City Tech.**
+### Three student robotics projects built through design, fabrication, electronics, and code
 
-[![License: CC BY 4.0](https://img.shields.io/badge/license-CC%20BY%204.0-f1c40f?style=flat-square)](LICENSE.md)
-![Projects](https://img.shields.io/badge/projects-3-6f42c1?style=flat-square)
-![CAD Files](https://img.shields.io/badge/CAD%20files-10-00979d?style=flat-square)
-![Firmware Sketches](https://img.shields.io/badge/firmware%20sketches-6-16c784?style=flat-square)
+[![Projects](https://img.shields.io/badge/projects-3-6f42c1?style=flat-square)](#project-collection)
+[![Disciplines](https://img.shields.io/badge/workflow-CAD%20to%20hardware-00979d?style=flat-square)](#learning-workflow)
+[![STEM Team](https://img.shields.io/badge/STEM%20team-2%20students%20%2B%204%20mentors-16c784?style=flat-square)](stem-research-academy/#team-and-learning)
+[![License](https://img.shields.io/badge/license-CC%20BY%204.0-f1c40f?style=flat-square)](LICENSE.md)
 
-</div>
+[![Placeholder for a City Tech AI and Automation Club group photograph](stem-research-academy/images/group-photo-01-placeholder.svg)](stem-research-academy/images/README.md)
 
-## Featured projects
+This repository collects three hands-on robotics projects from the City Tech
+AI & Automation Club. Each project keeps its design files, code, build history,
+and practical notes together so the finished robot and the process behind it
+can be explored from one place.
+
+[Explore the projects](#project-collection) · [See the STEM team](#stem-research-academy-team) · [Open the repository map](#repository-map) · [Visit the club page](https://angelojamesny.com/club-projects)
+
+---
+
+## Club Overview
+
+The collection covers three different robotics problems: balancing on two
+wheels, walking with servo-driven legs, and integrating a full Raspberry Pi
+mecanum platform. Together they show how mechanical design, electronics, and
+software evolve through repeated physical testing.
+
+| Project | Main engineering focus | Repository content |
+| --- | --- | --- |
+| Self Balancing Robot | IMU feedback, PID control, controller iteration | Arduino/Pico firmware and CAD |
+| Crab Crawler Walking Robot | Servo gait design, frame strength, wireless control | Fusion and STEP CAD plus build history |
+| STEM Research Academy Robot Lab | Full-system integration across manufacturing, electronics, and Python | Robot server, Pi installer, documentation, and tests |
+
+## Project Collection
+
+### 01 / Self Balancing Robot
+
+[![Self balancing robot](https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=1200,h=675,fit=crop/A85rnnzK6qs5qxKB/img_20260514_162917008-GuGOQgTeFhg8mCtz.jpg)](self-balancing-robot/README.md)
+
+A two-wheel robot that uses an MPU6050 and PID feedback to move its wheels
+under its center of mass. Three versions were built with Arduino and Raspberry
+Pi Pico controllers.
+
+| System | Configuration |
+| --- | --- |
+| Sensor | MPU6050 IMU |
+| Control | PID balance loop |
+| Controllers | Arduino Nano, Arduino Uno, Raspberry Pi Pico |
+| Drive | Two DC motors |
+| Files | Fusion/STEP CAD, main firmware, and experiments |
+
+[Open the project](self-balancing-robot/README.md) · [Browse the CAD](self-balancing-robot/cad/) · [Browse the firmware](self-balancing-robot/firmware/) · [View the portfolio page](https://angelojamesny.com/selfbalancing)
+
+<table>
+  <tr>
+    <td width="33%" align="center"><a href="https://www.youtube.com/watch?v=-mdpzGmiDxs"><img src="https://i.ytimg.com/vi_webp/-mdpzGmiDxs/hqdefault.webp" width="100%" alt="Self balancing robot first prototype video"><br><strong>First prototype</strong></a></td>
+    <td width="33%" align="center"><a href="https://www.youtube.com/watch?v=whE-oMi1N7U"><img src="https://i.ytimg.com/vi_webp/whE-oMi1N7U/hqdefault.webp" width="100%" alt="Self balancing robot printed body video"><br><strong>Printed body</strong></a></td>
+    <td width="33%" align="center"><a href="https://www.youtube.com/watch?v=JzyDli07yCE"><img src="https://i.ytimg.com/vi_webp/JzyDli07yCE/hqdefault.webp" width="100%" alt="Self balancing robot Pico controller video"><br><strong>Pico controller</strong></a></td>
+  </tr>
+</table>
+
+---
+
+### 02 / Crab Crawler Walking Robot
+
+[![Crab crawler walking robot](https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=1200,h=675,fit=crop/A85rnnzK6qs5qxKB/img_20260515_125209039-aa3XkdHF9OBnSOx5.jpg)](crab-crawler/README.md)
+
+A four-leg robot that walks through a servo gait sequence. The project moved
+from a large Arduino prototype to smaller ESP32-CAM versions with local Wi-Fi
+control and live video.
+
+| System | Configuration |
+| --- | --- |
+| Motion | Four servo-driven legs |
+| Controllers | Arduino Nano, then ESP32-CAM |
+| Interface | Local wireless driving panel |
+| Structure | Two documented 3D-printed frame revisions |
+| Files | Fusion archives and STEP exports |
+
+[Open the project](crab-crawler/README.md) · [Browse the CAD](crab-crawler/cad/) · [View the portfolio page](https://angelojamesny.com/crabcrawler)
+
+<table>
+  <tr>
+    <td width="33%" align="center"><a href="https://www.youtube.com/watch?v=WJB2is0cYr0"><img src="https://i.ytimg.com/vi_webp/WJB2is0cYr0/hqdefault.webp" width="100%" alt="Crab crawler Arduino prototype video"><br><strong>Arduino prototype</strong></a></td>
+    <td width="33%" align="center"><a href="https://www.youtube.com/watch?v=dIKoLMmPl84"><img src="https://i.ytimg.com/vi_webp/dIKoLMmPl84/hqdefault.webp" width="100%" alt="Small ESP32-CAM walking robot video"><br><strong>Small ESP32-CAM</strong></a></td>
+    <td width="33%" align="center"><a href="https://www.youtube.com/watch?v=3YAVgb8yF3U"><img src="https://i.ytimg.com/vi_webp/3YAVgb8yF3U/hqdefault.webp" width="100%" alt="Final crab crawler robot video"><br><strong>Stronger final version</strong></a></td>
+  </tr>
+</table>
+
+---
+
+### 03 / STEM Research Academy Robot Lab
+
+[![Final 3TSahur robot placeholder](stem-research-academy/images/final-robot-placeholder.svg)](stem-research-academy/README.md)
+
+A six-week, full-system robotics build completed by **two students** with
+support from **four mentors**. The students worked through CAD/CAM, 3D printing,
+manual and CNC-oriented manufacturing, custom PCB and low-voltage electrical
+work, sensors, servos, motors, and Python integration.
+
+| Program | Configuration |
+| --- | --- |
+| Team | 2 students and 4 mentors |
+| Duration | 6 weeks |
+| Main platform | Raspberry Pi 4 mecanum robot |
+| Mechanical work | CAD/CAM, printing, bandsaw, power tools, manual milling, CNC preparation |
+| Electrical work | 5 V logic, 12 V power, custom PCBs, motors, servos, cameras, LiDAR-ready interfaces, LEDs |
+| Software | Python robot server and local browser dashboard |
+
+[Open the STEM project](stem-research-academy/README.md) · [Browse the robot server](stem-research-academy/robot_server/) · [Read the wiring guide](stem-research-academy/docs/WIRING.md)
+
+## STEM Research Academy Team
 
 <table>
   <tr>
     <td width="50%" align="center" valign="top">
-      <a href="self-balancing-robot/README.md">
-        <img src="https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=720,h=480,fit=crop/A85rnnzK6qs5qxKB/img_20260514_162917008-GuGOQgTeFhg8mCtz.jpg" width="100%" alt="Self balancing robot">
-      </a>
-      <h3>Self Balancing Robot</h3>
-      <p>This robot uses a sensor, motors, and PID control to stay standing on two wheels.</p>
-      <p><strong>Included:</strong> Arduino code, Raspberry Pi Pico code, CAD files, and some early tests.</p>
-      <p><a href="self-balancing-robot/README.md"><strong>View the project</strong></a></p>
+      <img src="stem-research-academy/images/group-photo-02-placeholder.svg" width="100%" alt="Placeholder for the second STEM Research Academy full-group photo">
+      <br><strong>Full Group Photo 02</strong><br>
+      <sub>Reserved for a second photograph of the two students and four mentors.</sub>
     </td>
     <td width="50%" align="center" valign="top">
-      <a href="crab-crawler/README.md">
-        <img src="https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=720,h=480,fit=crop/A85rnnzK6qs5qxKB/img_20260515_125209039-aa3XkdHF9OBnSOx5.jpg" width="100%" alt="Crab crawler walking robot">
-      </a>
-      <h3>Crab Crawler Walking Robot</h3>
-      <p>This is a four leg robot that walks with servos. Later versions used an ESP32 CAM for wireless control.</p>
-      <p><strong>Included:</strong> CAD files for the small version and the final version.</p>
-      <p><a href="crab-crawler/README.md"><strong>View the project</strong></a></p>
+      <img src="stem-research-academy/images/final-robot-placeholder.svg" width="100%" alt="Placeholder for a photograph of the completed 3TSahur robot">
+      <br><strong>Completed Robot</strong><br>
+      <sub>Reserved for a clear photograph of the final large robot.</sub>
     </td>
   </tr>
 </table>
 
-<table>
-  <tr>
-    <td width="50%" align="center" valign="top">
-      <h3>STEM Research Academy Robot Lab</h3>
-      <p>A six-week robotics learning project for approximately 400 students, centered on a Raspberry Pi mecanum robot.</p>
-      <p><strong>Included:</strong> Mecanum control, Logitech camera streaming, ramp servos, hotspot setup, tests, documentation, and a rerunnable Pi installer.</p>
-      <p><a href="stem-research-academy/README.md"><strong>View the project</strong></a></p>
-    </td>
-  </tr>
-</table>
+The STEM team also built two smaller ESP32-S3-based robots locally. Those
+robots create their own Wi-Fi networks and use separate driving panels; their
+source files are not part of this repository.
 
-## Project videos
+---
 
-Both robots went through a few versions. The videos below show what changed along the way.
+## Learning Workflow
 
-### Self Balancing Robot
+| Stage | Practice across the collection |
+| --- | --- |
+| 01 / Define | Choose a movement problem and identify the control constraints |
+| 02 / Design | Model frames, assemblies, and component layouts in CAD |
+| 03 / Prototype | Print parts, assemble hardware, and expose physical problems |
+| 04 / Wire | Build safe power, motor, sensor, and controller connections |
+| 05 / Program | Create feedback loops, gait sequences, dashboards, and safety controls |
+| 06 / Test | Validate one subsystem at a time and preserve unsuccessful iterations |
+| 07 / Improve | Revise the mechanical design and software from measured behavior |
 
-<table>
-  <tr>
-    <td width="33%" align="center"><a href="https://www.youtube.com/watch?v=-mdpzGmiDxs"><img src="https://i.ytimg.com/vi_webp/-mdpzGmiDxs/hqdefault.webp" width="100%" alt="Self balancing robot version 1 video"><br><strong>Version 1: First prototype</strong></a></td>
-    <td width="33%" align="center"><a href="https://www.youtube.com/watch?v=whE-oMi1N7U"><img src="https://i.ytimg.com/vi_webp/whE-oMi1N7U/hqdefault.webp" width="100%" alt="Self balancing robot version 2 video"><br><strong>Version 2: Printed body</strong></a></td>
-    <td width="33%" align="center"><a href="https://www.youtube.com/watch?v=JzyDli07yCE"><img src="https://i.ytimg.com/vi_webp/JzyDli07yCE/hqdefault.webp" width="100%" alt="Self balancing robot version 3 video"><br><strong>Version 3: Pico controller</strong></a></td>
-  </tr>
-</table>
+## Repository Map
 
-### Crab Crawler Walking Robot
+```text
+CityTechClubProjects/
+|-- self-balancing-robot/
+|   |-- cad/                 Fusion and STEP mechanical files
+|   `-- firmware/            Arduino and Pico control programs
+|-- crab-crawler/
+|   `-- cad/                 Small and final walking-robot designs
+|-- stem-research-academy/
+|   |-- images/              Team and final-robot media slots
+|   |-- robot_server/        Python dashboard and hardware control
+|   |-- installer/           Raspberry Pi deployment
+|   |-- docs/                Wiring, setup, and ramp documentation
+|   `-- tests/               Hardware-independent validation
+|-- CITATION.cff
+|-- LICENSE.md
+`-- README.md
+```
 
-<table>
-  <tr>
-    <td width="33%" align="center"><a href="https://www.youtube.com/watch?v=WJB2is0cYr0"><img src="https://i.ytimg.com/vi_webp/WJB2is0cYr0/hqdefault.webp" width="100%" alt="Walking robot version 1 video"><br><strong>Version 1: Arduino prototype</strong></a></td>
-    <td width="33%" align="center"><a href="https://www.youtube.com/watch?v=dIKoLMmPl84"><img src="https://i.ytimg.com/vi_webp/dIKoLMmPl84/hqdefault.webp" width="100%" alt="Walking robot version 2 video"><br><strong>Version 2: Small ESP32 CAM version</strong></a></td>
-    <td width="33%" align="center"><a href="https://www.youtube.com/watch?v=3YAVgb8yF3U"><img src="https://i.ytimg.com/vi_webp/3YAVgb8yF3U/hqdefault.webp" width="100%" alt="Walking robot version 3 video"><br><strong>Version 3: Stronger frame</strong></a></td>
-  </tr>
-</table>
+## More Information
 
-## What is included
-
-The self balancing robot folder has code and CAD files, the crab crawler folder has CAD files, and the STEM Research Academy folder contains the large Raspberry Pi robot. Each folder also has a README with more information.
-
-## What we learned
-
-These projects helped us learn about sensors, motors, CAD, 3D printing, wiring, and programming. Some early versions had problems, but testing them helped us improve the next version.
-
-## More information
-
-| Project | Portfolio page | Files |
-|---|---|---|
-| Self Balancing Robot | [Read the project page](https://angelojamesny.com/selfbalancing) | [View the files](self-balancing-robot/README.md) |
-| Crab Crawler Walking Robot | [Read the project page](https://angelojamesny.com/crabcrawler) | [View the files](crab-crawler/README.md) |
-| STEM Research Academy Robot Lab | Documentation in this repository | [View the files](stem-research-academy/README.md) |
-| City Tech AI & Automation Club | [View the club page](https://angelojamesny.com/club-projects) | Not available |
+| Destination | Link |
+| --- | --- |
+| Club page | [City Tech AI & Automation Club](https://angelojamesny.com/club-projects) |
+| Self Balancing Robot portfolio | [angelojamesny.com/selfbalancing](https://angelojamesny.com/selfbalancing) |
+| Crab Crawler portfolio | [angelojamesny.com/crabcrawler](https://angelojamesny.com/crabcrawler) |
+| Citation information | [`CITATION.cff`](CITATION.cff) |
 
 ## License
 
-The original work is available under the [Creative Commons Attribution 4.0 International License](LICENSE.md). You can share or change it as long as you credit **Angelo Demetroulakos**, link to the license, and say what you changed.
+Original project work is available under the
+[Creative Commons Attribution 4.0 International License](LICENSE.md). You may
+share or adapt it with credit to **Angelo Demetroulakos**, a link to the
+license, and a note describing your changes. Third-party models and components
+remain subject to their original terms.
 
-Models made by other companies or creators still follow their original rules.
+---
+
+Built through the City Tech AI & Automation Club as an iterative
+design-to-hardware robotics collection.
