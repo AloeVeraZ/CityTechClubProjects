@@ -8,8 +8,6 @@
 [![Control](https://img.shields.io/badge/control-Python%203.11%2B-3776AB?style=flat-square&logo=python&logoColor=white)](robot_server/)
 [![License](https://img.shields.io/badge/license-CC%20BY%204.0-f1c40f?style=flat-square)](../LICENSE.md)
 
-[![City Tech AI and Automation Club at the Experimental Learning Symposium](images/club-cover.jpg)](https://www.instagram.com/p/DYOBZRNFmqn/?img_index=6)
-
 This folder documents the large **3TSahur** mecanum robot built during the
 STEM Research Academy. The project brought two students and four mentors
 through the complete path from an idea to a working machine.
