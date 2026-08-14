@@ -7,7 +7,7 @@
 [![STEM Team](https://img.shields.io/badge/STEM%20team-2%20students%20%2B%204%20mentors-16c784?style=flat-square)](stem-research-academy/#team-and-learning)
 [![License](https://img.shields.io/badge/license-CC%20BY%204.0-f1c40f?style=flat-square)](LICENSE.md)
 
-[![Placeholder for a City Tech AI and Automation Club group photograph](stem-research-academy/images/group-photo-01-placeholder.svg)](stem-research-academy/images/README.md)
+[![City Tech AI and Automation Club at the Experimental Learning Symposium](stem-research-academy/images/club-cover.jpg)](https://www.instagram.com/p/DYOBZRNFmqn/?img_index=6)
 
 This repository collects three hands-on robotics projects from the City Tech
 AI & Automation Club. Each project keeps its design files, code, build history,
@@ -113,15 +113,20 @@ work, sensors, servos, motors, and Python integration.
 
 <table>
   <tr>
-    <td width="50%" align="center" valign="top">
-      <img src="stem-research-academy/images/group-photo-02-placeholder.svg" width="100%" alt="Placeholder for the second STEM Research Academy full-group photo">
-      <br><strong>Full Group Photo 02</strong><br>
-      <sub>Reserved for a second photograph of the two students and four mentors.</sub>
-    </td>
-    <td width="50%" align="center" valign="top">
+    <td width="33%" align="center" valign="top">
       <img src="stem-research-academy/images/final-robot-placeholder.svg" width="100%" alt="Placeholder for a photograph of the completed 3TSahur robot">
       <br><strong>Completed Robot</strong><br>
       <sub>Reserved for a clear photograph of the final large robot.</sub>
+    </td>
+    <td width="33%" align="center" valign="top">
+      <img src="stem-research-academy/images/group-photo-01.png" width="100%" alt="STEM Research Academy team presenting certificates with the completed robot">
+      <br><strong>Group Photo 01</strong><br>
+      <sub>The team presenting its research and completed robot.</sub>
+    </td>
+    <td width="33%" align="center" valign="top">
+      <img src="stem-research-academy/images/group-photo-02.jpg" width="100%" alt="STEM Research Academy students and mentors with the robot in the lab">
+      <br><strong>Group Photo 02</strong><br>
+      <sub>The students and mentors with the robot in the lab.</sub>
     </td>
   </tr>
 </table>
@@ -154,7 +159,7 @@ CityTechClubProjects/
 |-- crab-crawler/
 |   `-- cad/                 Small and final walking-robot designs
 |-- stem-research-academy/
-|   |-- images/              Team and final-robot media slots
+|   |-- images/              Club, team, and final-robot media
 |   |-- robot_server/        Python dashboard and hardware control
 |   |-- installer/           Raspberry Pi deployment
 |   |-- docs/                Wiring, setup, and ramp documentation

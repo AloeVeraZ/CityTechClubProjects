@@ -8,7 +8,7 @@
 [![Control](https://img.shields.io/badge/control-Python%203.11%2B-3776AB?style=flat-square&logo=python&logoColor=white)](robot_server/)
 [![License](https://img.shields.io/badge/license-CC%20BY%204.0-f1c40f?style=flat-square)](../LICENSE.md)
 
-[![Final 3TSahur robot placeholder](images/final-robot-placeholder.svg)](images/README.md)
+[![City Tech AI and Automation Club at the Experimental Learning Symposium](images/club-cover.jpg)](https://www.instagram.com/p/DYOBZRNFmqn/?img_index=6)
 
 This folder documents the large **3TSahur** mecanum robot built during the
 STEM Research Academy. The project brought two students and four mentors
@@ -47,17 +47,19 @@ were completed locally and are not included in this repository.
 
 ## Team and Learning
 
+[![Final 3TSahur robot placeholder](images/final-robot-placeholder.svg)](images/README.md)
+
 <table>
   <tr>
     <td width="50%" align="center" valign="top">
-      <img src="images/group-photo-01-placeholder.svg" width="100%" alt="Placeholder for the first STEM Research Academy full-group photo">
+      <img src="images/group-photo-01.png" width="100%" alt="STEM Research Academy team presenting certificates with the completed robot">
       <br><strong>Group Photo 01</strong><br>
-      <sub>Replace with the first photograph of the two students and four mentors.</sub>
+      <sub>The team presenting its research and completed robot.</sub>
     </td>
     <td width="50%" align="center" valign="top">
-      <img src="images/group-photo-02-placeholder.svg" width="100%" alt="Placeholder for the second STEM Research Academy full-group photo">
+      <img src="images/group-photo-02.jpg" width="100%" alt="STEM Research Academy students and mentors with the robot in the lab">
       <br><strong>Group Photo 02</strong><br>
-      <sub>Replace with the second photograph of the complete project team.</sub>
+      <sub>The students and mentors with the robot in the lab.</sub>
     </td>
   </tr>
 </table>
