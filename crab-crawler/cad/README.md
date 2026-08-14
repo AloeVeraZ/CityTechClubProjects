@@ -2,8 +2,8 @@
 
 ### Editable Fusion archives and portable STEP exports for two frame revisions
 
-[![CAD](https://img.shields.io/badge/CAD-Autodesk%20Fusion-ff8a00?style=flat-square)](#design-files)
-[![Formats](https://img.shields.io/badge/formats-F3Z%20%2B%20STEP-00979d?style=flat-square)](#file-formats)
+[![CAD](https://img.shields.io/badge/CAD-Autodesk%20Fusion-111111?style=flat-square)](#design-files)
+[![Formats](https://img.shields.io/badge/formats-F3Z%20%2B%20STEP-6b7280?style=flat-square)](#file-formats)
 
 [Project overview](../README.md) · [Final design](final/) · [Small prototype](small/)
 

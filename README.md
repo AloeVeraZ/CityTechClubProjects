@@ -1,13 +1,13 @@
+<div align="center">
+
 # City Tech AI & Automation Club
 
 ### Three student robotics projects built through design, fabrication, electronics, and code
 
-[![Projects](https://img.shields.io/badge/projects-3-6f42c1?style=flat-square)](#project-collection)
-[![Disciplines](https://img.shields.io/badge/workflow-CAD%20to%20hardware-00979d?style=flat-square)](#learning-workflow)
-[![STEM Team](https://img.shields.io/badge/STEM%20team-2%20students%20%2B%204%20mentors-16c784?style=flat-square)](stem-research-academy/#team-and-learning)
-[![License](https://img.shields.io/badge/license-CC%20BY%204.0-f1c40f?style=flat-square)](LICENSE.md)
-
-[![City Tech AI and Automation Club at the Experimental Learning Symposium](stem-research-academy/images/club-cover.jpg)](https://www.instagram.com/p/DYOBZRNFmqn/?img_index=6)
+[![Projects](https://img.shields.io/badge/projects-3-111111?style=for-the-badge)](#project-collection)
+[![Disciplines](https://img.shields.io/badge/workflow-CAD%20to%20hardware-3f3f46?style=for-the-badge)](#learning-workflow)
+[![STEM Team](https://img.shields.io/badge/STEM%20team-2%20students%20%2B%204%20mentors-6b7280?style=for-the-badge)](stem-research-academy/#team-and-learning)
+[![License](https://img.shields.io/badge/license-CC%20BY%204.0-111111?style=for-the-badge)](LICENSE.md)
 
 This repository collects three hands-on robotics projects from the City Tech
 AI & Automation Club. Each project keeps its design files, code, build history,
@@ -15,6 +15,10 @@ and practical notes together so the finished robot and the process behind it
 can be explored from one place.
 
 [Explore the projects](#project-collection) · [See the STEM team](#stem-research-academy-team) · [Open the repository map](#repository-map) · [Visit the club page](https://angelojamesny.com/club-projects)
+
+</div>
+
+[![City Tech AI and Automation Club at the Experimental Learning Symposium](stem-research-academy/images/club-cover.jpg)](https://www.instagram.com/p/DYOBZRNFmqn/?img_index=6)
 
 ---
 

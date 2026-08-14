@@ -2,9 +2,9 @@
 
 ### Primary balance controllers and the experiments used to bring them up
 
-[![Language](https://img.shields.io/badge/language-Arduino%20C%2B%2B-00979d?style=flat-square&logo=arduino&logoColor=white)](#main-code)
-[![Control](https://img.shields.io/badge/control-PID-7c5cff?style=flat-square)](#main-code)
-[![Sensor](https://img.shields.io/badge/sensor-MPU6050-00a8e8?style=flat-square)](#test-code)
+[![Language](https://img.shields.io/badge/language-Arduino%20C%2B%2B-111111?style=flat-square&logo=arduino&logoColor=white)](#main-code)
+[![Control](https://img.shields.io/badge/control-PID-3f3f46?style=flat-square)](#main-code)
+[![Sensor](https://img.shields.io/badge/sensor-MPU6050-6b7280?style=flat-square)](#test-code)
 
 [Project overview](../README.md) · [Main code](#main-code) · [Experiments](#test-code) · [CAD collection](../cad/)
 
