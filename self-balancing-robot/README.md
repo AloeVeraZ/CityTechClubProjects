@@ -17,6 +17,7 @@
 
 A two-wheeled inverted pendulum robot engineered to maintain dynamic equilibrium using MPU6050 inertial feedback and closed-loop PID control.
 
+<strong>Quick navigation:</strong><br>
 [Project Overview](#project-overview) | [Development Path](#development-path) | [CAD Collection](cad/) | [Firmware](firmware/) | [Build Videos](#build-videos) | [Back to Club](../)
 
 </div>
@@ -82,14 +83,21 @@ The Self Balancing Robot serves as a practical testbench for inertial sensing, c
 
 The MPU6050 measures pitch angle and angular velocity. The onboard controller executes a PID algorithm to compute corrective motor voltage, driving the wheel contact patch beneath the center of gravity.
 
-```mermaid
-flowchart LR
-    I["MPU6050 Tilt & Rate"] --> C["PID Controller"]
-    C --> D["H-Bridge Motor Driver"]
-    D --> M["Left & Right DC Motors"]
-    M --> R["Chassis Angle Correction"]
-    R --> I
-```
+<table>
+  <tr>
+    <td align="center"><strong>MPU6050</strong><br>Tilt and rate</td>
+    <td align="center">&rarr;</td>
+    <td align="center"><strong>PID Controller</strong></td>
+    <td align="center">&rarr;</td>
+    <td align="center"><strong>H-Bridge Driver</strong></td>
+    <td align="center">&rarr;</td>
+    <td align="center"><strong>Left and Right Motors</strong></td>
+    <td align="center">&rarr;</td>
+    <td align="center"><strong>Chassis Correction</strong></td>
+    <td align="center">&rarr; feedback</td>
+    <td align="center"><strong>MPU6050</strong></td>
+  </tr>
+</table>
 
 ## Project Files
 
@@ -133,11 +141,3 @@ The [`firmware/`](firmware/) directory contains primary balance controllers alon
 1. **Raised Bench Test:** Keep wheels suspended off the table during first upload to verify motor polarity against tilt direction.
 2. **Sensor Calibration:** Keep the robot stationary during startup gyro bias calculation.
 3. **Gain Tuning:** Begin with low $K_p$, zero $K_d$, and zero $K_i$. Increase $K_p$ until oscillation begins, then introduce $K_d$ to dampen movement.
-
----
-
-<div align="center">
-
-Designed and built by **[Angelo James Demetroulakos](https://angelojamesny.com/selfbalancing)** · **[City Tech AI & Automation Club](../)**
-
-</div>

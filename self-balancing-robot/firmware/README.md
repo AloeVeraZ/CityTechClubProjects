@@ -12,6 +12,7 @@
 
 This directory contains the primary closed-loop balance control firmware alongside modular bring-up sketches for sensor calibration and motor verification.
 
+<strong>Quick navigation:</strong><br>
 [Main Code](#main-code) | [Test Code](#test-code) | [Commissioning & Safety](#commissioning--safety) | [Back to Self Balancing Robot](../)
 
 </div>

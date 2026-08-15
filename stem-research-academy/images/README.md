@@ -11,6 +11,7 @@
 
 This directory preserves original-resolution project photography, team photos, and presentation media for the STEM Research Academy robot.
 
+<strong>Quick navigation:</strong><br>
 [Media Manifest](#media-manifest) | [Usage Guidelines](#usage-guidelines) | [Back to STEM Project](../)
 
 </div>

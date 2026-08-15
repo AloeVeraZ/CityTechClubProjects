@@ -12,6 +12,7 @@
 
 This directory contains the original Autodesk Fusion designs and neutral STEP solid models for the Self Balancing Robot platform.
 
+<strong>Quick navigation:</strong><br>
 [Design Files](#design-files) | [File Formats](#file-formats) | [Component Validation](#component-validation) | [Back to Self Balancing Robot](../)
 
 </div>

@@ -11,6 +11,7 @@
 
 This repository collects three hands-on robotics projects from the City Tech AI & Automation Club. Each project keeps its design files, code, build history, and practical notes together in one place.
 
+<strong>Quick navigation:</strong><br>
 [Project Collection](#project-collection) | [STEM Research Team](#stem-research-academy-team) | [Learning Workflow](#learning-workflow) | [Repository Map](#repository-map)
 
 </div>

@@ -17,6 +17,7 @@
 
 A compact four-leg walking robot built through iterative frame design, gait sequencing, and wireless ESP32-CAM control.
 
+<strong>Quick navigation:</strong><br>
 [Project Overview](#project-overview) | [Development Path](#development-path) | [CAD Collection](cad/) | [Build Videos](#build-videos) | [Back to Club](../)
 
 </div>
@@ -83,13 +84,23 @@ The Crab Crawler project explores multi-servo legged locomotion on a compact des
 
 The ESP32-CAM hosts a local Wi-Fi web server. The operator interface sends directional commands over HTTP/WebSockets, which the microcontroller translates into coordinated multi-servo gait steps.
 
-```mermaid
-flowchart LR
-    O["Operator Browser"] -->|"Local Wi-Fi Command"| E["ESP32-CAM"]
-    E --> S["PCA9685 Servo Driver"]
-    S --> L["Four Articulated Legs"]
-    E -->|"MJPEG Stream"| O
-```
+<table>
+  <tr>
+    <td align="center"><strong>Operator Browser</strong><br>Directional commands</td>
+    <td align="center">&rarr;</td>
+    <td align="center"><strong>ESP32-CAM</strong><br>Local Wi-Fi server</td>
+    <td align="center">&rarr;</td>
+    <td align="center"><strong>PCA9685 Driver</strong></td>
+    <td align="center">&rarr;</td>
+    <td align="center"><strong>Four Articulated Legs</strong></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Operator Browser</strong></td>
+    <td align="center">&larr;</td>
+    <td align="center"><strong>ESP32-CAM</strong><br>MJPEG video stream</td>
+    <td colspan="4"></td>
+  </tr>
+</table>
 
 ## CAD Collection
 
@@ -116,11 +127,3 @@ The [`cad/`](cad/) directory contains source Autodesk Fusion archives (`.f3z`) a
 - Confirm servo arm zero positions before installing leg linkages.
 - Use high-infill settings (≥40% PETG/ABS) on the leg pivots for structural rigidity.
 - Ensure the external battery pack can supply peak concurrent servo stall currents without browning out the ESP32-CAM.
-
----
-
-<div align="center">
-
-Designed and built by **[Angelo James Demetroulakos](https://angelojamesny.com/crabcrawler)** · **[City Tech AI & Automation Club](../)**
-
-</div>

@@ -12,6 +12,7 @@
 
 This package implements the asynchronous hardware control daemon and browser dashboard serving the 3TSahur mecanum robot on Raspberry Pi 4.
 
+<strong>Quick navigation:</strong><br>
 [Package Map](#package-map) | [Runtime & Safety](#runtime--safety) | [Automated Validation](#automated-validation) | [Back to STEM Project](../)
 
 </div>

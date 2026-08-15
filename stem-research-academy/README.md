@@ -16,6 +16,7 @@
 
 Documentation and control architecture for the **3TSahur** mecanum robot built during a six-week hands-on engineering research program.
 
+<strong>Quick navigation:</strong><br>
 [Meet the Team](#team-and-learning) | [System Architecture](#large-robot-system) | [Connect & Drive](#connect-and-drive) | [Robot Server](robot_server/) | [Installer](installer/) | [Back to Club](../)
 
 </div>
@@ -65,14 +66,31 @@ The program encompassed the complete product design cycle:
 
 3TSahur is driven by a Raspberry Pi 4 controlling four independent mecanum wheels, an automated two-servo ramp mechanism, and a Logitech HD camera stream. The Pi hosts its own standalone Wi-Fi hotspot, allowing operators to connect directly from any phone, tablet, or PC without internet access.
 
-```mermaid
-flowchart LR
-    O["Operator Browser UI"] <-->|"Local Wi-Fi Hotspot"| P["Raspberry Pi 4"]
-    P -->|"BCM GPIO PWM"| D["Dual H-Bridge Drivers"]
-    D --> M["Four Mecanum Motors"]
-    P -->|"V4L2 USB"| C["Logitech HD Camera"]
-    P -->|"pigpio PWM"| S["Dual Synchronized Ramp Servos"]
-```
+<table>
+  <tr>
+    <td align="center"><strong>Operator Browser UI</strong></td>
+    <td align="center">&harr;<br>Local Wi-Fi</td>
+    <td align="center"><strong>Raspberry Pi 4</strong></td>
+    <td align="center">&rarr;<br>BCM GPIO PWM</td>
+    <td align="center"><strong>Dual H-Bridge Drivers</strong></td>
+    <td align="center">&rarr;</td>
+    <td align="center"><strong>Four Mecanum Motors</strong></td>
+  </tr>
+  <tr>
+    <td colspan="2"></td>
+    <td align="center"><strong>Raspberry Pi 4</strong></td>
+    <td align="center">&rarr;<br>V4L2 USB</td>
+    <td align="center"><strong>Logitech HD Camera</strong></td>
+    <td colspan="2"></td>
+  </tr>
+  <tr>
+    <td colspan="2"></td>
+    <td align="center"><strong>Raspberry Pi 4</strong></td>
+    <td align="center">&rarr;<br>pigpio PWM</td>
+    <td align="center"><strong>Dual Ramp Servos</strong></td>
+    <td colspan="2"></td>
+  </tr>
+</table>
 
 | Subsystem | Technical Specifications |
 | --- | --- |

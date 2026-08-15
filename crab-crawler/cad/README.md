@@ -12,6 +12,7 @@
 
 This directory contains the original Fusion 360 project archives (`.f3z`) and neutral STEP solid models (`.step`) for the Crab Crawler walking robot.
 
+<strong>Quick navigation:</strong><br>
 [Design Files](#design-files) | [File Formats](#file-formats) | [Fabrication Notes](#fabrication-notes) | [Back to Crab Crawler](../)
 
 </div>

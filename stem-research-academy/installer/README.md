@@ -12,6 +12,7 @@
 
 This directory provides a turnkey installation pipeline to configure a stock Raspberry Pi OS system into an integrated autonomous robot server.
 
+<strong>Quick navigation:</strong><br>
 [Installed Components](#installed-components) | [Installation Guide](#installation-guide) | [Installer Files](#installer-files) | [Back to STEM Project](../)
 
 </div>
