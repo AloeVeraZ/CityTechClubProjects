@@ -2,8 +2,7 @@
 
 ### Three mechanical references across the Arduino and Raspberry Pi Pico builds
 
-[![CAD](https://img.shields.io/badge/CAD-Autodesk%20Fusion-111111?style=flat-square)](#design-files)
-[![Formats](https://img.shields.io/badge/formats-F3D%20%2F%20F3Z%20%2B%20STEP-6b7280?style=flat-square)](#file-formats)
+<img alt="CAD: Autodesk Fusion" src="https://img.shields.io/badge/CAD-Autodesk%20Fusion-111111?style=flat-square"> <img alt="Formats: F3D, F3Z, and STEP" src="https://img.shields.io/badge/formats-F3D%20%2F%20F3Z%20%2B%20STEP-6b7280?style=flat-square">
 
 [Project overview](../README.md) · [Pico V1](pico-v1/) · [Arduino Uno V2](arduino-uno-v2/) · [Final assembly](final-assembly/)
 

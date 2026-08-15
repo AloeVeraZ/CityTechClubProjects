@@ -2,9 +2,7 @@
 
 ### Repeatable deployment for the hotspot, dashboard, GPIO services, and local display
 
-[![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%20OS-111111?style=flat-square&logo=raspberrypi&logoColor=white)](#install)
-[![Service](https://img.shields.io/badge/service-systemd-3f3f46?style=flat-square)](#installed-components)
-[![Network](https://img.shields.io/badge/network-NetworkManager-6b7280?style=flat-square)](#installed-components)
+<img alt="Platform: Raspberry Pi OS" src="https://img.shields.io/badge/platform-Raspberry%20Pi%20OS-111111?style=flat-square&logo=raspberrypi&logoColor=white"> <img alt="Service: systemd" src="https://img.shields.io/badge/service-systemd-3f3f46?style=flat-square"> <img alt="Network: NetworkManager" src="https://img.shields.io/badge/network-NetworkManager-6b7280?style=flat-square">
 
 [Project overview](../README.md) · [Setup guide](../docs/SETUP.md) · [Wiring](../docs/WIRING.md) · [Robot server](../robot_server/)
 

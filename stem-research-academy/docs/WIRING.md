@@ -2,9 +2,7 @@
 
 ### Mecanum motor-driver mapping, ramp-servo signals, and power boundaries
 
-[![Drive](https://img.shields.io/badge/drive-4%20mecanum%20motors-6f42c1?style=flat-square)](#01--mecanum-drivetrain)
-[![Motor Power](https://img.shields.io/badge/motor%20power-external%20supply-f39c12?style=flat-square)](#power-and-first-test)
-[![Servo Power](https://img.shields.io/badge/servo%20power-regulated%205%20V-00979d?style=flat-square)](#02--direct-ramp-servos)
+<img alt="Drive: 4 mecanum motors" src="https://img.shields.io/badge/drive-4%20mecanum%20motors-6f42c1?style=flat-square"> <img alt="Motor power: external supply" src="https://img.shields.io/badge/motor%20power-external%20supply-f39c12?style=flat-square"> <img alt="Servo power: regulated 5 V" src="https://img.shields.io/badge/servo%20power-regulated%205%20V-00979d?style=flat-square">
 
 [Project overview](../README.md) · [Setup](SETUP.md) · [Ramp details](3TSAHUR_AUXILIARY_ACTUATORS.md) · [Motor code](../robot_server/motor.py)
 

@@ -2,9 +2,7 @@
 
 ### Python control service for the mecanum drivetrain, camera, ramp, and dashboard
 
-[![Language](https://img.shields.io/badge/language-Python%203.11%2B-111111?style=flat-square&logo=python&logoColor=white)](#package-map)
-[![Interface](https://img.shields.io/badge/interface-Flask-000000?style=flat-square&logo=flask&logoColor=white)](#runtime)
-[![Safety](https://img.shields.io/badge/safety-watchdog%20protected-6b7280?style=flat-square)](#runtime)
+<img alt="Language: Python 3.11+" src="https://img.shields.io/badge/language-Python%203.11%2B-111111?style=flat-square&logo=python&logoColor=white"> <img alt="Interface: Flask" src="https://img.shields.io/badge/interface-Flask-000000?style=flat-square&logo=flask&logoColor=white"> <img alt="Safety: watchdog protected" src="https://img.shields.io/badge/safety-watchdog%20protected-6b7280?style=flat-square">
 
 [Project overview](../README.md) · [Package map](#package-map) · [Wiring](../docs/WIRING.md) · [Installer](../installer/)
 

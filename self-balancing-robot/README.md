@@ -2,12 +2,7 @@
 
 ### Three controller generations of sensor feedback, PID tuning, and mechanical iteration
 
-[![Status](https://img.shields.io/badge/status-complete-111111?style=flat-square)](#results)
-[![Control](https://img.shields.io/badge/control-PID-3f3f46?style=flat-square)](#control-system)
-[![Sensor](https://img.shields.io/badge/sensor-MPU6050-6b7280?style=flat-square)](#control-system)
-[![CAD](https://img.shields.io/badge/CAD-Fusion%20360%20%2B%20STEP-3f3f46?style=flat-square)](cad/)
-[![Firmware](https://img.shields.io/badge/firmware-Arduino%20%2B%20Pico-6b7280?style=flat-square)](firmware/)
-[![License](https://img.shields.io/badge/license-CC%20BY%204.0-111111?style=flat-square)](../LICENSE.md)
+<img alt="Status: complete" src="https://img.shields.io/badge/status-complete-111111?style=flat-square"> <img alt="Control: PID" src="https://img.shields.io/badge/control-PID-3f3f46?style=flat-square"> <img alt="Sensor: MPU6050" src="https://img.shields.io/badge/sensor-MPU6050-6b7280?style=flat-square"> <img alt="CAD: Fusion 360 and STEP" src="https://img.shields.io/badge/CAD-Fusion%20360%20%2B%20STEP-3f3f46?style=flat-square"> <img alt="Firmware: Arduino and Pico" src="https://img.shields.io/badge/firmware-Arduino%20%2B%20Pico-6b7280?style=flat-square"> <img alt="License: CC BY 4.0" src="https://img.shields.io/badge/license-CC%20BY%204.0-111111?style=flat-square">
 
 [![Self balancing robot](https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=1200,h=675,fit=crop/A85rnnzK6qs5qxKB/img_20260514_162917008-GuGOQgTeFhg8mCtz.jpg)](https://angelojamesny.com/selfbalancing)
 

@@ -4,10 +4,7 @@
 
 ### Three student robotics projects built through design, fabrication, electronics, and code
 
-[![Projects](https://img.shields.io/badge/projects-3-8B5CF6?style=for-the-badge&labelColor=6D28D9)](#project-collection)
-[![Disciplines](https://img.shields.io/badge/workflow-CAD%20to%20hardware-00979D?style=for-the-badge&labelColor=006A70)](#learning-workflow)
-[![STEM Team](https://img.shields.io/badge/STEM%20team-2%20students%20%2B%204%20mentors-16C784?style=for-the-badge&labelColor=0E8A5F)](stem-research-academy/#team-and-learning)
-[![License](https://img.shields.io/badge/license-CC%20BY%204.0-F1C40F?style=for-the-badge&labelColor=B7950B)](LICENSE.md)
+<img alt="Projects: 3" src="https://img.shields.io/badge/projects-3-8B5CF6?style=for-the-badge&labelColor=6D28D9"> <img alt="Workflow: CAD to hardware" src="https://img.shields.io/badge/workflow-CAD%20to%20hardware-00979D?style=for-the-badge&labelColor=006A70"> <img alt="STEM team: 2 students and 4 mentors" src="https://img.shields.io/badge/STEM%20team-2%20students%20%2B%204%20mentors-16C784?style=for-the-badge&labelColor=0E8A5F"> <img alt="License: CC BY 4.0" src="https://img.shields.io/badge/license-CC%20BY%204.0-F1C40F?style=for-the-badge&labelColor=B7950B">
 
 This repository collects three hands-on robotics projects from the City Tech
 AI & Automation Club. Each project keeps its design files, code, build history,
@@ -39,7 +36,7 @@ software evolve through repeated physical testing.
 
 ### 01 / Self Balancing Robot
 
-[![Self balancing robot](https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=1200,h=675,fit=crop/A85rnnzK6qs5qxKB/img_20260514_162917008-GuGOQgTeFhg8mCtz.jpg)](self-balancing-robot/README.md)
+<img src="https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=1200,h=675,fit=crop/A85rnnzK6qs5qxKB/img_20260514_162917008-GuGOQgTeFhg8mCtz.jpg" alt="Self balancing robot">
 
 A two-wheel robot that uses an MPU6050 and PID feedback to move its wheels
 under its center of mass. Three versions were built with Arduino and Raspberry
@@ -67,7 +64,7 @@ Pi Pico controllers.
 
 ### 02 / Crab Crawler Walking Robot
 
-[![Crab crawler walking robot](https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=1200,h=675,fit=crop/A85rnnzK6qs5qxKB/img_20260515_125209039-aa3XkdHF9OBnSOx5.jpg)](crab-crawler/README.md)
+<img src="https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=1200,h=675,fit=crop/A85rnnzK6qs5qxKB/img_20260515_125209039-aa3XkdHF9OBnSOx5.jpg" alt="Crab crawler walking robot">
 
 A four-leg robot that walks through a servo gait sequence. The project moved
 from a large Arduino prototype to smaller ESP32-CAM versions with local Wi-Fi
@@ -95,7 +92,7 @@ control and live video.
 
 ### 03 / STEM Research Academy Robot Lab
 
-[![Final 3TSahur robot placeholder](stem-research-academy/images/final-robot-placeholder.svg)](stem-research-academy/README.md)
+<img src="stem-research-academy/images/final-robot-placeholder.svg" alt="Final 3TSahur robot placeholder">
 
 A six-week, full-system robotics build completed by **two students** with
 support from **four mentors**. The students worked through CAD/CAM, 3D printing,

@@ -2,8 +2,7 @@
 
 ### Two direct-GPIO servos with fixed, mirrored open and closed positions
 
-[![Timing](https://img.shields.io/badge/timing-pigpio-00979d?style=flat-square)](#03--runtime-and-configuration)
-[![Positions](https://img.shields.io/badge/positions-0%C2%B0%20%2F%20120%C2%B0-f39c12?style=flat-square)](#02--positions-and-controls)
+<img alt="Timing: pigpio" src="https://img.shields.io/badge/timing-pigpio-00979d?style=flat-square"> <img alt="Positions: 0 and 120 degrees" src="https://img.shields.io/badge/positions-0%C2%B0%20%2F%20120%C2%B0-f39c12?style=flat-square">
 
 [Project overview](../README.md) · [Wiring](WIRING.md) · [Setup](SETUP.md) · [Actuator code](../robot_server/actuators.py)
 

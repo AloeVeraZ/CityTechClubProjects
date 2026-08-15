@@ -2,11 +2,7 @@
 
 ### Three generations of servo walking, printed-frame iteration, and wireless control
 
-[![Status](https://img.shields.io/badge/status-complete-111111?style=flat-square)](#results)
-[![Controller](https://img.shields.io/badge/controller-ESP32--CAM-3f3f46?style=flat-square)](#control-system)
-[![Motion](https://img.shields.io/badge/motion-servo%20walking-6b7280?style=flat-square)](#control-system)
-[![CAD](https://img.shields.io/badge/CAD-Fusion%20360%20%2B%20STEP-3f3f46?style=flat-square)](cad/)
-[![License](https://img.shields.io/badge/license-CC%20BY%204.0-111111?style=flat-square)](../LICENSE.md)
+<img alt="Status: complete" src="https://img.shields.io/badge/status-complete-111111?style=flat-square"> <img alt="Controller: ESP32-CAM" src="https://img.shields.io/badge/controller-ESP32--CAM-3f3f46?style=flat-square"> <img alt="Motion: servo walking" src="https://img.shields.io/badge/motion-servo%20walking-6b7280?style=flat-square"> <img alt="CAD: Fusion 360 and STEP" src="https://img.shields.io/badge/CAD-Fusion%20360%20%2B%20STEP-3f3f46?style=flat-square"> <img alt="License: CC BY 4.0" src="https://img.shields.io/badge/license-CC%20BY%204.0-111111?style=flat-square">
 
 [![Crab crawler walking robot](https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=1200,h=675,fit=crop/A85rnnzK6qs5qxKB/img_20260515_125209039-aa3XkdHF9OBnSOx5.jpg)](https://angelojamesny.com/crabcrawler)
 

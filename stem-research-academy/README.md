@@ -2,11 +2,7 @@
 
 ### Six weeks of CAD/CAM, fabrication, electronics, and robot integration
 
-[![Program](https://img.shields.io/badge/program-STEM%20Research%20Academy-111111?style=flat-square)](#program-overview)
-[![Team](https://img.shields.io/badge/team-2%20students%20%2B%204%20mentors-3f3f46?style=flat-square)](#team-and-learning)
-[![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%204-6b7280?style=flat-square&logo=raspberrypi&logoColor=white)](#large-robot-system)
-[![Control](https://img.shields.io/badge/control-Python%203.11%2B-3f3f46?style=flat-square&logo=python&logoColor=white)](robot_server/)
-[![License](https://img.shields.io/badge/license-CC%20BY%204.0-111111?style=flat-square)](../LICENSE.md)
+<img alt="Program: STEM Research Academy" src="https://img.shields.io/badge/program-STEM%20Research%20Academy-111111?style=flat-square"> <img alt="Team: 2 students and 4 mentors" src="https://img.shields.io/badge/team-2%20students%20%2B%204%20mentors-3f3f46?style=flat-square"> <img alt="Platform: Raspberry Pi 4" src="https://img.shields.io/badge/platform-Raspberry%20Pi%204-6b7280?style=flat-square&logo=raspberrypi&logoColor=white"> <img alt="Control: Python 3.11+" src="https://img.shields.io/badge/control-Python%203.11%2B-3f3f46?style=flat-square&logo=python&logoColor=white"> <img alt="License: CC BY 4.0" src="https://img.shields.io/badge/license-CC%20BY%204.0-111111?style=flat-square">
 
 This folder documents the large **3TSahur** mecanum robot built during the
 STEM Research Academy. The project brought two students and four mentors
@@ -45,7 +41,7 @@ were completed locally and are not included in this repository.
 
 ## Team and Learning
 
-[![Final 3TSahur robot placeholder](images/final-robot-placeholder.svg)](images/README.md)
+<img src="images/final-robot-placeholder.svg" alt="Final 3TSahur robot placeholder">
 
 <table>
   <tr>

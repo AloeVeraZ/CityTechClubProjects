@@ -2,8 +2,7 @@
 
 ### Installation, first boot, and raised-wheel validation for the large robot
 
-[![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%204-C51A4A?style=flat-square&logo=raspberrypi&logoColor=white)](#02--install-on-the-raspberry-pi)
-[![Network](https://img.shields.io/badge/network-local%202.4%20GHz%20hotspot-00979d?style=flat-square)](#03--connect)
+<img alt="Platform: Raspberry Pi 4" src="https://img.shields.io/badge/platform-Raspberry%20Pi%204-C51A4A?style=flat-square&logo=raspberrypi&logoColor=white"> <img alt="Network: local 2.4 GHz hotspot" src="https://img.shields.io/badge/network-local%202.4%20GHz%20hotspot-00979d?style=flat-square">
 
 [Project overview](../README.md) · [Wiring](WIRING.md) · [Ramp actuators](3TSAHUR_AUXILIARY_ACTUATORS.md) · [Installer](../installer/)
 
