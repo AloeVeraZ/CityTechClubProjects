@@ -41,7 +41,7 @@ were completed locally and are not included in this repository.
 
 ## Team and Learning
 
-<img src="images/final-robot-placeholder.svg" alt="Final 3TSahur robot placeholder">
+<img src="images/final-robot.jpg" alt="Completed 3TSahur Raspberry Pi mecanum robot">
 
 <table>
   <tr>

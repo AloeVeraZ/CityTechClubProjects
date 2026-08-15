@@ -7,13 +7,13 @@
 ---
 
 The club cover is used only on the overall club landing page. The STEM Research
-Academy page contains both Academy group photographs at their original
-resolution and one completed-robot placeholder.
+Academy page contains the completed robot and both Academy group photographs at
+their original resolution.
 
 | Position | File | Photograph |
 | --- | --- | --- |
 | Club cover | `club-cover.jpg` | Experimental Learning Symposium photo used only on the overall club page |
-| 01 | `final-robot-placeholder.svg` | Completed 3TSahur robot, pending its final photograph |
+| 01 | `final-robot.jpg` | Completed 3TSahur Raspberry Pi mecanum robot |
 | 02 | `group-photo-01.png` | STEM Research Academy team presenting certificates with the robot |
 | 03 | `group-photo-02.jpg` | STEM Research Academy students and mentors with the robot in the lab |
 

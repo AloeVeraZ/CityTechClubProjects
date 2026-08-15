@@ -92,7 +92,7 @@ control and live video.
 
 ### 03 / STEM Research Academy Robot Lab
 
-<img src="stem-research-academy/images/final-robot-placeholder.svg" alt="Final 3TSahur robot placeholder">
+<img src="stem-research-academy/images/final-robot.jpg" alt="Completed 3TSahur Raspberry Pi mecanum robot">
 
 A six-week, full-system robotics build completed by **two students** with
 support from **four mentors**. The students worked through CAD/CAM, 3D printing,
@@ -115,9 +115,9 @@ work, sensors, servos, motors, and Python integration.
 <table>
   <tr>
     <td width="33%" align="center" valign="top">
-      <img src="stem-research-academy/images/final-robot-placeholder.svg" width="100%" alt="Placeholder for a photograph of the completed 3TSahur robot">
+      <img src="stem-research-academy/images/final-robot.jpg" width="100%" alt="Completed 3TSahur Raspberry Pi mecanum robot">
       <br><strong>Completed Robot</strong><br>
-      <sub>Reserved for a clear photograph of the final large robot.</sub>
+      <sub>The final Raspberry Pi mecanum robot built during the Academy.</sub>
     </td>
     <td width="33%" align="center" valign="top">
       <img src="stem-research-academy/images/group-photo-01.png" width="100%" alt="STEM Research Academy team presenting certificates with the completed robot">
