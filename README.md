@@ -4,14 +4,14 @@
 
 ### Three student robotics projects built through design, fabrication, electronics, and code
 
-<img alt="Projects: 3" src="https://img.shields.io/badge/projects-3-8B5CF6?style=for-the-badge&labelColor=6D28D9"> <img alt="Workflow: CAD to hardware" src="https://img.shields.io/badge/workflow-CAD%20to%20hardware-00979D?style=for-the-badge&labelColor=006A70"> <img alt="STEM team: 2 students and 4 mentors" src="https://img.shields.io/badge/STEM%20team-2%20students%20%2B%204%20mentors-16C784?style=for-the-badge&labelColor=0E8A5F"> <img alt="License: CC BY 4.0" src="https://img.shields.io/badge/license-CC%20BY%204.0-F1C40F?style=for-the-badge&labelColor=B7950B">
+<img alt="Projects: 3" src="https://img.shields.io/badge/projects-3-8B5CF6?style=for-the-badge&labelColor=6D28D9"> <img alt="License: CC BY 4.0" src="https://img.shields.io/badge/license-CC%20BY%204.0-F1C40F?style=for-the-badge&labelColor=B7950B">
 
 This repository collects three hands-on robotics projects from the City Tech
 AI & Automation Club. Each project keeps its design files, code, build history,
 and practical notes together so the finished robot and the process behind it
 can be explored from one place.
 
-[Explore the projects](#project-collection) · [See the STEM team](#stem-research-academy-team) · [Open the repository map](#repository-map) · [Visit the club page](https://angelojamesny.com/club-projects)
+[Explore the projects](#project-collection) · [See the STEM team](#stem-research-academy-team) · [Open the repository map](#repository-map)
 
 </div>
 
@@ -50,7 +50,7 @@ Pi Pico controllers.
 | Drive | Two DC motors |
 | Files | Fusion/STEP CAD, main firmware, and experiments |
 
-[Open the project](self-balancing-robot/README.md) · [Browse the CAD](self-balancing-robot/cad/) · [Browse the firmware](self-balancing-robot/firmware/) · [View the portfolio page](https://angelojamesny.com/selfbalancing)
+[Open the project](self-balancing-robot/README.md) · [Browse the CAD](self-balancing-robot/cad/) · [Browse the firmware](self-balancing-robot/firmware/)
 
 <table>
   <tr>
@@ -78,7 +78,7 @@ control and live video.
 | Structure | Two documented 3D-printed frame revisions |
 | Files | Fusion archives and STEP exports |
 
-[Open the project](crab-crawler/README.md) · [Browse the CAD](crab-crawler/cad/) · [View the portfolio page](https://angelojamesny.com/crabcrawler)
+[Open the project](crab-crawler/README.md) · [Browse the CAD](crab-crawler/cad/)
 
 <table>
   <tr>
@@ -169,15 +169,6 @@ CityTechClubProjects/
 |-- LICENSE.md
 `-- README.md
 ```
-
-## More Information
-
-| Destination | Link |
-| --- | --- |
-| Club page | [City Tech AI & Automation Club](https://angelojamesny.com/club-projects) |
-| Self Balancing Robot portfolio | [angelojamesny.com/selfbalancing](https://angelojamesny.com/selfbalancing) |
-| Crab Crawler portfolio | [angelojamesny.com/crabcrawler](https://angelojamesny.com/crabcrawler) |
-| Citation information | [`CITATION.cff`](CITATION.cff) |
 
 ## License
 
