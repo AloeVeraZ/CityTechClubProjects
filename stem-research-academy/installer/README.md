@@ -1,53 +1,64 @@
+<div align="center">
+
 # 3TSahur Raspberry Pi Installer
 
-### Repeatable deployment for the hotspot, dashboard, GPIO services, and local display
+### Automated deployment scripts for Wi-Fi hotspot, dashboard, GPIO services, and systemd units
 
-<img alt="Platform: Raspberry Pi OS" src="https://img.shields.io/badge/platform-Raspberry%20Pi%20OS-111111?style=flat-square&logo=raspberrypi&logoColor=white"> <img alt="Service: systemd" src="https://img.shields.io/badge/service-systemd-3f3f46?style=flat-square"> <img alt="Network: NetworkManager" src="https://img.shields.io/badge/network-NetworkManager-6b7280?style=flat-square">
+[![Platform](https://img.shields.io/badge/Platform-Raspberry_Pi_OS-c51a4a?style=flat-square&logo=raspberrypi&logoColor=white)](https://www.raspberrypi.com/)
+[![Services](https://img.shields.io/badge/Daemon-systemd-6f42c1?style=flat-square)](#installed-components)
+[![Networking](https://img.shields.io/badge/Network-NetworkManager-0a7f5a?style=flat-square)](#installer-files)
+[![License](https://img.shields.io/badge/License-CC_BY_4.0-0078d4?style=flat-square)](../../LICENSE.md)
+[![Parent](https://img.shields.io/badge/Project-STEM_Research_Academy-111111?style=flat-square)](../)
 
-[Project overview](../README.md) · [Setup guide](../docs/SETUP.md) · [Wiring](../docs/WIRING.md) · [Robot server](../robot_server/)
+This directory provides a turnkey installation pipeline to configure a stock Raspberry Pi OS system into an integrated autonomous robot server.
+
+[Installed Components](#installed-components) | [Installation Guide](#installation-guide) | [Installer Files](#installer-files) | [Back to STEM Project](../)
+
+</div>
 
 ---
-
-`install.sh` provisions Raspberry Pi OS for the large 3TSahur robot and safely
-updates an existing installation.
 
 ## Installed Components
 
-| Area | Result |
+`install.sh` automates the complete provisioning and verification workflow:
+
+| Subsystem | Resulting Configuration |
 | --- | --- |
-| Application | Validated deployment to `~/STEMResearchAcademy` |
-| Python | Project virtual environment and runtime packages |
-| Robot service | `stem-robot-dashboard.service` |
-| Network | `3TSahur-Swarm` hotspot and fixed `10.42.0.1` address |
-| Local name | `3tsahur.local` through mDNS |
-| Servo timing | `pigpiod.service` |
-| Display | Resizable Chromium dashboard window |
-| Proxy | Nginx dashboard access on port 80 |
+| Target location | Clean virtual environment deployed to `~/STEMResearchAcademy` |
+| Python environment | Python 3 virtual environment with isolated dependency tree |
+| Daemon service | `stem-robot-dashboard.service` managed via systemd |
+| Wi-Fi access point | NetworkManager 2.4 GHz hotspot (`3TSahur-Swarm` @ `10.42.0.1`) |
+| Local hostname | `3tsahur.local` broadcast via Avahi / mDNS |
+| PWM daemon | `pigpiod.service` for accurate hardware timing on ramp servos |
+| Reverse proxy | Optional Nginx proxy serving dashboard traffic on HTTP port 80 |
 
-## Install
+## Installation Guide
 
-Run from a trusted checkout as the normal Pi user, not as root:
+Run the installer from a local git checkout as the normal `pi` user (do not run as root):
 
 ```bash
-bash installer/install.sh
+cd ~/STEMResearchAcademy/installer
+bash install.sh
 ```
 
 > [!IMPORTANT]
-> The installer intentionally reboots after it validates and enables the
-> deployment. Complete the wiring and raised-wheel checks in the
-> [setup guide](../docs/SETUP.md) before applying drivetrain power.
+> The installer automatically restarts the Raspberry Pi upon successful verification to initialize network interfaces and GPIO permissions. Complete all hardware wiring before applying high-voltage motor power.
 
 ## Installer Files
 
-| File | Purpose |
+| File | Technical Responsibility |
 | --- | --- |
-| `install.sh` | Full install, update, validation, and rollback flow |
-| `curl-install.sh` | Small remote bootstrap for the main installer |
-| `hotspot.sh` | NetworkManager hotspot setup |
-| `kiosk.sh` | Local dashboard window |
-| `start-dashboard.sh` | Python service launcher |
-| `systemd/` | Dashboard, hotspot, and `pigpiod` unit files |
+| `install.sh` | Main idempotent installer script with automatic dependency validation |
+| `curl-install.sh` | Remote bootstrap script for single-command curl installation |
+| `hotspot.sh` | NetworkManager hotspot and static IP (`10.42.0.1`) configuration |
+| `kiosk.sh` | Launches dedicated Chromium fullscreen UI on attached HDMI monitors |
+| `start-dashboard.sh` | Service wrapper that activates venv and launches Flask daemon |
+| `systemd/` | Unit files for auto-restarting services on startup |
 
 ---
 
-Return to the [STEM Research Academy project](../README.md).
+<div align="center">
+
+Designed and documented for **[STEM Research Academy](../)** · **[City Tech Robotics](../../)**
+
+</div>

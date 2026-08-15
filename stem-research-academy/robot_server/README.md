@@ -1,61 +1,66 @@
+<div align="center">
+
 # 3TSahur Robot Server
 
-### Python control service for the mecanum drivetrain, camera, ramp, and dashboard
+### Python control service for mecanum kinematics, USB camera streaming, ramp actuation, and telemetry
 
-<img alt="Language: Python 3.11+" src="https://img.shields.io/badge/language-Python%203.11%2B-111111?style=flat-square&logo=python&logoColor=white"> <img alt="Interface: Flask" src="https://img.shields.io/badge/interface-Flask-000000?style=flat-square&logo=flask&logoColor=white"> <img alt="Safety: watchdog protected" src="https://img.shields.io/badge/safety-watchdog%20protected-6b7280?style=flat-square">
+[![Language](https://img.shields.io/badge/Language-Python_3.11%2B-3776ab?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Web Framework](https://img.shields.io/badge/Framework-Flask-000000?style=flat-square&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![Safety](https://img.shields.io/badge/Safety-Watchdog_Protected-0a7f5a?style=flat-square)](#runtime--safety)
+[![License](https://img.shields.io/badge/License-CC_BY_4.0-0078d4?style=flat-square)](../../LICENSE.md)
+[![Parent](https://img.shields.io/badge/Project-STEM_Research_Academy-111111?style=flat-square)](../)
 
-[Project overview](../README.md) · [Package map](#package-map) · [Wiring](../docs/WIRING.md) · [Installer](../installer/)
+This package implements the asynchronous hardware control daemon and browser dashboard serving the 3TSahur mecanum robot on Raspberry Pi 4.
+
+[Package Map](#package-map) | [Runtime & Safety](#runtime--safety) | [Automated Validation](#automated-validation) | [Back to STEM Project](../)
+
+</div>
 
 ---
 
-`robot_server` runs on the Raspberry Pi 4. It serves the browser dashboard,
-captures the Logitech USB camera, mixes mecanum commands into four PWM motor
-outputs, controls the two-servo ramp, and reports system health.
-
 ## Package Map
 
-| Module | Responsibility |
+`robot_server` coordinates communication between the browser front-end, hardware PWM drivers, camera pipeline, and health telemetry:
+
+| Module | Core Responsibility |
 | --- | --- |
-| `app.py` | Flask routes, command expiry, sequence validation, and watchdog |
-| `motor.py` | Mecanum mixing, tested polarity, and motor GPIO output |
-| `actuators.py` | Mirrored two-servo ramp positions |
-| `camera.py` | Logitech discovery, capture recovery, and MJPEG output |
-| `health.py` | Cached Pi temperature, power, storage, and camera health |
-| `templates/` | Dashboard page |
-| `static/` | Dashboard JavaScript and CSS |
+| `app.py` | Flask HTTP & WebSocket endpoints, command timestamp validation, and hardware watchdog |
+| `motor.py` | Holonomic mecanum kinematics mixing, polarity mapping, deadband compensation, and GPIO PWM |
+| `actuators.py` | Mirrored dual-servo ramp position sequencing via `pigpio` socket |
+| `camera.py` | Dynamic USB V4L2 camera discovery, auto-reconnect capture loop, and MJPEG encoder |
+| `health.py` | Asynchronous caching of CPU temperature, core voltage, RAM, and disk utilization |
+| `templates/` & `static/` | Responsive HTML5/CSS/JavaScript driving dashboard with touch/keyboard/gamepad support |
 
-## Runtime
+## Runtime & Safety
 
-Install `requirements.txt`, then run:
+To start the service in local development mode:
 
 ```bash
 python -m robot_server.app
 ```
 
-| Environment | Behavior |
+| Operating Mode | Behavior & Fail-Safe Response |
 | --- | --- |
-| Raspberry Pi with GPIO | Full motor and camera service |
-| Computer without `RPi.GPIO` | Safe drivetrain simulation mode |
-| Missing `pigpiod` | Ramp disabled while the API and dashboard remain available |
-| Lost drive heartbeat | Watchdog stops all drivetrain outputs |
+| Raspberry Pi Hardware | Full GPIO PWM motor switching, camera streaming, and servo control |
+| Host PC / Simulation | Automatic mock mode for dry-run testing without physical GPIO pins |
+| `pigpiod` Unavailable | Ramp servos safely disabled while motor API and telemetry remain operational |
+| Lost Heartbeat (>500ms) | Watchdog immediately zeros all four motor PWM channels |
 
-Production deployment is handled by the [installer](../installer/), not by
-manually launching the development server.
+> [!CAUTION]
+> Simulation tests confirm API routes and mixing mathematics, but do not replace raised-wheel physical bench testing. Follow the [setup guide](../docs/SETUP.md) before conducting untethered floor maneuvers.
 
-## Validation
+## Automated Validation
+
+Execute the test suite to verify kinematics, safety timeouts, and health caching:
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-The tests cover motor mixing and polarity, reversal dead-time, watchdog
-heartbeats, camera recovery, ramp behavior, dashboard controls, API expiry,
-sequence rejection, and hardware-independent health checks.
-
-> [!CAUTION]
-> Simulation tests do not replace raised-wheel validation on the physical
-> robot. Follow the [setup guide](../docs/SETUP.md) before a floor test.
-
 ---
 
-Return to the [STEM Research Academy project](../README.md).
+<div align="center">
+
+Designed and documented for **[STEM Research Academy](../)** · **[City Tech Robotics](../../)**
+
+</div>

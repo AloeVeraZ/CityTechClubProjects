@@ -1,41 +1,52 @@
+<div align="center">
+
 # Self Balancing Robot CAD Collection
 
 ### Three mechanical references across the Arduino and Raspberry Pi Pico builds
 
-<img alt="CAD: Autodesk Fusion" src="https://img.shields.io/badge/CAD-Autodesk%20Fusion-111111?style=flat-square"> <img alt="Formats: F3D, F3Z, and STEP" src="https://img.shields.io/badge/formats-F3D%20%2F%20F3Z%20%2B%20STEP-6b7280?style=flat-square">
+[![Status](https://img.shields.io/badge/Status-Complete-22c55e?style=flat-square)](#design-files)
+[![Software](https://img.shields.io/badge/CAD-Autodesk_Fusion-6f42c1?style=flat-square)](https://www.autodesk.com/products/fusion-360/)
+[![Formats](https://img.shields.io/badge/Formats-F3D_%2F_F3Z_%2B_STEP-f57c00?style=flat-square)](#file-formats)
+[![License](https://img.shields.io/badge/License-CC_BY_4.0-0a7f5a?style=flat-square)](../../LICENSE.md)
+[![Parent](https://img.shields.io/badge/Project-Self_Balancing_Robot-0078d4?style=flat-square)](../)
 
-[Project overview](../README.md) · [Pico V1](pico-v1/) · [Arduino Uno V2](arduino-uno-v2/) · [Final assembly](final-assembly/)
+This directory contains the original Autodesk Fusion designs and neutral STEP solid models for the Self Balancing Robot platform.
+
+[Design Files](#design-files) | [File Formats](#file-formats) | [Component Validation](#component-validation) | [Back to Self Balancing Robot](../)
+
+</div>
 
 ---
 
 ## Design Files
 
-| Revision | Fusion file | STEP export | Purpose |
+| Revision | Fusion Archive | STEP Model | Description |
 | --- | --- | --- | --- |
-| 01 / Pico V1 | [`pico-v1/pico-cad-v1.f3z`](pico-v1/pico-cad-v1.f3z) | [`pico-v1/pico-cad-v1.step`](pico-v1/pico-cad-v1.step) | Raspberry Pi Pico layout |
-| 02 / Arduino Uno V2 | [`arduino-uno-v2/arduino-uno-cad-v2.f3z`](arduino-uno-v2/arduino-uno-cad-v2.f3z) | [`arduino-uno-v2/arduino-uno-cad-v2.step`](arduino-uno-v2/arduino-uno-cad-v2.step) | Arduino Uno layout |
-| 03 / Final reference | [`final-assembly/final-cad.f3d`](final-assembly/final-cad.f3d) | [`final-assembly/final-cad.step`](final-assembly/final-cad.step) | Completed design reference |
+| 01 / Pico V1 | [`pico-v1/pico-cad-v1.f3z`](pico-v1/pico-cad-v1.f3z) | [`pico-v1/pico-cad-v1.step`](pico-v1/pico-cad-v1.step) | Raspberry Pi Pico (RP2040) tiered frame layout |
+| 02 / Arduino Uno V2 | [`arduino-uno-v2/arduino-uno-cad-v2.f3z`](arduino-uno-v2/arduino-uno-cad-v2.f3z) | [`arduino-uno-v2/arduino-uno-cad-v2.step`](arduino-uno-v2/arduino-uno-cad-v2.step) | Arduino Uno / Nano shield bracket layout |
+| 03 / Final reference | [`final-assembly/final-cad.f3d`](final-assembly/final-cad.f3d) | [`final-assembly/final-cad.step`](final-assembly/final-cad.step) | Integrated full robot reference assembly |
 
 ## File Formats
 
-| Format | Use |
+| Format | Purpose & Compatibility |
 | --- | --- |
-| `.f3d` | Native Autodesk Fusion single-design file |
-| `.f3z` | Autodesk Fusion archive that may include linked components |
-| `.step` | Portable solid model without the Fusion edit history |
+| `.f3d` | Native Autodesk Fusion single-design file (preserves full sketch and timeline parametric history) |
+| `.f3z` | Autodesk Fusion archive bundle (contains linked subcomponents and joint definitions) |
+| `.step` | Neutral ISO 10303 solid model compatible with modern CAD systems and slicers |
 
-## Final Model Note
+## Component Validation
 
 > [!WARNING]
-> The final assembly is a design reference, not an exact digital twin of every
-> purchased component used on the physical robot.
+> The final CAD assembly serves as a dimensional reference. Off-the-shelf components (batteries, motor brackets, and fasteners) may vary across manufacturing batches.
 
-Some wheels, batteries, holders, and other store-bought parts are simplified
-placeholders. Measure the real motors, wheels, battery, boards, holes, and
-fasteners before printing or ordering parts.
+- Verify motor mounting hole spacing and D-shaft diameter before 3D printing wheel hubs.
+- Ensure standoffs provide adequate vertical clearance for the MPU6050 breakout header pins.
+- Mount the battery tray as low as possible to reduce unwanted pendulum inertia.
 
 ---
 
-Return to the [Self Balancing Robot project](../README.md), open the
-[firmware collection](../firmware/), or return to the
-[club project collection](../../README.md).
+<div align="center">
+
+Designed and documented for **[Self Balancing Robot](../)** · **[City Tech Robotics](../../)**
+
+</div>

@@ -1,45 +1,54 @@
+<div align="center">
+
 # Self Balancing Robot Firmware
 
-### Primary balance controllers and the experiments used to bring them up
+### Arduino C++ and Raspberry Pi Pico PID balance routines and bring-up experiments
 
-<img alt="Language: Arduino C++" src="https://img.shields.io/badge/language-Arduino%20C%2B%2B-111111?style=flat-square&logo=arduino&logoColor=white"> <img alt="Control: PID" src="https://img.shields.io/badge/control-PID-3f3f46?style=flat-square"> <img alt="Sensor: MPU6050" src="https://img.shields.io/badge/sensor-MPU6050-6b7280?style=flat-square">
+[![Language](https://img.shields.io/badge/Language-Arduino_C%2B%2B-6f42c1?style=flat-square&logo=arduino&logoColor=white)](https://www.arduino.cc/)
+[![Control](https://img.shields.io/badge/Control-PID_Loop-0a7f5a?style=flat-square)](#main-code)
+[![Sensor](https://img.shields.io/badge/Sensor-MPU6050_I2C-f57c00?style=flat-square)](#test-code)
+[![License](https://img.shields.io/badge/License-CC_BY_4.0-0078d4?style=flat-square)](../../LICENSE.md)
+[![Parent](https://img.shields.io/badge/Project-Self_Balancing_Robot-111111?style=flat-square)](../)
 
-[Project overview](../README.md) · [Main code](#main-code) · [Experiments](#test-code) · [CAD collection](../cad/)
+This directory contains the primary closed-loop balance control firmware alongside modular bring-up sketches for sensor calibration and motor verification.
+
+[Main Code](#main-code) | [Test Code](#test-code) | [Commissioning & Safety](#commissioning--safety) | [Back to Self Balancing Robot](../)
+
+</div>
 
 ---
 
 ## Main Code
 
-| Controller | Sketch | Purpose |
+| Controller | Sketch Path | Architecture & Function |
 | --- | --- | --- |
-| Arduino Nano | [`arduino-nano/arduino-nano.ino`](arduino-nano/arduino-nano.ino) | Read the IMU, run PID control, and command both motors |
-| Raspberry Pi Pico | [`raspberry-pi-pico/raspberry-pi-pico.ino`](raspberry-pi-pico/raspberry-pi-pico.ino) | Calibrate the sensor, run the balance loop, and test motor correction |
+| Arduino Nano / Uno | [`arduino-nano/arduino-nano.ino`](arduino-nano/arduino-nano.ino) | ATmega328P 8-bit PID balance loop with complementary filtered IMU telemetry |
+| Raspberry Pi Pico | [`raspberry-pi-pico/raspberry-pi-pico.ino`](raspberry-pi-pico/raspberry-pi-pico.ino) | RP2040 32-bit dual-core high-frequency PID balance loop |
 
 ## Test Code
 
-| Experiment | Sketch | What it isolates |
+| Experiment | Sketch Path | Isolated Subsystem |
 | --- | --- | --- |
-| 01 / Motor test | [`experiments/motor-test/motor-test.ino`](experiments/motor-test/motor-test.ino) | Forward and reverse motor direction |
-| 02 / IMU serial | [`experiments/imu-serial/imu-serial.ino`](experiments/imu-serial/imu-serial.ino) | Sensor readings in the Serial Plotter |
-| 03 / Early PID | [`experiments/pid-early/pid-early.ino`](experiments/pid-early/pid-early.ino) | First balance-control implementation |
-| 04 / Alternate PID | [`experiments/pid-alternate/pid-alternate.ino`](experiments/pid-alternate/pid-alternate.ino) | Second sensor and PID experiment |
+| 01 / Motor test | [`experiments/motor-test/motor-test.ino`](experiments/motor-test/motor-test.ino) | Verifies left/right forward and reverse wiring polarity |
+| 02 / IMU serial | [`experiments/imu-serial/imu-serial.ino`](experiments/imu-serial/imu-serial.ino) | Streams real-time raw accelerometer and gyro data to Arduino Serial Plotter |
+| 03 / Early PID | [`experiments/pid-early/pid-early.ino`](experiments/pid-early/pid-early.ino) | Early proportional-only balance response baseline |
+| 04 / Alternate PID | [`experiments/pid-alternate/pid-alternate.ino`](experiments/pid-alternate/pid-alternate.ino) | Alternative integral anti-windup implementation |
 
-Each `.ino` file is in its own Arduino sketch folder so it can be opened and
-uploaded directly from the Arduino IDE.
+Each `.ino` sketch is isolated in its own directory for one-click upload in Arduino IDE.
 
-## Before Uploading
+## Commissioning & Safety
 
 > [!CAUTION]
-> Keep the wheels raised for the first test. A reversed motor or unstable PID
-> setting can move the robot immediately after startup.
+> Always suspend the wheels above the work surface before powering the motor driver for initial testing. Incorrect motor polarity will cause runaway acceleration.
 
-- Confirm the selected board, motor driver, IMU, and pin numbers.
-- Verify motor direction before enabling the balance loop.
-- Keep the sensor still while it calibrates.
-- Begin with a low motor-power limit.
-- Tune the balance angle and PID values for the physical robot.
+1. **Verify IMU Polarity:** Ensure tilting the robot forward registers a positive angle, and tilting backward registers a negative angle.
+2. **Verify Motor Reaction:** When tilting forward, the wheels must spin forward to drive underneath the robot.
+3. **Calibrate Gyro Bias:** Allow the microcontroller 3–5 seconds of complete stillness upon boot to zero the gyroscope offsets.
 
 ---
 
-Return to the [Self Balancing Robot project](../README.md) or the
-[club project collection](../../README.md).
+<div align="center">
+
+Designed and documented for **[Self Balancing Robot](../)** · **[City Tech Robotics](../../)**
+
+</div>

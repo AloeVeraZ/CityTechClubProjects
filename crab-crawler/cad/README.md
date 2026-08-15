@@ -1,43 +1,52 @@
+<div align="center">
+
 # Crab Crawler CAD Collection
 
 ### Editable Fusion archives and portable STEP exports for two frame revisions
 
-<img alt="CAD: Autodesk Fusion" src="https://img.shields.io/badge/CAD-Autodesk%20Fusion-111111?style=flat-square"> <img alt="Formats: F3Z and STEP" src="https://img.shields.io/badge/formats-F3Z%20%2B%20STEP-6b7280?style=flat-square">
+[![Status](https://img.shields.io/badge/Status-Complete-22c55e?style=flat-square)](#design-files)
+[![Software](https://img.shields.io/badge/CAD-Autodesk_Fusion-6f42c1?style=flat-square)](https://www.autodesk.com/products/fusion-360/)
+[![Formats](https://img.shields.io/badge/Formats-F3Z_%2B_STEP-f57c00?style=flat-square)](#file-formats)
+[![License](https://img.shields.io/badge/License-CC_BY_4.0-0a7f5a?style=flat-square)](../../LICENSE.md)
+[![Parent](https://img.shields.io/badge/Project-Crab_Crawler-0078d4?style=flat-square)](../)
 
-[Project overview](../README.md) · [Final design](final/) · [Small prototype](small/)
+This directory contains the original Fusion 360 project archives (`.f3z`) and neutral STEP solid models (`.step`) for the Crab Crawler walking robot.
+
+[Design Files](#design-files) | [File Formats](#file-formats) | [Fabrication Notes](#fabrication-notes) | [Back to Crab Crawler](../)
+
+</div>
 
 ---
 
 ## Design Files
 
-| Revision | Fusion archive | STEP export | Purpose |
+| Revision | Fusion Archive | STEP Export | Description |
 | --- | --- | --- | --- |
-| 01 / Small prototype | [`small/small.f3z`](small/small.f3z) | [`small/small.step`](small/small.step) | Compact ESP32-CAM experiment |
-| 02 / Final design | [`final/final.f3z`](final/final.f3z) | [`final/final.step`](final/final.step) | Reinforced completed frame |
+| 01 / Small prototype | [`small/small.f3z`](small/small.f3z) | [`small/small.step`](small/small.step) | Compact ESP32-CAM early experimental chassis |
+| 02 / Final design | [`final/final.f3z`](final/final.f3z) | [`final/final.step`](final/final.step) | Reinforced final frame with thickened leg joints |
 
-The small design preserved the compact second-generation robot. The final
-design thickened the joints and frame sections that failed during testing.
+The small prototype documents the compact second-generation walker. The final design reinforces the joint and frame sections that experienced fatigue during gait testing.
 
 ## File Formats
 
-| Format | Use |
+| Format | Purpose & Compatibility |
 | --- | --- |
-| `.f3z` | Opens in Autodesk Fusion and can preserve linked design components |
-| `.step` | Opens in most CAD packages but does not preserve Fusion history |
+| `.f3z` | Autodesk Fusion distributed design archive (preserves components, joints, and linked sub-assemblies) |
+| `.step` | Neutral ISO 10303 solid model compatible with Onshape, SolidWorks, Inventor, FreeCAD, and slicers |
 
-## Before Printing
+## Fabrication Notes
 
 > [!IMPORTANT]
-> Measure the exact servos, controller, battery, screws, and servo arms before
-> printing. These files document the project build and may need adjustment for
-> different hardware or printer tolerances.
+> Measure your specific servos, controller, battery, screws, and servo horns before printing. These models represent tested physical builds and may require tolerance offsets for your specific 3D printer calibration.
 
-- Check the thicker joints and choose a strong print orientation.
-- Confirm that the servo arms and legs can move through the full gait.
-- Leave enough clearance for wiring and connectors.
-- Test one leg before printing the complete frame.
+- **Print Orientation:** Orient leg pivots along the build plate to align layer lines with principal bending moments.
+- **Clearance:** Confirm full range of motion for servo horns and linkages before mounting fasteners.
+- **Wire Routing:** Route servo leads through designated chassis channels to prevent pinching during leg cycling.
 
 ---
 
-Return to the [Crab Crawler project](../README.md) or the
-[club project collection](../../README.md).
+<div align="center">
+
+Designed and documented for **[Crab Crawler Walking Robot](../)** · **[City Tech Robotics](../../)**
+
+</div>

@@ -4,14 +4,14 @@
 
 ### Three student robotics projects built through design, fabrication, electronics, and code
 
-<img alt="Projects: 3" src="https://img.shields.io/badge/projects-3-8B5CF6?style=for-the-badge&labelColor=6D28D9"> <img alt="License: CC BY 4.0" src="https://img.shields.io/badge/license-CC%20BY%204.0-F1C40F?style=for-the-badge&labelColor=B7950B">
+[![Projects](https://img.shields.io/badge/Projects-3_Robots-6f42c1?style=flat-square)](#project-collection)
+[![CAD](https://img.shields.io/badge/CAD-Fusion_360_%2B_STEP-f57c00?style=flat-square)](#project-collection)
+[![Controls](https://img.shields.io/badge/Controls-Python_%2B_C%2B%2B-0a7f5a?style=flat-square)](#project-collection)
+[![License](https://img.shields.io/badge/License-CC_BY_4.0-0078d4?style=flat-square)](LICENSE.md)
 
-This repository collects three hands-on robotics projects from the City Tech
-AI & Automation Club. Each project keeps its design files, code, build history,
-and practical notes together so the finished robot and the process behind it
-can be explored from one place.
+This repository collects three hands-on robotics projects from the City Tech AI & Automation Club. Each project keeps its design files, code, build history, and practical notes together in one place.
 
-[Explore the projects](#project-collection) · [See the STEM team](#stem-research-academy-team) · [Open the repository map](#repository-map)
+[Project Collection](#project-collection) | [STEM Research Team](#stem-research-academy-team) | [Learning Workflow](#learning-workflow) | [Repository Map](#repository-map)
 
 </div>
 
