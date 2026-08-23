@@ -9,10 +9,10 @@
 [![Controls](https://img.shields.io/badge/Controls-Python_%2B_C%2B%2B-0a7f5a?style=flat-square)](#project-collection)
 [![License](https://img.shields.io/badge/License-CC_BY_4.0-0078d4?style=flat-square)](LICENSE.md)
 
-This repository collects three hands-on robotics projects from the City Tech AI & Automation Club. Each project keeps its design files, code, build history, and practical notes together in one place.
+This repo keeps three robots from the City Tech AI & Automation Club in one place, along with the CAD, code, build photos, and notes for each one.
 
 <strong>Quick navigation:</strong><br>
-[Project Collection](#project-collection) | [STEM Research Team](#stem-research-academy-team) | [Learning Workflow](#learning-workflow) | [Repository Map](#repository-map)
+[Projects](#project-collection) | [STEM Research Team](#stem-research-academy-team) | [How We Worked](#how-we-worked) | [Repository Map](#repository-map)
 
 </div>
 
@@ -139,7 +139,7 @@ source files are not part of this repository.
 
 ---
 
-## Learning Workflow
+## How We Worked
 
 | Stage | Practice across the collection |
 | --- | --- |

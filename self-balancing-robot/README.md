@@ -15,7 +15,7 @@
   <img src="https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=1200,h=675,fit=crop/A85rnnzK6qs5qxKB/img_20260514_162917008-GuGOQgTeFhg8mCtz.jpg" alt="Self balancing robot" width="820" draggable="false">
 </picture>
 
-A two-wheeled inverted pendulum robot engineered to maintain dynamic equilibrium using MPU6050 inertial feedback and closed-loop PID control.
+A two-wheel robot that uses an MPU6050 and a PID loop to catch itself before it falls.
 
 <strong>Quick navigation:</strong><br>
 [Project Overview](#project-overview) | [Development Path](#development-path) | [CAD Collection](cad/) | [Firmware](firmware/) | [Build Videos](#build-videos) | [Back to Club](../)
@@ -26,7 +26,7 @@ A two-wheeled inverted pendulum robot engineered to maintain dynamic equilibrium
 
 ## Project Overview
 
-The Self Balancing Robot serves as a practical testbench for inertial sensing, complementary filtering, PID loop tuning, and mechanical mass distribution. Across three iterations, the platform migrated across microcontroller architectures to optimize control loop execution times.
+I used this robot to learn IMU filtering, PID tuning, and how weight placement changes the result. It went through three controller and frame revisions before reaching the final version.
 
 | System | Implementation |
 | --- | --- |

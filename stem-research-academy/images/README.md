@@ -9,7 +9,7 @@
 [![License](https://img.shields.io/badge/License-CC_BY_4.0-0078d4?style=flat-square)](../../LICENSE.md)
 [![Parent](https://img.shields.io/badge/Project-STEM_Research_Academy-111111?style=flat-square)](../)
 
-This directory preserves original-resolution project photography, team photos, and presentation media for the STEM Research Academy robot.
+This folder keeps the original project photos, team pictures, and presentation media for the STEM Research Academy robot.
 
 <strong>Quick navigation:</strong><br>
 [Media Manifest](#media-manifest) | [Usage Guidelines](#usage-guidelines) | [Back to STEM Project](../)

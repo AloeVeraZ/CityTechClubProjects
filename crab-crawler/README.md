@@ -15,7 +15,7 @@
   <img src="https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=1200,h=675,fit=crop/A85rnnzK6qs5qxKB/img_20260515_125209039-aa3XkdHF9OBnSOx5.jpg" alt="Crab crawler walking robot" width="820" draggable="false">
 </picture>
 
-A compact four-leg walking robot built through iterative frame design, gait sequencing, and wireless ESP32-CAM control.
+A small four-leg walker that went through three frames, a few gait changes, and a final wireless ESP32-CAM build.
 
 <strong>Quick navigation:</strong><br>
 [Project Overview](#project-overview) | [Development Path](#development-path) | [CAD Collection](cad/) | [Build Videos](#build-videos) | [Back to Club](../)
@@ -26,7 +26,7 @@ A compact four-leg walking robot built through iterative frame design, gait sequ
 
 ## Project Overview
 
-The Crab Crawler project explores multi-servo legged locomotion on a compact desktop footprint. Across three distinct iterations, the robot evolved from an overweight tethered prototype into a reinforced wireless walker with a live video feed.
+Crab Crawler started as a heavy tethered prototype and ended as a smaller wireless robot with stronger joints and a live camera feed. Each version fixed something that showed up during real walking tests.
 
 | System | Implementation |
 | --- | --- |
@@ -72,7 +72,7 @@ The Crab Crawler project explores multi-servo legged locomotion on a compact des
 
 [![Play Final crab crawler robot video](https://i.ytimg.com/vi_webp/3YAVgb8yF3U/hqdefault.webp)](https://www.youtube.com/watch?v=3YAVgb8yF3U)
 
-> **Click the preview to watch the final reinforced walker.** Demonstrates stable gait and robust joints.
+> **Click the preview to watch the final walker.** This version has the stable gait and stronger joints.
 
 | Parameter | Configuration & Result |
 | --- | --- |

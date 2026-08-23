@@ -27,7 +27,7 @@ Documentation and control architecture for the **3TSahur** mecanum robot built d
 
 This was an intensive six-week robotics development program for **two high school students**, guided by **four collegiate mentors**. The project avoided pre-assembled commercial kits, guiding students through original CAD modeling, manual machining, custom PCB layout, embedded power electronics, and full-stack Python software development.
 
-| Program Specification | Implementation Details |
+| Part | What we used |
 | --- | --- |
 | Student researchers | 2 |
 | Technical mentors | 4 |
@@ -121,7 +121,7 @@ The [`robot_server/`](robot_server/) package contains the core Python service an
 
 ### 02 / [Raspberry Pi Installer](installer/)
 
-The [`installer/`](installer/) directory provides scripts to provision a fresh Raspberry Pi OS install into a turnkey autonomous controller.
+The scripts in [`installer/`](installer/) turn a fresh Raspberry Pi OS install into the robot controller.
 
 | Script / Service | Purpose |
 | --- | --- |

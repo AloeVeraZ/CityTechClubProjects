@@ -10,7 +10,7 @@
 [![License](https://img.shields.io/badge/License-CC_BY_4.0-0078d4?style=flat-square)](../../LICENSE.md)
 [![Parent](https://img.shields.io/badge/Project-Self_Balancing_Robot-111111?style=flat-square)](../)
 
-This directory contains the primary closed-loop balance control firmware alongside modular bring-up sketches for sensor calibration and motor verification.
+This folder has the main balance code plus small sketches for checking the motors, IMU, and early PID ideas separately.
 
 <strong>Quick navigation:</strong><br>
 [Main Code](#main-code) | [Test Code](#test-code) | [Commissioning & Safety](#commissioning--safety) | [Back to Self Balancing Robot](../)
@@ -21,7 +21,7 @@ This directory contains the primary closed-loop balance control firmware alongsi
 
 ## Main Code
 
-| Controller | Sketch Path | Architecture & Function |
+| Controller | Sketch | What it does |
 | --- | --- | --- |
 | Arduino Nano / Uno | [`arduino-nano/arduino-nano.ino`](arduino-nano/arduino-nano.ino) | ATmega328P 8-bit PID balance loop with complementary filtered IMU telemetry |
 | Raspberry Pi Pico | [`raspberry-pi-pico/raspberry-pi-pico.ino`](raspberry-pi-pico/raspberry-pi-pico.ino) | RP2040 32-bit dual-core high-frequency PID balance loop |

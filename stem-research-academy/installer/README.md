@@ -10,7 +10,7 @@
 [![License](https://img.shields.io/badge/License-CC_BY_4.0-0078d4?style=flat-square)](../../LICENSE.md)
 [![Parent](https://img.shields.io/badge/Project-STEM_Research_Academy-111111?style=flat-square)](../)
 
-This directory provides a turnkey installation pipeline to configure a stock Raspberry Pi OS system into an integrated autonomous robot server.
+This installer takes a normal Raspberry Pi OS setup and configures the robot server, hotspot, dashboard, GPIO access, and startup services.
 
 <strong>Quick navigation:</strong><br>
 [Installed Components](#installed-components) | [Installation Guide](#installation-guide) | [Installer Files](#installer-files) | [Back to STEM Project](../)
@@ -21,7 +21,7 @@ This directory provides a turnkey installation pipeline to configure a stock Ras
 
 ## Installed Components
 
-`install.sh` automates the complete provisioning and verification workflow:
+`install.sh` handles the setup in one run:
 
 | Subsystem | Resulting Configuration |
 | --- | --- |
