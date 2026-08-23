@@ -173,11 +173,7 @@ CityTechClubProjects/
 
 ## License
 
-Original project work is available under the
-[Creative Commons Attribution 4.0 International License](LICENSE.md). You may
-share or adapt it with credit to **Angelo Demetroulakos**, a link to the
-license, and a note describing your changes. Third-party models and components
-remain subject to their original terms.
+Project work in this repository is available under the [Creative Commons Attribution 4.0 International License](LICENSE.md). Third-party models and components remain under their original terms.
 
 ---
 
