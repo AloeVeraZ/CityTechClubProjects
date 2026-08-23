@@ -2,14 +2,14 @@
 
 # City Tech AI & Automation Club
 
-### Three student robotics projects built through design, fabrication, electronics, and code
+### Four student robotics projects built through design, fabrication, electronics, and code
 
-[![Projects](https://img.shields.io/badge/Projects-3_Robots-6f42c1?style=flat-square)](#project-collection)
+[![Projects](https://img.shields.io/badge/Projects-4_Robots-6f42c1?style=flat-square)](#project-collection)
 [![CAD](https://img.shields.io/badge/CAD-Fusion_360_%2B_STEP-f57c00?style=flat-square)](#project-collection)
 [![Controls](https://img.shields.io/badge/Controls-Python_%2B_C%2B%2B-0a7f5a?style=flat-square)](#project-collection)
 [![License](https://img.shields.io/badge/License-CC_BY_4.0-0078d4?style=flat-square)](LICENSE.md)
 
-This repo keeps three robots from the City Tech AI & Automation Club in one place, along with the CAD, code, build photos, and notes for each one.
+This repo keeps four robots from the City Tech AI & Automation Club in one place, along with the CAD, code, build photos, and notes for each one.
 
 <strong>Quick navigation:</strong><br>
 [Projects](#project-collection) | [STEM Research Team](#stem-research-academy-team) | [How We Worked](#how-we-worked) | [Repository Map](#repository-map)
@@ -22,16 +22,18 @@ This repo keeps three robots from the City Tech AI & Automation Club in one plac
 
 ## Club Overview
 
-The collection covers three different robotics problems: balancing on two
-wheels, walking with servo-driven legs, and integrating a full Raspberry Pi
-mecanum platform. Together they show how mechanical design, electronics, and
-software evolve through repeated physical testing.
+The collection covers four different robotics problems: balancing on two
+wheels, walking with servo-driven legs, integrating a full Raspberry Pi
+mecanum platform, and controlling a three-wheel holonomic drivetrain. Together
+they show how mechanical design, electronics, and software evolve through
+repeated physical testing.
 
 | Project | Main engineering focus | Repository content |
 | --- | --- | --- |
 | Self Balancing Robot | IMU feedback, PID control, controller iteration | Arduino/Pico firmware and CAD |
 | Crab Crawler Walking Robot | Servo gait design, frame strength, wireless control | Fusion and STEP CAD plus build history |
 | STEM Research Academy Robot Lab | Full-system integration across manufacturing, electronics, and Python | Robot server, Pi installer, documentation, and tests |
+| OmniBot | Bluetooth control and three-wheel holonomic drive | Pi controller, kinematics, servo support, installer, and tests |
 
 ## Project Collection
 
@@ -111,6 +113,25 @@ work, sensors, servos, motors, and Python integration.
 
 [Open the STEM project](stem-research-academy/README.md) · [Browse the robot server](stem-research-academy/robot_server/) · [Read the wiring guide](stem-research-academy/docs/WIRING.md)
 
+---
+
+### 04 / OmniBot
+
+OmniBot is a Raspberry Pi robot with three omni wheels mounted 120 degrees
+apart. A Bluetooth controller drives the robot directly through a local Pygame
+runtime, while an optional PCA9685 HAT controls a 300-degree positional servo.
+
+| System | Configuration |
+| --- | --- |
+| Main platform | Raspberry Pi OS with Desktop |
+| Drivetrain | Three independently driven omni wheels |
+| Interface | Generic Bluetooth gamepad and local 800&times;480 telemetry UI |
+| Motor control | BOARD-numbered GPIO PWM through three H-bridge channels |
+| Servo control | PCA9685 I2C HAT, channel 0 |
+| Safety | Enable/disable state, neutral-stick arming, disconnect stop, and reversal delay |
+
+[Open OmniBot](OmniBot/README.md) · [Read the installer guide](OmniBot/installer/README.md) · [Browse the tests](OmniBot/tests/)
+
 ## STEM Research Academy Team
 
 <table>
@@ -166,6 +187,12 @@ CityTechClubProjects/
 |   |-- installer/           Raspberry Pi deployment
 |   |-- docs/                Wiring, setup, and ramp documentation
 |   `-- tests/               Hardware-independent validation
+|-- OmniBot/
+|   |-- installer/           Raspberry Pi deployment and desktop auto-start
+|   |-- tests/               Hardware-independent controller and drive validation
+|   |-- omni_robot.py        Pygame controller and GPIO runtime
+|   |-- omni_kinematics.py   Three-wheel holonomic drive math
+|   `-- servo_hat.py         PCA9685 positional-servo control
 |-- CITATION.cff
 |-- LICENSE.md
 `-- README.md

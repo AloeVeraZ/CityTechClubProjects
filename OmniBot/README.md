@@ -1,101 +1,162 @@
+<div align="center">
+
 # OmniBot
 
-Controller-driven three-wheel omni drive for Raspberry Pi. It keeps the supplied
-800x480 pygame UI, BOARD-numbered GPIO wiring, generic Bluetooth controller axis
-mapping, A-to-enable behavior, Y-to-disable behavior, and neutral-stick arming.
+### Raspberry Pi controller for a three-wheel holonomic robot and positional servo
 
-## One-command Raspberry Pi installation
+[![Platform](https://img.shields.io/badge/Platform-Raspberry_Pi-c51a4a?style=flat-square&logo=raspberrypi&logoColor=white)](https://www.raspberrypi.com/)
+[![Control](https://img.shields.io/badge/Control-Python_%2B_Pygame-3776ab?style=flat-square&logo=python&logoColor=white)](#robot-controller)
+[![Drive](https://img.shields.io/badge/Drive-3_Wheel_Omni-0a7f5a?style=flat-square)](#large-robot-system)
+[![License](https://img.shields.io/badge/License-CC_BY_4.0-0078d4?style=flat-square)](../LICENSE.md)
 
-Flash Raspberry Pi OS **with Desktop**, enable SSH, pair the Bluetooth controller,
-then SSH into the Pi and run this as the normal user (do not put `sudo` first):
+OmniBot is a controller-driven robot with three omni wheels spaced 120 degrees apart. A Raspberry Pi reads a Bluetooth gamepad, calculates holonomic wheel commands, drives three H-bridge motor channels, and controls a 300-degree positional servo through a PCA9685 HAT.
+
+<strong>Quick navigation:</strong><br>
+[Robot System](#large-robot-system) | [Robot Controller](#robot-controller) | [Installer](installer/) | [Connect & Drive](#connect-and-drive) | [Wiring](#hardware-and-wiring) | [Back to Club](../)
+
+</div>
+
+---
+
+## Large Robot System
+
+The Raspberry Pi is the complete robot controller. Unlike the STEM Research Academy robot, OmniBot does not host a web server or Wi-Fi dashboard. The operator pairs a Bluetooth controller directly to the Pi, and the local Pygame application handles controller input, safety arming, drive mixing, GPIO motor output, servo movement, and on-screen telemetry.
+
+<table>
+  <tr>
+    <td align="center"><strong>Bluetooth Controller</strong></td>
+    <td align="center">&rarr;<br>BlueZ / SDL</td>
+    <td align="center"><strong>Raspberry Pi</strong></td>
+    <td align="center">&rarr;<br>Pygame Input</td>
+    <td align="center"><strong>OmniBot Runtime</strong></td>
+  </tr>
+  <tr>
+    <td colspan="2"></td>
+    <td align="center"><strong>OmniBot Runtime</strong></td>
+    <td align="center">&rarr;<br>BOARD GPIO PWM</td>
+    <td align="center"><strong>H-Bridges &amp; 3 Drive Motors</strong></td>
+  </tr>
+  <tr>
+    <td colspan="2"></td>
+    <td align="center"><strong>OmniBot Runtime</strong></td>
+    <td align="center">&rarr;<br>I2C / PCA9685</td>
+    <td align="center"><strong>300&deg; Positional Servo</strong></td>
+  </tr>
+</table>
+
+| Subsystem | Technical configuration |
+| --- | --- |
+| Main controller | Raspberry Pi running Raspberry Pi OS with Desktop |
+| Drivetrain | Three independently driven omni wheels mounted 120 degrees apart |
+| Operator input | Generic Bluetooth controller read through Pygame/SDL |
+| Motor output | Three bidirectional H-bridge channels using BOARD-numbered GPIO PWM |
+| Auxiliary actuator | goBILDA 25-2 Torque positional servo on PCA9685 channel 0 |
+| User interface | Local 800&times;480 Pygame status and telemetry display |
+| Safety behavior | A-to-enable, neutral-stick arming, Y-to-disable, disconnect stop, and reversal dead time |
+
+## Repository Structure
+
+| File or folder | Purpose |
+| --- | --- |
+| [`omni_robot.py`](omni_robot.py) | Main Pygame application, controller mapping, GPIO motor control, safety state, and telemetry UI |
+| [`omni_kinematics.py`](omni_kinematics.py) | Hardware-independent deadzones, input shaping, servo math, and three-wheel holonomic mixing |
+| [`servo_hat.py`](servo_hat.py) | PCA9685 I2C setup and calibrated positional-servo pulse output |
+| [`installer/`](installer/) | Raspberry Pi package installation, deployment, launcher creation, and desktop auto-start |
+| [`tests/`](tests/) | Hardware-independent tests for controller mapping, power shaping, kinematics, and servo limits |
+
+## Robot Controller
+
+`omni_robot.py` is the robot runtime. It reads the gamepad at 60 frames per second, passes movement commands through the pure functions in `omni_kinematics.py`, and writes the resulting power levels to the three motors.
+
+The drive software includes:
+
+- A circular deadzone and cardinal-direction lock for predictable translation.
+- A gated right-stick rotation axis that rejects accidental diagonal input.
+- Direction normalization so every travel direction can use the available motor range.
+- A short 100% breakaway pulse, followed by shaped 75–100% drive output.
+- An 80 ms coast period before reversing a motor.
+- Immediate motor stop when disabled, unarmed, or disconnected.
+
+There is no remote server to start or browser address to open. The controller and runtime both operate locally on the Raspberry Pi.
+
+## Raspberry Pi Installer
+
+The [`installer/`](installer/) folder contains the automated Raspberry Pi deployment script. It installs the graphical runtime, GPIO/I2C and Bluetooth dependencies, deploys OmniBot to `~/OmniBot`, validates the Python files and drive math, creates `run_omnibot.sh`, enables desktop auto-start, and reboots the Pi.
+
+Run the one-command installer as the normal Raspberry Pi user, without putting `sudo` first:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/OmniBot/main/installer/install.sh | bash
 ```
 
-The installer adds pygame, Raspberry Pi GPIO support, and Bluetooth support; clones
-or updates `~/OmniBot`; validates the Python and drive math; enables desktop
-auto-start; and reboots. It does not erase or replace existing Bluetooth pairings.
+See the [installer guide](installer/README.md) for prerequisites, installed components, update behavior, generated files, verification, and troubleshooting.
 
-The controller must be connected at startup or may be connected later. Press A,
-release it, and hold both sticks centered for 0.25 seconds. Press Y for an immediate
-software stop. Disconnecting the controller also disables and stops the drive.
+## Connect and Drive
 
-## Positional servo on HAT channel 0
+OmniBot uses a Bluetooth gamepad rather than a web dashboard:
 
-The supported HAT is the 16-channel Waveshare-style PCA9685 I2C Servo Driver HAT
-at its default `0x40` address. Connect a 360-degree **positional** servo to channel
-0 with the ground, 5V, and signal wires in the board's indicated orientation.
+1. Pair the controller in Raspberry Pi OS Bluetooth settings.
+2. Power the robot and allow the Pi desktop and OmniBot application to start.
+3. Connect the controller if it was not already connected during startup.
+4. Press and release `A` to enable the control system.
+5. Hold both sticks centered for 0.25 seconds to arm the motors.
+6. Drive with the controls below. Press `Y` at any time for a software stop.
 
-- Hold the left trigger to move at maximum servo speed toward `-150 degrees`.
-- Hold the right trigger to move at maximum servo speed toward `+150 degrees`.
-- Release both triggers to hold the current position.
-- Press X to return to `0 degrees`.
+| Control | Action |
+| --- | --- |
+| Left stick up / down | Drive forward / backward |
+| Left stick left / right | Strafe left / right |
+| Right stick up / down | Rotate the chassis |
+| `A` | Enable, then wait for centered-stick arming |
+| `Y` | Disable and stop all drive motors immediately |
+| Left trigger | Move servo toward &minus;150&deg; |
+| Right trigger | Move servo toward +150&deg; |
+| `X` | Return the positional servo to 0&deg; |
 
-The goBILDA 25-2 Torque servo is a 300-degree positional servo, so the software
-never commands beyond `-150..+150 degrees`. Its documented full PWM span is
-500-2500 microseconds. Before attaching the mechanism, test the servo unloaded and
-calibrate `SERVO_MIN_PULSE_US`,
-`SERVO_CENTER_PULSE_US`, and `SERVO_MAX_PULSE_US` in `servo_hat.py`. Immediately
-reduce the pulse range if the servo buzzes, heats, or pushes against a physical
-stop. The installer enables I2C and installs the SMBus driver automatically.
+The left stick is cardinal-locked: when driving forward or backward, small sideways drift is ignored; when strafing, small vertical drift is ignored. Rotation works only while the other right-stick axis remains near center.
 
-## Wiring and controls
+## Hardware and Wiring
 
-GPIO mode is `BOARD`, so these are physical header pin numbers:
+GPIO mode is `BOARD`, so the values below are physical Raspberry Pi header pin numbers.
 
 | Motor | IN1 | IN2 |
-|---|---:|---:|
+| --- | ---: | ---: |
 | Front | 40 | 38 |
 | Left rear | 15 | 35 |
 | Right rear | 12 | 16 |
 
-The left stick controls forward, backward, left, and right translation. Its
-horizontal input is inverted to match this controller. The right stick's vertical
-axis controls rotation with its up/down direction corrected. Rotation is accepted
-only while that stick remains inside a narrow horizontal center band; sideways and
-diagonal input do nothing. Left-stick translation is cardinal-locked:
-small horizontal drift while driving forward/backward is discarded, keeping motor
-0 completely off; small vertical drift while strafing is also discarded. Motor 2
-is electrically reversed in software so forward commands motors 1 and 2 with the
-same GPIO direction, producing opposite physical wheel rotation on the mirrored
-rear mounts.
+Motor 2 is inverted in software to account for its mirrored wiring or mounting direction. Exact forward and backward motion intentionally leaves the front wheel stopped while the rear wheels rotate in opposite directions; the omni rollers allow the front wheel to slide laterally. Pure rotation commands all three motors in the same direction.
 
-Every nonzero motor command applies a 0.20-second 100% breakaway pulse to overcome
-static friction, then runs between 75% and 100% as the stick moves farther. Any
-individual wheel command at 65% or above is saturated to a sustained true 100%, so
-a controller that reports slightly below its nominal endpoint cannot drop the
-motors out of full power after the breakaway pulse. Releasing the stick stops the
-affected motor immediately.
+The supported servo interface is a Waveshare-style 16-channel PCA9685 Servo Driver HAT at I2C address `0x40`. Connect a 300-degree positional servo to channel 0. Before attaching a mechanism, test the servo unloaded and calibrate `SERVO_MIN_PULSE_US`, `SERVO_CENTER_PULSE_US`, and `SERVO_MAX_PULSE_US` in [`servo_hat.py`](servo_hat.py).
 
-## Three-wheel behavior
+> [!CAUTION]
+> Raise the chassis so every wheel can spin freely during initial testing. Do not power drive motors from the Raspberry Pi 5 V rail. Verify motor power, driver capacity, a common Pi/driver ground, servo wire orientation, and mechanical clearance before enabling motion.
 
-With wheels tangent to the chassis and 120 degrees apart, exact forward/backward
-motion intentionally commands the front wheel to zero while the two rear wheels
-turn in opposite directions. A small strafe command makes the front motor turn.
-That is correct three-wheel omni kinematics; the rollers allow the stopped wheel to
-slide sideways. Pure rotation commands all three motors in the same direction.
+## Runtime and Testing
 
-If the robot still barely moves at 100% PWM while the lifted wheels spin quickly,
-the limiting problem is electrical or mechanical, not kinematic software. Check
-the motor supply under load, common Pi/driver ground, driver current capacity and
-voltage drop, battery condition, wheel binding, robot weight, and motor gearing.
-Do not power drive motors from the Raspberry Pi 5 V rail.
-
-Runtime log:
-
-```bash
-tail -f ~/OmniBot/omnibot.log
-```
-
-Run manually:
+The installer creates a launcher that starts OmniBot automatically with the desktop. To run it manually:
 
 ```bash
 ~/OmniBot/run_omnibot.sh
 ```
 
-Run the hardware-independent math tests:
+Follow the runtime log:
 
 ```bash
-cd ~/OmniBot && python3 -m unittest discover -s tests -v
+tail -f ~/OmniBot/omnibot.log
 ```
+
+Run the hardware-independent tests:
+
+```bash
+cd ~/OmniBot
+python3 -m unittest discover -s tests -v
+```
+
+---
+
+<div align="center">
+
+Developed through the **[City Tech AI & Automation Club](../)**
+
+</div>
