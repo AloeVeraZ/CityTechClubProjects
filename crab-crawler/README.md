@@ -111,7 +111,7 @@ The [`cad/`](cad/) directory contains source Autodesk Fusion archives (`.f3z`) a
 | 01 / Small prototype | [`cad/small/small.f3z`](cad/small/small.f3z) | [`cad/small/small.step`](cad/small/small.step) | Lightweight early test chassis |
 | 02 / Final reinforced | [`cad/final/final.f3z`](cad/final/final.f3z) | [`cad/final/final.step`](cad/final/final.step) | Thickened production frame |
 
-[Browse the CAD folder](cad/) | [Read the CAD Guide](cad/README.md)
+[Browse the CAD folder](cad/)
 
 ## Build Videos
 

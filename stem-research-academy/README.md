@@ -115,7 +115,19 @@ The [`robot_server/`](robot_server/) package contains the core Python service an
 | `camera.py` | Dynamic USB camera discovery, frame capture, and MJPEG encoder |
 | `health.py` | Real-time monitoring of CPU temp, voltage throttling, RAM, and storage |
 
-[Browse the Robot Server](robot_server/) | [Read Server Guide](robot_server/README.md)
+[Browse the Robot Server](robot_server/)
+
+Start the service in local development mode with:
+
+```bash
+python -m robot_server.app
+```
+
+On a Raspberry Pi, the service uses the GPIO, camera, and servo hardware. On a
+development computer it automatically uses mock hardware for dry-run testing.
+If `pigpiod` is unavailable, ramp control is disabled while the motor API and
+telemetry remain available. A lost command heartbeat stops all motor output
+within 500 ms.
 
 ---
 
@@ -173,6 +185,12 @@ After powering the robot and waiting for the Raspberry Pi to boot:
 - **Separate Power Rails:** Keep 12 V motor power completely isolated from the Raspberry Pi 5 V logic rail.
 - **Buck Converter Verification:** Calibrate the servo buck converter to exactly 5.0 V with a multimeter before attaching servo leads.
 - **Watchdog Validation:** Confirm that closing the browser or disconnecting Wi-Fi stops all motors within 500 ms.
+
+Run the hardware-independent server tests with:
+
+```bash
+python -m unittest discover -s tests -v
+```
 
 ---
 

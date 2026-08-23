@@ -111,7 +111,7 @@ The [`cad/`](cad/) directory contains editable Autodesk Fusion files (`.f3d`, `.
 | 02 / Arduino Uno V2 | [`cad/arduino-uno-v2/arduino-uno-cad-v2.f3z`](cad/arduino-uno-v2/arduino-uno-cad-v2.f3z) | [`cad/arduino-uno-v2/arduino-uno-cad-v2.step`](cad/arduino-uno-v2/arduino-uno-cad-v2.step) | Arduino Uno chassis |
 | 03 / Final reference | [`cad/final-assembly/final-cad.f3d`](cad/final-assembly/final-cad.f3d) | [`cad/final-assembly/final-cad.step`](cad/final-assembly/final-cad.step) | Completed master assembly |
 
-[Browse CAD Collection](cad/) | [Read CAD Guide](cad/README.md)
+[Browse CAD Collection](cad/)
 
 ### Firmware Collection
 
@@ -124,8 +124,9 @@ The [`firmware/`](firmware/) directory contains primary balance controllers alon
 | [`experiments/motor-test/`](firmware/experiments/motor-test/) | Diagnostic | Motor direction and PWM linearity test |
 | [`experiments/imu-serial/`](firmware/experiments/imu-serial/) | Diagnostic | MPU6050 raw and filtered telemetry |
 | [`experiments/pid-early/`](firmware/experiments/pid-early/) | Diagnostic | Early proportional-only test loop |
+| [`experiments/pid-alternate/`](firmware/experiments/pid-alternate/) | Diagnostic | Alternate PID implementation with integral anti-windup |
 
-[Browse Firmware Collection](firmware/) | [Read Firmware Guide](firmware/README.md)
+[Browse Firmware Collection](firmware/)
 
 ## Build Videos
 
