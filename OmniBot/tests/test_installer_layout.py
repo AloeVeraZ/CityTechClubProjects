@@ -25,6 +25,9 @@ class InstallerLayoutTests(unittest.TestCase):
         self.assertIn('APP_DIR="$REPO_DIR/$APP_SUBDIR"', script)
         self.assertIn('git -C "$REPO_DIR" fetch', script)
         self.assertIn('"$APP_DIR/omni_robot.py"', script)
+        self.assertIn("Acquire::Retries=3", script)
+        self.assertIn("dpkg --configure -a", script)
+        self.assertIn("Package index refresh failed", script)
         self.assertNotIn('git -C "$APP_DIR"', script)
         self.assertNotIn("AloeVeraZ/OmniBot", script)
 

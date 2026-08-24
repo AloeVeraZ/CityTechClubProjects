@@ -13,33 +13,79 @@ CONFIG_FILE="$CONFIG_DIR/config.env"
 
 say() { printf '\n\033[1;36m[OmniBot]\033[0m %s\n' "$*"; }
 fail() { printf '\n\033[1;31m[OmniBot ERROR]\033[0m %s\n' "$*" >&2; exit 1; }
-trap 'fail "Installation stopped on line $LINENO. Fix the error above and rerun the installer."' ERR
+
+CURRENT_STEP="starting the installer"
+on_error() {
+    local status="$1" line="$2" command="$3"
+    trap - ERR
+    printf '\n\033[1;31m[OmniBot ERROR]\033[0m %s failed (line %s, exit %s).\n' \
+        "$CURRENT_STEP" "$line" "$status" >&2
+    printf 'Command: %s\n' "$command" >&2
+    printf 'Fix the error shown above, then rerun the same installer command.\n' >&2
+    exit "$status"
+}
+trap 'on_error "$?" "$LINENO" "$BASH_COMMAND"' ERR
 
 if [ "$(id -u)" -eq 0 ]; then
     fail "Run this as the normal Raspberry Pi user, without sudo."
 fi
 command -v sudo >/dev/null 2>&1 || fail "sudo is required."
+CURRENT_STEP="requesting administrator access"
+sudo -v || fail "sudo authentication failed. Run the installer as your normal Pi user."
+CURRENT_STEP="repairing any interrupted package configuration"
+sudo env DEBIAN_FRONTEND=noninteractive dpkg --configure -a || \
+    fail "dpkg could not finish an interrupted package configuration. Resolve the error above, then rerun."
 
 apt_get() {
-    sudo env DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=120 "$@"
+    local attempt status=1
+    for attempt in 1 2 3; do
+        if sudo env DEBIAN_FRONTEND=noninteractive apt-get \
+            -o DPkg::Lock::Timeout=120 \
+            -o Acquire::Retries=3 \
+            "$@"; then
+            return 0
+        else
+            status=$?
+        fi
+        if [ "$attempt" -lt 3 ]; then
+            say "apt-get $* failed (attempt $attempt of 3). Retrying in five seconds..."
+            sleep 5
+        fi
+    done
+    return "$status"
 }
 
-say "Installing Raspberry Pi, pygame, GPIO, Bluetooth, and hotspot packages..."
-apt_get update
+apt_require() {
+    apt_get "$@" || fail \
+        "apt-get $* failed after three attempts. Check the Pi's internet connection, date/time, package sources, and any error printed above."
+}
 
-GPIO_PACKAGE="python3-rpi.gpio"
-if apt-cache show python3-rpi-lgpio >/dev/null 2>&1; then
-    GPIO_PACKAGE="python3-rpi-lgpio"
+CURRENT_STEP="refreshing Raspberry Pi package information"
+say "Installing Raspberry Pi, pygame, GPIO, Bluetooth, and hotspot packages..."
+if ! apt_get update; then
+    say "Package index refresh failed. Continuing in case the required packages are already installed or cached."
 fi
 
-apt_get install -y \
+GPIO_PACKAGE="python3-rpi.gpio"
+if dpkg-query -W -f='${Status}' python3-rpi-lgpio 2>/dev/null | grep -Fq 'install ok installed' || \
+   apt-cache show python3-rpi-lgpio >/dev/null 2>&1; then
+    GPIO_PACKAGE="python3-rpi-lgpio"
+fi
+NGINX_PACKAGE="nginx"
+if dpkg-query -W -f='${Status}' nginx-light 2>/dev/null | grep -Fq 'install ok installed' || \
+   apt-cache show nginx-light >/dev/null 2>&1; then
+    NGINX_PACKAGE="nginx-light"
+fi
+
+CURRENT_STEP="installing Raspberry Pi system packages"
+apt_require install -y \
     ca-certificates \
     curl \
     git \
     avahi-daemon \
     libnss-mdns \
     network-manager \
-    nginx-light \
+    "$NGINX_PACKAGE" \
     python3 \
     python3-pygame \
     python3-smbus \
@@ -51,9 +97,11 @@ if ! command -v labwc >/dev/null 2>&1 && \
    ! command -v startlxde-pi >/dev/null 2>&1; then
     say "No graphical desktop detected. Installing the Raspberry Pi desktop..."
     if apt-cache show rpd-wayland-core >/dev/null 2>&1; then
-        apt_get install -y rpd-wayland-core rpd-theme rpd-preferences lightdm
+        CURRENT_STEP="installing the Raspberry Pi Wayland desktop"
+        apt_require install -y rpd-wayland-core rpd-theme rpd-preferences lightdm
     elif apt-cache show raspberrypi-ui-mods >/dev/null 2>&1; then
-        apt_get install -y raspberrypi-ui-mods lightdm
+        CURRENT_STEP="installing the Raspberry Pi desktop"
+        apt_require install -y raspberrypi-ui-mods lightdm
     else
         fail "Desktop packages were not found. Flash Raspberry Pi OS with Desktop and rerun."
     fi
@@ -66,6 +114,7 @@ if command -v raspi-config >/dev/null 2>&1; then
     sudo raspi-config nonint do_i2c 0
 fi
 
+CURRENT_STEP="downloading the CityTechClubProjects repository"
 say "Downloading OmniBot..."
 install_fresh_copy() {
     local reason="$1"
@@ -113,6 +162,7 @@ fi
 test -f "$APP_DIR/omni_robot.py" || \
     fail "The repository checkout does not contain $APP_SUBDIR/omni_robot.py."
 
+CURRENT_STEP="validating the OmniBot application"
 python3 -m py_compile \
     "$APP_DIR/omni_kinematics.py" \
     "$APP_DIR/omni_robot.py" \
@@ -126,6 +176,7 @@ bash -n "$APP_DIR/installer/curl-install.sh"
 python3 -c 'import pygame; import RPi.GPIO; import smbus; print("pygame, GPIO, and SMBus imports passed.")'
 PYTHONPATH="$APP_DIR" python3 -m unittest discover -s "$APP_DIR/tests" -v
 
+CURRENT_STEP="configuring the private OmniBot Wi-Fi hotspot"
 say "Configuring the private OmniBot Wi-Fi hotspot..."
 sudo install -d -m 0755 "$CONFIG_DIR"
 if ! sudo test -f "$CONFIG_FILE"; then
@@ -195,6 +246,7 @@ sudo systemctl enable NetworkManager.service
 sudo systemctl enable avahi-daemon.service
 sudo systemctl enable omnibot-hotspot.service
 
+CURRENT_STEP="configuring the OmniBot dashboard proxy"
 say "Adding the friendly http://10.42.0.1 dashboard address..."
 NGINX_TEMP="$(mktemp)"
 NGINX_TEST_CONFIG="$(mktemp)"
@@ -246,6 +298,7 @@ sudo "$NGINX_BIN" -t
 sudo systemctl enable nginx.service
 sudo systemctl restart nginx.service
 
+CURRENT_STEP="creating the OmniBot launcher and desktop auto-start"
 say "Creating the launcher and desktop auto-start..."
 cat > "$RUNNER" <<EOF
 #!/usr/bin/env bash
