@@ -83,12 +83,12 @@ Wi-Fi control uses one active browser session, increasing command sequence numbe
 
 ## Raspberry Pi Installer
 
-The [`installer/`](installer/) folder contains the automated deployment scripts. They install the graphical runtime, GPIO/I2C and Bluetooth dependencies, NetworkManager, Avahi, and Nginx; deploy OmniBot to `~/OmniBot`; validate the runtime; create the private hotspot and dashboard proxy; enable desktop auto-start; and reboot the Pi.
+The [`installer/`](installer/) folder contains the automated deployment scripts. They install the graphical runtime, GPIO/I2C and Bluetooth dependencies, NetworkManager, Avahi, and Nginx; clone the current CityTechClubProjects repository and run OmniBot from `~/CityTechClubProjects/OmniBot`; validate the runtime; create the private hotspot and dashboard proxy; enable desktop auto-start; and reboot the Pi.
 
 Run the one-command installer as the normal Raspberry Pi user, without putting `sudo` first:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/OmniBot/main/installer/curl-install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/OmniBot/installer/curl-install.sh | bash
 ```
 
 See the [installer guide](installer/README.md) for prerequisites, installed components, update behavior, generated files, verification, and troubleshooting.
@@ -151,19 +151,19 @@ The supported servo interface is a Waveshare-style 16-channel PCA9685 Servo Driv
 The installer creates a launcher that starts OmniBot automatically with the desktop. To run it manually:
 
 ```bash
-~/OmniBot/run_omnibot.sh
+~/CityTechClubProjects/OmniBot/run_omnibot.sh
 ```
 
 Follow the runtime log:
 
 ```bash
-tail -f ~/OmniBot/omnibot.log
+tail -f ~/CityTechClubProjects/OmniBot/omnibot.log
 ```
 
 Run the hardware-independent tests:
 
 ```bash
-cd ~/OmniBot
+cd ~/CityTechClubProjects/OmniBot
 python3 -m unittest discover -s tests -v
 ```
 

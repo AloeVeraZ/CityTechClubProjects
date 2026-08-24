@@ -38,7 +38,7 @@ Use a Raspberry Pi with:
 From a terminal on the Raspberry Pi, run:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/OmniBot/main/installer/curl-install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/OmniBot/installer/curl-install.sh | bash
 ```
 
 The installer reboots the Raspberry Pi five seconds after successful validation. Existing Bluetooth pairings are preserved.
@@ -46,14 +46,14 @@ The installer reboots the Raspberry Pi five seconds after successful validation.
 To install from an existing local checkout instead:
 
 ```bash
-cd ~/OmniBot/installer
+cd ~/CityTechClubProjects/OmniBot/installer
 bash install.sh
 ```
 
-Set `OMNIBOT_APP_DIR` if the application should be installed somewhere other than `~/OmniBot`. Set `OMNIBOT_REPO_BRANCH` to install a branch other than `main`:
+Set `OMNIBOT_REPO_DIR` if the CityTechClubProjects checkout should be installed somewhere other than `~/CityTechClubProjects`. Set `OMNIBOT_REPO_BRANCH` to install a branch other than `main`:
 
 ```bash
-OMNIBOT_APP_DIR="$HOME/Robots/OmniBot" OMNIBOT_REPO_BRANCH=main bash install.sh
+OMNIBOT_REPO_DIR="$HOME/Robots/CityTechClubProjects" OMNIBOT_REPO_BRANCH=main bash install.sh
 ```
 
 ## Installed Components
@@ -63,12 +63,12 @@ OMNIBOT_APP_DIR="$HOME/Robots/OmniBot" OMNIBOT_REPO_BRANCH=main bash install.sh
 | System packages | Curl, Git, Python 3, Pygame, SMBus, I2C tools, Raspberry Pi GPIO support, BlueZ, NetworkManager, Avahi, and Nginx |
 | Desktop | Uses the existing Raspberry Pi desktop or installs supported desktop packages when none are detected |
 | I2C | Enables the Raspberry Pi I2C interface through `raspi-config` when available |
-| Application | Clones or updates OmniBot in `~/OmniBot` by default |
+| Application | Clones or updates CityTechClubProjects in `~/CityTechClubProjects` and runs its `OmniBot` subdirectory |
 | Validation | Compiles all Python modules, checks web assets and shell syntax, imports hardware libraries, and runs the hardware-independent test suite |
 | Hotspot | Creates the NetworkManager connection `omnibot-hotspot` and starts it through `omnibot-hotspot.service` |
 | Local name | Sets the hostname to `omnibot` and enables Avahi for `omnibot.local` |
 | Dashboard proxy | Proxies port 80 to the Python control server on port 8080 through Nginx |
-| Launcher | Creates `~/OmniBot/run_omnibot.sh` with a single-instance lock and log redirection |
+| Launcher | Creates `~/CityTechClubProjects/OmniBot/run_omnibot.sh` with a single-instance lock and log redirection |
 | Desktop auto-start | Creates `~/.config/autostart/omnibot.desktop` |
 | Labwc auto-start | Adds an OmniBot-managed block to `~/.config/labwc/autostart` |
 | Bluetooth | Enables the system Bluetooth service without erasing existing pairings |
@@ -81,7 +81,7 @@ The installer is safe to rerun. When the application directory is a clean Git ch
 If the existing folder is damaged, is not a Git checkout, contains local changes, or has local commits, the installer preserves it in a timestamped backup such as:
 
 ```text
-~/OmniBot.backup.20260822-153000.1234
+~/CityTechClubProjects.backup.20260822-153000.1234
 ```
 
 It then installs a fresh copy. Generated `run_omnibot.sh` and `omnibot.log` files do not count as local source changes. The root-owned hotspot configuration lives outside the checkout and survives application upgrades.
@@ -90,9 +90,9 @@ It then installs a fresh copy. Generated `run_omnibot.sh` and `omnibot.log` file
 
 | Path | Purpose |
 | --- | --- |
-| `~/OmniBot/run_omnibot.sh` | Single-instance launcher for `omni_robot.py` |
-| `~/OmniBot/omnibot.log` | Combined startup and runtime output |
-| `~/OmniBot/.omnibot.lock` | Prevents duplicate controller processes |
+| `~/CityTechClubProjects/OmniBot/run_omnibot.sh` | Single-instance launcher for `omni_robot.py` |
+| `~/CityTechClubProjects/OmniBot/omnibot.log` | Combined startup and runtime output |
+| `~/CityTechClubProjects/OmniBot/.omnibot.lock` | Prevents duplicate controller processes |
 | `~/.config/autostart/omnibot.desktop` | Desktop-session auto-start entry |
 | `~/.config/labwc/autostart` | Labwc auto-start command managed between OmniBot markers |
 | `/etc/omnibot/config.env` | Root-only hotspot settings; defaults to SSID `OmniBot` and password `omnibot1` |
@@ -115,19 +115,19 @@ After the Pi reboots:
 Run OmniBot manually if the desktop auto-start did not launch it:
 
 ```bash
-~/OmniBot/run_omnibot.sh
+~/CityTechClubProjects/OmniBot/run_omnibot.sh
 ```
 
 Inspect the log:
 
 ```bash
-tail -n 100 ~/OmniBot/omnibot.log
+tail -n 100 ~/CityTechClubProjects/OmniBot/omnibot.log
 ```
 
 Rerun the validation tests:
 
 ```bash
-cd ~/OmniBot
+cd ~/CityTechClubProjects/OmniBot
 python3 -m unittest discover -s tests -v
 ```
 

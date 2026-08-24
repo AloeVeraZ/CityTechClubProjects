@@ -3,7 +3,7 @@
 set -Eeuo pipefail
 
 REPO_BRANCH="${OMNIBOT_REPO_BRANCH:-main}"
-INSTALLER_URL="https://raw.githubusercontent.com/AloeVeraZ/OmniBot/${REPO_BRANCH}/installer/install.sh"
+INSTALLER_URL="https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/${REPO_BRANCH}/OmniBot/installer/install.sh"
 TEMP_INSTALLER="$(mktemp)"
 
 cleanup() { rm -f -- "$TEMP_INSTALLER"; }

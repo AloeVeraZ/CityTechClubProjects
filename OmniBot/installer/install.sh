@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-REPO_URL="https://github.com/AloeVeraZ/OmniBot.git"
+REPO_URL="${OMNIBOT_REPO_URL:-https://github.com/AloeVeraZ/CityTechClubProjects.git}"
 REPO_BRANCH="${OMNIBOT_REPO_BRANCH:-main}"
-APP_DIR="${OMNIBOT_APP_DIR:-$HOME/OmniBot}"
+REPO_DIR="${OMNIBOT_REPO_DIR:-$HOME/CityTechClubProjects}"
+APP_SUBDIR="OmniBot"
+APP_DIR="$REPO_DIR/$APP_SUBDIR"
 RUNNER="$APP_DIR/run_omnibot.sh"
 LOG_FILE="$APP_DIR/omnibot.log"
 CONFIG_DIR="/etc/omnibot"
@@ -68,43 +70,48 @@ say "Downloading OmniBot..."
 install_fresh_copy() {
     local reason="$1"
     local stamp="$(date +%Y%m%d-%H%M%S).$$"
-    local backup="${APP_DIR}.backup.${stamp}"
-    local fresh="${APP_DIR}.installing.${stamp}"
+    local backup="${REPO_DIR}.backup.${stamp}"
+    local fresh="${REPO_DIR}.installing.${stamp}"
     say "$reason"
     git clone --branch "$REPO_BRANCH" --single-branch "$REPO_URL" "$fresh"
-    mv "$APP_DIR" "$backup"
-    mv "$fresh" "$APP_DIR"
-    say "The previous folder was preserved at $backup"
+    test -f "$fresh/$APP_SUBDIR/omni_robot.py" || \
+        fail "The selected repository branch does not contain $APP_SUBDIR/omni_robot.py."
+    mv "$REPO_DIR" "$backup"
+    mv "$fresh" "$REPO_DIR"
+    say "The previous repository checkout was preserved at $backup"
 }
 
-if [ -d "$APP_DIR/.git" ]; then
+if [ -d "$REPO_DIR/.git" ]; then
     checkout_valid=true
     changes=""
-    if changes="$(git -C "$APP_DIR" status --porcelain --untracked-files=all)"; then
-        changes="$(printf '%s\n' "$changes" | grep -vFx '?? run_omnibot.sh' | grep -vFx '?? omnibot.log' || true)"
+    if changes="$(git -C "$REPO_DIR" status --porcelain --untracked-files=all)"; then
+        changes="$(printf '%s\n' "$changes" | grep -vFx "?? $APP_SUBDIR/run_omnibot.sh" | grep -vFx "?? $APP_SUBDIR/omnibot.log" || true)"
     else
         checkout_valid=false
     fi
 
     if [ "$checkout_valid" != true ]; then
         install_fresh_copy "The existing Git checkout is damaged; installing a clean copy."
-    elif ! git -C "$APP_DIR" fetch --prune origin "$REPO_BRANCH"; then
+    elif ! git -C "$REPO_DIR" fetch --prune origin "$REPO_BRANCH"; then
         install_fresh_copy "The existing checkout could not be updated; installing a clean copy."
     elif [ -n "$changes" ]; then
         install_fresh_copy "Local changes were found; installing a clean copy."
-    elif ! git -C "$APP_DIR" show-ref --verify --quiet "refs/heads/$REPO_BRANCH"; then
+    elif ! git -C "$REPO_DIR" show-ref --verify --quiet "refs/heads/$REPO_BRANCH"; then
         install_fresh_copy "The existing checkout has no $REPO_BRANCH branch; installing a clean copy."
-    elif ! git -C "$APP_DIR" merge-base --is-ancestor "$REPO_BRANCH" "origin/$REPO_BRANCH"; then
+    elif ! git -C "$REPO_DIR" merge-base --is-ancestor "$REPO_BRANCH" "origin/$REPO_BRANCH"; then
         install_fresh_copy "Local commits were found; installing a clean copy."
     else
-        git -C "$APP_DIR" checkout -f "$REPO_BRANCH"
-        git -C "$APP_DIR" reset --hard "origin/$REPO_BRANCH"
+        git -C "$REPO_DIR" checkout -f "$REPO_BRANCH"
+        git -C "$REPO_DIR" reset --hard "origin/$REPO_BRANCH"
     fi
-elif [ -e "$APP_DIR" ]; then
-    install_fresh_copy "A non-Git OmniBot folder was found; installing a clean copy."
+elif [ -e "$REPO_DIR" ]; then
+    install_fresh_copy "A non-Git CityTechClubProjects folder was found; installing a clean copy."
 else
-    git clone --branch "$REPO_BRANCH" --single-branch "$REPO_URL" "$APP_DIR"
+    git clone --branch "$REPO_BRANCH" --single-branch "$REPO_URL" "$REPO_DIR"
 fi
+
+test -f "$APP_DIR/omni_robot.py" || \
+    fail "The repository checkout does not contain $APP_SUBDIR/omni_robot.py."
 
 python3 -m py_compile \
     "$APP_DIR/omni_kinematics.py" \
