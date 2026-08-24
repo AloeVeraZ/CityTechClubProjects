@@ -27,7 +27,10 @@ class InstallerLayoutTests(unittest.TestCase):
         self.assertIn('"$APP_DIR/omni_robot.py"', script)
         self.assertIn("Acquire::Retries=3", script)
         self.assertIn("dpkg --configure -a", script)
-        self.assertIn("Package index refresh failed", script)
+        self.assertIn("timedatectl set-ntp true", script)
+        self.assertIn("update-ca-certificates", script)
+        self.assertIn("apt_log_has_certificate_error", script)
+        self.assertIn("TLS verification was not disabled", script)
         self.assertNotIn('git -C "$APP_DIR"', script)
         self.assertNotIn("AloeVeraZ/OmniBot", script)
 

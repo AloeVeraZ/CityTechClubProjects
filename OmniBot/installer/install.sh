@@ -15,6 +15,14 @@ say() { printf '\n\033[1;36m[OmniBot]\033[0m %s\n' "$*"; }
 fail() { printf '\n\033[1;31m[OmniBot ERROR]\033[0m %s\n' "$*" >&2; exit 1; }
 
 CURRENT_STEP="starting the installer"
+APT_LOG=""
+cleanup() {
+    if [ -n "$APT_LOG" ]; then
+        rm -f -- "$APT_LOG"
+    fi
+}
+trap cleanup EXIT
+
 on_error() {
     local status="$1" line="$2" command="$3"
     trap - ERR
@@ -35,6 +43,65 @@ sudo -v || fail "sudo authentication failed. Run the installer as your normal Pi
 CURRENT_STEP="repairing any interrupted package configuration"
 sudo env DEBIAN_FRONTEND=noninteractive dpkg --configure -a || \
     fail "dpkg could not finish an interrupted package configuration. Resolve the error above, then rerun."
+APT_LOG="$(mktemp)"
+
+apt_log_has_certificate_error() {
+    grep -Eqi \
+        'certificate verification failed|certificate verify failed|certificate.*(not trusted|expired|not yet valid)|issuer certificate|certificate chain|TLS.*certificate|SSL certificate' \
+        "$APT_LOG"
+}
+
+ensure_system_clock() {
+    local synchronized="" year=""
+    year="$(date -u +%Y 2>/dev/null || printf '0')"
+
+    if command -v timedatectl >/dev/null 2>&1; then
+        synchronized="$(timedatectl show --property=NTPSynchronized --value 2>/dev/null || true)"
+        if [ "$synchronized" != "yes" ]; then
+            say "Synchronizing the Pi clock before HTTPS package downloads..."
+            sudo timedatectl set-ntp true 2>/dev/null || true
+            sudo systemctl restart systemd-timesyncd.service 2>/dev/null || true
+            for _ in 1 2 3 4 5 6 7 8 9 10; do
+                synchronized="$(timedatectl show --property=NTPSynchronized --value 2>/dev/null || true)"
+                [ "$synchronized" = "yes" ] && break
+                sleep 2
+            done
+        fi
+    fi
+
+    year="$(date -u +%Y 2>/dev/null || printf '0')"
+    if [ "$year" -lt 2024 ] || [ "$year" -gt 2100 ]; then
+        fail "The Pi clock is $(date -u 2>/dev/null || printf 'invalid'), so HTTPS certificates cannot be verified. Connect the Pi to a network that provides time synchronization, correct the clock, and rerun."
+    fi
+    say "Pi clock: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+}
+
+refresh_certificate_store() {
+    local fresh_option="${1:-}"
+    local update_certs=""
+    if command -v update-ca-certificates >/dev/null 2>&1; then
+        update_certs="$(command -v update-ca-certificates)"
+    elif [ -x /usr/sbin/update-ca-certificates ]; then
+        update_certs=/usr/sbin/update-ca-certificates
+    fi
+
+    if [ -n "$update_certs" ]; then
+        if [ -n "$fresh_option" ]; then
+            sudo "$update_certs" "$fresh_option" || \
+                fail "The local CA certificate store could not be rebuilt. Resolve the certificate error above, then rerun."
+        else
+            sudo "$update_certs" || \
+                fail "The local CA certificate store could not be rebuilt. Resolve the certificate error above, then rerun."
+        fi
+    else
+        say "The CA update utility is not installed yet; apt will install ca-certificates."
+    fi
+}
+
+CURRENT_STEP="synchronizing the system clock"
+ensure_system_clock
+CURRENT_STEP="refreshing the trusted CA certificate store"
+refresh_certificate_store
 
 apt_get() {
     local attempt status=1
@@ -42,11 +109,12 @@ apt_get() {
         if sudo env DEBIAN_FRONTEND=noninteractive apt-get \
             -o DPkg::Lock::Timeout=120 \
             -o Acquire::Retries=3 \
-            "$@"; then
+            "$@" 2>&1 | tee "$APT_LOG"; then
             return 0
         else
-            status=$?
+            status="${PIPESTATUS[0]}"
         fi
+        apt_log_has_certificate_error && return "$status"
         if [ "$attempt" -lt 3 ]; then
             say "apt-get $* failed (attempt $attempt of 3). Retrying in five seconds..."
             sleep 5
@@ -56,14 +124,32 @@ apt_get() {
 }
 
 apt_require() {
-    apt_get "$@" || fail \
-        "apt-get $* failed after three attempts. Check the Pi's internet connection, date/time, package sources, and any error printed above."
+    if apt_get "$@"; then
+        return 0
+    fi
+    if apt_log_has_certificate_error; then
+        fail "apt-get $* could not verify an HTTPS certificate. The clock and CA store were repaired, so the remaining cause is usually a captive-portal Wi-Fi network, HTTPS-inspecting proxy, or invalid custom package source. Open the network login page or fix the source/proxy certificate; TLS verification was not disabled."
+    fi
+    fail "apt-get $* failed after three attempts. Check the Pi's internet connection, date/time, package sources, and any error printed above."
 }
 
 CURRENT_STEP="refreshing Raspberry Pi package information"
 say "Installing Raspberry Pi, pygame, GPIO, Bluetooth, and hotspot packages..."
 if ! apt_get update; then
-    say "Package index refresh failed. Continuing in case the required packages are already installed or cached."
+    if apt_log_has_certificate_error; then
+        CURRENT_STEP="repairing the trusted CA certificate store"
+        say "apt reported a certificate error. Rebuilding the CA store and retrying once..."
+        refresh_certificate_store --fresh
+        CURRENT_STEP="refreshing Raspberry Pi package information after CA repair"
+        if ! apt_get update; then
+            if apt_log_has_certificate_error; then
+                fail "apt still cannot verify the package server certificate after clock synchronization and a fresh CA rebuild. Complete any Wi-Fi captive-portal login and remove any broken HTTPS proxy or custom apt source, then rerun. TLS verification was not disabled."
+            fi
+            say "Package index refresh still failed for a non-certificate reason. Continuing in case the required packages are installed or cached."
+        fi
+    else
+        say "Package index refresh failed for a non-certificate reason. Continuing in case the required packages are already installed or cached."
+    fi
 fi
 
 GPIO_PACKAGE="python3-rpi.gpio"
