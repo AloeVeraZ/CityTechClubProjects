@@ -1,0 +1,75 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f5f6f8;
+  color: #19191c;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; background: #f5f6f8; }
+button { font: inherit; touch-action: none; user-select: none; }
+.shell { width: min(1040px, 100%); margin: 0 auto; padding: 18px; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+h1 { font-size: clamp(1.15rem, 3vw, 1.55rem); margin: 0; }
+header p { color: #5a6069; margin: 4px 0 0; }
+.pill { border-radius: 999px; color: white; font-size: .75rem; font-weight: 800; letter-spacing: .08em; padding: 8px 12px; }
+.pill.online { background: #16834b; }
+.pill.offline { background: #a53131; }
+.workspace { display: grid; grid-template-columns: 250px 1fr; gap: 18px; }
+.stick-card, .telemetry-card { background: white; border: 2px solid #d2d7dc; border-radius: 16px; padding: 16px; }
+.stick { position: relative; width: 210px; height: 210px; max-width: 100%; aspect-ratio: 1; border-radius: 50%; border: 3px solid #c8cdd2; margin: 0 auto 15px; background: #fff; overflow: hidden; }
+.cross { position: absolute; background: #edf0f3; }
+.cross.horizontal { height: 1px; left: 10%; right: 10%; top: 50%; }
+.cross.vertical { width: 1px; top: 10%; bottom: 10%; left: 50%; }
+.stick-dot { position: absolute; width: 24px; height: 24px; border-radius: 50%; background: #dce0e5; border: 2px solid #b7bdc4; left: calc(50% - 12px); top: calc(50% - 12px); transform: translate(0, 0); transition: transform 50ms linear; }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.actions button, .servo-controls button { border: 0; border-radius: 10px; color: white; font-weight: 800; padding: 12px; cursor: pointer; }
+.enable { background: #1767c0; }
+.stop { background: #b3202a; }
+.hint, footer { color: #6b7179; font-size: .8rem; text-align: center; }
+.telemetry-card h2 { font-size: 1.2rem; margin: 0 0 18px; }
+.telemetry { min-height: 124px; }
+.telemetry p { border-bottom: 1px solid #edf0f2; margin: 0; padding: 9px 0; font-variant-numeric: tabular-nums; }
+.servo { color: #464c54; font-size: .9rem; }
+.direction { display: inline-block; background: #eef2f7; border-radius: 999px; color: #3d4650; font-weight: 700; padding: 8px 12px; }
+.controls { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-top: 14px; }
+.controls button { min-height: 72px; background: white; border: 2px solid #d2d7dc; border-radius: 12px; color: #24282e; cursor: pointer; font-size: 1.15rem; font-weight: 900; }
+.controls button span { display: block; color: #646b74; font-size: .7rem; font-weight: 600; margin-top: 4px; }
+.controls button.active { background: #1d68b5; border-color: #1d68b5; color: white; }
+.controls button.active span { color: #dbeaff; }
+.servo-controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+.servo-controls button { background: #5a626c; }
+.servo-controls button.active { background: #343a41; }
+#toast { position: fixed; left: 50%; bottom: 18px; translate: -50%; background: #24272b; border-radius: 9px; color: white; opacity: 0; padding: 10px 14px; pointer-events: none; transition: opacity .2s; }
+#toast.visible { opacity: 1; }
+
+@media (max-width: 720px) {
+  .shell { padding: 12px; }
+  .workspace { grid-template-columns: 1fr; }
+  .stick-card { display: grid; grid-template-columns: minmax(130px, 190px) 1fr; align-items: center; gap: 14px; }
+  .stick { width: 180px; margin-bottom: 0; }
+  .actions { grid-template-columns: 1fr; }
+  .hint { grid-column: 2; margin: -8px 0 0; }
+  .controls { grid-template-columns: repeat(3, 1fr); }
+  .servo-controls { grid-template-columns: 1fr; }
+}
+
+@media (min-width: 721px) and (max-height: 650px) {
+  .shell { padding: 8px 14px; }
+  header { margin-bottom: 6px; }
+  header p { margin-top: 1px; }
+  .workspace { gap: 10px; grid-template-columns: 220px 1fr; }
+  .stick-card, .telemetry-card { border-radius: 12px; padding: 8px 12px; }
+  .stick { height: 166px; width: 166px; margin-bottom: 7px; }
+  .actions button { padding: 8px; }
+  .hint { margin: 5px 0 0; }
+  .telemetry-card h2 { margin-bottom: 6px; }
+  .telemetry { min-height: 94px; }
+  .telemetry p { padding: 5px 0; }
+  .servo, .direction { margin: 7px 0; }
+  .controls { gap: 7px; margin-top: 7px; }
+  .controls button { min-height: 52px; }
+  .servo-controls { gap: 7px; margin-top: 7px; }
+  .servo-controls button { padding: 8px; }
+  footer { margin-top: 4px; }
+}

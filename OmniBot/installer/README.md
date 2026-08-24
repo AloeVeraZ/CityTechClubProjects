@@ -2,14 +2,14 @@
 
 # OmniBot Raspberry Pi Installer
 
-### Automated deployment for the Pygame controller, GPIO/I2C support, Bluetooth, and desktop auto-start
+### Automated deployment for Pygame, GPIO/I2C, Bluetooth, a private Wi-Fi hotspot, and the browser dashboard
 
 [![Platform](https://img.shields.io/badge/Platform-Raspberry_Pi_OS-c51a4a?style=flat-square&logo=raspberrypi&logoColor=white)](https://www.raspberrypi.com/)
 [![Desktop](https://img.shields.io/badge/Runtime-Pygame-3776ab?style=flat-square&logo=python&logoColor=white)](#installed-components)
 [![Bluetooth](https://img.shields.io/badge/Controller-BlueZ-0a7f5a?style=flat-square&logo=bluetooth&logoColor=white)](#before-installing)
 [![Parent](https://img.shields.io/badge/Project-OmniBot-111111?style=flat-square)](../)
 
-`install.sh` prepares a Raspberry Pi to run OmniBot automatically after the graphical desktop starts. It installs system packages, enables I2C and Bluetooth, downloads or updates the application, validates the runtime, and creates the local launcher and auto-start entries.
+`curl-install.sh` safely downloads `install.sh` before execution. The main installer prepares a Raspberry Pi to run OmniBot automatically after the graphical desktop starts, creates a private Wi-Fi hotspot, exposes the dashboard through Nginx, and preserves local Bluetooth control.
 
 <strong>Quick navigation:</strong><br>
 [Before Installing](#before-installing) | [Quick Install](#quick-install) | [Installed Components](#installed-components) | [Updates](#existing-installations-and-updates) | [Troubleshooting](#troubleshooting) | [Back to OmniBot](../)
@@ -24,7 +24,8 @@ Use a Raspberry Pi with:
 
 - Raspberry Pi OS with Desktop and a normal non-root user account.
 - Internet access during installation.
-- A generic Bluetooth controller paired through Raspberry Pi OS.
+- A Wi-Fi adapter that supports access-point mode.
+- An optional generic Bluetooth controller paired through Raspberry Pi OS.
 - Three motor drivers wired to the BOARD pins documented in the [OmniBot guide](../#hardware-and-wiring).
 - A shared ground between the Raspberry Pi and motor drivers.
 - An optional PCA9685 servo HAT at I2C address `0x40` with a positional servo on channel 0.
@@ -37,7 +38,7 @@ Use a Raspberry Pi with:
 From a terminal on the Raspberry Pi, run:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/OmniBot/main/installer/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/OmniBot/main/installer/curl-install.sh | bash
 ```
 
 The installer reboots the Raspberry Pi five seconds after successful validation. Existing Bluetooth pairings are preserved.
@@ -49,21 +50,24 @@ cd ~/OmniBot/installer
 bash install.sh
 ```
 
-Set `OMNIBOT_APP_DIR` before running the script if the application should be installed somewhere other than `~/OmniBot`:
+Set `OMNIBOT_APP_DIR` if the application should be installed somewhere other than `~/OmniBot`. Set `OMNIBOT_REPO_BRANCH` to install a branch other than `main`:
 
 ```bash
-OMNIBOT_APP_DIR="$HOME/Robots/OmniBot" bash install.sh
+OMNIBOT_APP_DIR="$HOME/Robots/OmniBot" OMNIBOT_REPO_BRANCH=main bash install.sh
 ```
 
 ## Installed Components
 
 | Component | Result |
 | --- | --- |
-| System packages | Git, Python 3, Pygame, SMBus, I2C tools, Raspberry Pi GPIO support, and BlueZ |
+| System packages | Curl, Git, Python 3, Pygame, SMBus, I2C tools, Raspberry Pi GPIO support, BlueZ, NetworkManager, Avahi, and Nginx |
 | Desktop | Uses the existing Raspberry Pi desktop or installs supported desktop packages when none are detected |
 | I2C | Enables the Raspberry Pi I2C interface through `raspi-config` when available |
 | Application | Clones or updates OmniBot in `~/OmniBot` by default |
-| Validation | Compiles the Python modules, imports hardware libraries, and runs the hardware-independent test suite |
+| Validation | Compiles all Python modules, checks web assets and shell syntax, imports hardware libraries, and runs the hardware-independent test suite |
+| Hotspot | Creates the NetworkManager connection `omnibot-hotspot` and starts it through `omnibot-hotspot.service` |
+| Local name | Sets the hostname to `omnibot` and enables Avahi for `omnibot.local` |
+| Dashboard proxy | Proxies port 80 to the Python control server on port 8080 through Nginx |
 | Launcher | Creates `~/OmniBot/run_omnibot.sh` with a single-instance lock and log redirection |
 | Desktop auto-start | Creates `~/.config/autostart/omnibot.desktop` |
 | Labwc auto-start | Adds an OmniBot-managed block to `~/.config/labwc/autostart` |
@@ -72,7 +76,7 @@ OMNIBOT_APP_DIR="$HOME/Robots/OmniBot" bash install.sh
 
 ## Existing Installations and Updates
 
-The installer is safe to rerun. When `~/OmniBot` is a clean Git checkout on `main`, it fetches the latest source and resets the checkout to `origin/main`.
+The installer is safe to rerun. When the application directory is a clean Git checkout on the selected branch, it fetches the latest source and resets the checkout to the matching remote branch.
 
 If the existing folder is damaged, is not a Git checkout, contains local changes, or has local commits, the installer preserves it in a timestamped backup such as:
 
@@ -80,7 +84,7 @@ If the existing folder is damaged, is not a Git checkout, contains local changes
 ~/OmniBot.backup.20260822-153000.1234
 ```
 
-It then installs a fresh copy. Generated `run_omnibot.sh` and `omnibot.log` files do not count as local source changes.
+It then installs a fresh copy. Generated `run_omnibot.sh` and `omnibot.log` files do not count as local source changes. The root-owned hotspot configuration lives outside the checkout and survives application upgrades.
 
 ## Generated Files
 
@@ -91,17 +95,22 @@ It then installs a fresh copy. Generated `run_omnibot.sh` and `omnibot.log` file
 | `~/OmniBot/.omnibot.lock` | Prevents duplicate controller processes |
 | `~/.config/autostart/omnibot.desktop` | Desktop-session auto-start entry |
 | `~/.config/labwc/autostart` | Labwc auto-start command managed between OmniBot markers |
+| `/etc/omnibot/config.env` | Root-only hotspot settings; defaults to SSID `OmniBot` and password `omnibot1` |
+| `/usr/local/sbin/omnibot-hotspot` | Installed hotspot configuration helper |
+| `/etc/systemd/system/omnibot-hotspot.service` | Boot-time hotspot service |
+| `/etc/nginx/sites-available/omnibot-dashboard` | Port-80 dashboard reverse proxy |
 
 ## After Installation
 
 After the Pi reboots:
 
-1. Confirm the Bluetooth controller is connected.
-2. Wait for the OmniBot Pygame window to appear.
-3. Press and release `A`.
-4. Center both sticks for 0.25 seconds to arm the drivetrain.
-5. Test each direction with the robot raised off the floor.
-6. Press `Y` and confirm that all drive motors stop immediately.
+1. Wait for the OmniBot Pygame window to appear.
+2. Join Wi-Fi network `OmniBot` using password `omnibot1`.
+3. Open `http://10.42.0.1`, select **Enable**, and keep the controls neutral for 0.25 seconds.
+4. Test each direction with the robot raised off the floor, then select **Stop** and confirm every drive motor stops.
+5. For local control, connect the Bluetooth controller, press and release `A`, center both sticks for 0.25 seconds, and press `Y` to test the immediate stop.
+
+`http://omnibot.local` is the friendly mDNS address when the client supports it, and `http://10.42.0.1:8080` bypasses Nginx as a direct fallback. To change the Wi-Fi name or password, edit `/etc/omnibot/config.env` with `sudo`, then reboot. WPA-PSK passwords must contain at least eight characters.
 
 Run OmniBot manually if the desktop auto-start did not launch it:
 
@@ -126,9 +135,12 @@ python3 -m unittest discover -s tests -v
 
 | Problem | Check |
 | --- | --- |
+| No `OmniBot` Wi-Fi network | Run `systemctl status omnibot-hotspot`, verify the Wi-Fi interface in `/etc/omnibot/config.env`, and confirm access-point support |
+| Dashboard does not open | Try `http://10.42.0.1:8080`, inspect `omnibot.log`, then check `systemctl status nginx` |
+| Dashboard stops while moving | This is the 200 ms safety watchdog; keep the page active and select **Enable** again |
 | No Pygame window | Confirm the Pi booted to the graphical desktop, then inspect `omnibot.log` |
 | Controller not found | Reconnect it in Bluetooth settings and restart the launcher |
-| Robot remains unarmed | Press and release `A`, then hold both sticks at neutral for 0.25 seconds |
+| Robot remains unarmed | Enable the selected input source, then hold every movement input neutral for 0.25 seconds |
 | Motors spin incorrectly | Verify the BOARD pin wiring and mirrored right-rear motor orientation |
 | Servo unavailable | Confirm I2C is enabled, address `0x40` appears in `i2cdetect -y 1`, and channel 0 is wired correctly |
 | Servo buzzes or hits a stop | Disconnect the load and reduce the pulse range in `servo_hat.py` |

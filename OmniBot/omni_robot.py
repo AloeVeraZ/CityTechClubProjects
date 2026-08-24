@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 import time
 
@@ -22,6 +23,7 @@ from omni_kinematics import (
     trigger_activation,
 )
 from servo_hat import PositionalServo
+from wifi_control import RemoteControlState, WifiControlServer
 
 # Generic Bluetooth controller mapping (kept from the original program).
 LEFT_X_AXIS = 0
@@ -63,6 +65,7 @@ SERVO_SPEED_DEGREES_PER_SECOND = 1000.0
 
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 480
 UI_FPS = 60
+WIFI_CONTROL_PORT = int(os.environ.get("OMNIBOT_PORT", "8080"))
 
 
 class Motor:
@@ -225,8 +228,22 @@ def main() -> None:
     except Exception as error:
         servo_error = f"Servo 0 unavailable: {error}"
     joystick = get_joystick()
+    remote_control = RemoteControlState()
+    wifi_server: WifiControlServer | None = None
+    try:
+        wifi_server = WifiControlServer(
+            remote_control, port=WIFI_CONTROL_PORT
+        ).start()
+        print(f"OmniBot Wi-Fi controller listening on port {wifi_server.port}")
+    except OSError as error:
+        # The robot's local controller and display must remain usable even if
+        # the network port is temporarily unavailable.
+        print(f"OmniBot Wi-Fi controller unavailable: {error}", file=sys.stderr)
+
     enabled = False
     armed = False
+    control_source = "none"
+    remote_generation = remote_control.consume().generation
     neutral_since: float | None = None
     previous_a = False
     previous_y = False
@@ -247,14 +264,35 @@ def main() -> None:
                     running = False
                 elif event.type in (pygame.JOYDEVICEADDED, pygame.JOYDEVICEREMOVED):
                     joystick = get_joystick()
-                    if joystick is None:
+                    if joystick is None and control_source == "local":
                         enabled = armed = False
+                        control_source = "none"
                         all_stop()
 
             now = time.monotonic()
             dt = min(now - last_time, 0.1)
             last_time = now
-            joy_name = joystick.get_name() if joystick else "No controller found"
+            remote_input = remote_control.consume(now)
+            if remote_input.generation != remote_generation:
+                remote_generation = remote_input.generation
+                if remote_input.enabled:
+                    control_source = "wifi"
+                    enabled = True
+                    armed = False
+                    neutral_since = None
+                    all_stop()
+                elif control_source == "wifi":
+                    control_source = "none"
+                    enabled = armed = False
+                    neutral_since = None
+                    all_stop()
+
+            if control_source == "wifi":
+                joy_name = "Laptop browser over OmniBot Wi-Fi"
+            elif joystick:
+                joy_name = joystick.get_name()
+            else:
+                joy_name = "No local controller - Wi-Fi ready"
 
             def axis(index: int) -> float:
                 if joystick is None or index >= joystick.get_numaxes():
@@ -268,27 +306,50 @@ def main() -> None:
                     and joystick.get_button(index)
                 )
 
-            lx_raw = axis(LEFT_X_AXIS)
-            ly_raw = axis(LEFT_Y_AXIS)
-            right_orthogonal_raw = axis(RIGHT_TURN_ORTHOGONAL_AXIS)
-            right_turn_raw = axis(RIGHT_TURN_AXIS)
-            left_trigger_raw = axis(LEFT_TRIGGER_AXIS)
-            right_trigger_raw = axis(RIGHT_TRIGGER_AXIS)
+            if control_source == "wifi":
+                # Remote values are already expressed in the robot's logical
+                # directions. Convert only the display/controller convention;
+                # the original deadzones, cardinal lock, and omni mixer below
+                # are still applied without modification.
+                lx_raw = -remote_input.strafe
+                ly_raw = -remote_input.forward
+                right_orthogonal_raw = 0.0
+                right_turn_raw = remote_input.turn
+                left_trigger_raw = remote_input.left_trigger
+                right_trigger_raw = remote_input.right_trigger
+            else:
+                lx_raw = axis(LEFT_X_AXIS)
+                ly_raw = axis(LEFT_Y_AXIS)
+                right_orthogonal_raw = axis(RIGHT_TURN_ORTHOGONAL_AXIS)
+                right_turn_raw = axis(RIGHT_TURN_AXIS)
+                left_trigger_raw = axis(LEFT_TRIGGER_AXIS)
+                right_trigger_raw = axis(RIGHT_TRIGGER_AXIS)
             a_pressed = button(BUTTON_A_INDEX)
             y_pressed = button(BUTTON_Y_INDEX)
-            x_pressed = button(BUTTON_X_INDEX)
+            x_pressed = button(BUTTON_X_INDEX) or (
+                control_source == "wifi" and remote_input.center_servo
+            )
 
             # Rising edges prevent a held A button from resetting arming each frame.
             if y_pressed and not previous_y:
+                remote_control.stop()
+                remote_generation = remote_control.consume().generation
                 enabled = armed = False
+                control_source = "none"
                 neutral_since = None
                 all_stop()
             elif a_pressed and not previous_a:
+                remote_control.stop()
+                remote_generation = remote_control.consume().generation
+                control_source = "local"
                 enabled = True
                 armed = False
                 neutral_since = None
-                left_trigger_rest = left_trigger_raw
-                right_trigger_rest = right_trigger_raw
+                # A local controller can take over while Wi-Fi input is still
+                # present in this frame. Calibrate from the physical trigger
+                # axes, not from the just-replaced remote values.
+                left_trigger_rest = axis(LEFT_TRIGGER_AXIS)
+                right_trigger_rest = axis(RIGHT_TRIGGER_AXIS)
                 all_stop()
             previous_a, previous_y = a_pressed, y_pressed
 
@@ -308,12 +369,16 @@ def main() -> None:
             turn = axis_deadzone(turn_raw, TURN_DEADZONE)
             neutral = max((strafe * strafe + forward * forward) ** 0.5, abs(turn))
 
-            left_trigger = trigger_activation(
-                left_trigger_raw, left_trigger_rest
-            )
-            right_trigger = trigger_activation(
-                right_trigger_raw, right_trigger_rest
-            )
+            if control_source == "wifi":
+                left_trigger = left_trigger_raw
+                right_trigger = right_trigger_raw
+            else:
+                left_trigger = trigger_activation(
+                    left_trigger_raw, left_trigger_rest
+                )
+                right_trigger = trigger_activation(
+                    right_trigger_raw, right_trigger_rest
+                )
 
             if servo is not None:
                 if enabled and armed:
@@ -347,9 +412,14 @@ def main() -> None:
                     neutral_since = None
 
             telemetry = []
-            if not enabled or not armed or joystick is None:
+            input_connected = (
+                remote_input.enabled
+                if control_source == "wifi"
+                else joystick is not None
+            )
+            if not enabled or not armed or not input_connected:
                 all_stop()
-                if joystick is None:
+                if not input_connected and enabled:
                     reason = "STOPPED (Controller disconnected)"
                 elif not enabled:
                     reason = "STOPPED (System disabled)"
@@ -377,12 +447,21 @@ def main() -> None:
             draw_ui(
                 joy_name, lx_raw, ly_raw, telemetry, enabled, armed, servo_status
             )
+            remote_control.report_runtime(
+                enabled=enabled,
+                armed=armed,
+                source=control_source,
+                telemetry=telemetry,
+                servo=servo_status,
+            )
             clock.tick(UI_FPS)
     finally:
         for motor in motors:
             motor.stop()
         if servo is not None:
             servo.close()
+        if wifi_server is not None:
+            wifi_server.close()
         GPIO.cleanup()
         pygame.quit()
 

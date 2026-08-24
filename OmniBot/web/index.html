@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>OmniBot Wi-Fi Controller</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <h1 id="status-title">Status: DISABLED (Enable to drive)</h1>
+        <p id="source">Laptop Wi-Fi controller</p>
+      </div>
+      <span id="link" class="pill offline">CONNECTING</span>
+    </header>
+
+    <section class="workspace">
+      <div class="stick-card">
+        <div id="stick" class="stick" aria-label="Current translation input">
+          <span class="cross horizontal"></span><span class="cross vertical"></span>
+          <span id="stick-dot" class="stick-dot"></span>
+        </div>
+        <div class="actions">
+          <button id="enable" class="enable">Enable</button>
+          <button id="stop" class="stop">STOP</button>
+        </div>
+        <p class="hint">Enter enables · Space/Esc stops</p>
+      </div>
+
+      <div class="telemetry-card">
+        <h2>Omni Drivetrain Telemetry</h2>
+        <div id="telemetry" class="telemetry">
+          <p>Waiting for robot…</p>
+        </div>
+        <p id="servo" class="servo">Servo 0: waiting</p>
+        <p id="direction" class="direction">Standing by</p>
+      </div>
+    </section>
+
+    <section class="controls" aria-label="Touch drive controls">
+      <button data-drive="forward">W<span>Forward</span></button>
+      <button data-drive="left">A<span>Strafe left</span></button>
+      <button data-drive="back">S<span>Reverse</span></button>
+      <button data-drive="right">D<span>Strafe right</span></button>
+      <button data-drive="turn-left">Q<span>Rotate left</span></button>
+      <button data-drive="turn-right">E<span>Rotate right</span></button>
+    </section>
+
+    <section class="servo-controls" aria-label="Servo controls">
+      <button data-servo="left">Left trigger · Servo −</button>
+      <button id="servo-center">X · Center servo</button>
+      <button data-servo="right">Right trigger · Servo +</button>
+    </section>
+
+    <footer>Keyboard, touch, or a browser-connected gamepad · Commands expire automatically</footer>
+  </main>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="/controller.js"></script>
+</body>
+</html>

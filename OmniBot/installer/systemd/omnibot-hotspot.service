@@ -1,0 +1,13 @@
+[Unit]
+Description=OmniBot Wi-Fi hotspot
+Wants=NetworkManager.service
+After=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/omnibot-hotspot start
+ExecStop=/usr/local/sbin/omnibot-hotspot stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
