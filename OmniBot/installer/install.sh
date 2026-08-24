@@ -51,6 +51,24 @@ apt_log_has_certificate_error() {
         "$APT_LOG"
 }
 
+apt_log_has_missing_package_error() {
+    grep -Eqi \
+        'unable to locate package|has no installation candidate|but it is not installable' \
+        "$APT_LOG"
+}
+
+show_apt_diagnostics() {
+    printf '\n===== Last apt output =====\n' >&2
+    tail -n 30 "$APT_LOG" >&2 2>/dev/null || true
+    printf '===== System details =====\n' >&2
+    if [ -r /etc/os-release ]; then
+        grep -E '^(PRETTY_NAME|VERSION_CODENAME)=' /etc/os-release >&2 || true
+    fi
+    printf 'Architecture: %s\n' "$(uname -m 2>/dev/null || printf 'unknown')" >&2
+    printf 'Clock: %s\n' "$(date -u 2>/dev/null || printf 'unknown')" >&2
+    printf '===========================\n' >&2
+}
+
 ensure_system_clock() {
     local synchronized="" year=""
     year="$(date -u +%Y 2>/dev/null || printf '0')"
@@ -115,6 +133,7 @@ apt_get() {
             status="${PIPESTATUS[0]}"
         fi
         apt_log_has_certificate_error && return "$status"
+        apt_log_has_missing_package_error && return "$status"
         if [ "$attempt" -lt 3 ]; then
             say "apt-get $* failed (attempt $attempt of 3). Retrying in five seconds..."
             sleep 5
@@ -128,9 +147,55 @@ apt_require() {
         return 0
     fi
     if apt_log_has_certificate_error; then
+        show_apt_diagnostics
         fail "apt-get $* could not verify an HTTPS certificate. The clock and CA store were repaired, so the remaining cause is usually a captive-portal Wi-Fi network, HTTPS-inspecting proxy, or invalid custom package source. Open the network login page or fix the source/proxy certificate; TLS verification was not disabled."
     fi
+    show_apt_diagnostics
     fail "apt-get $* failed after three attempts. Check the Pi's internet connection, date/time, package sources, and any error printed above."
+}
+
+package_installed() {
+    dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -Fq 'install ok installed'
+}
+
+install_package() {
+    local package="$1"
+    if package_installed "$package"; then
+        say "Package already installed: $package"
+        return 0
+    fi
+    CURRENT_STEP="installing required package $package"
+    say "Installing required package: $package"
+    apt_require install -y "$package"
+}
+
+SELECTED_PACKAGE=""
+install_one_of() {
+    local purpose="$1"
+    shift
+    local package=""
+
+    for package in "$@"; do
+        if package_installed "$package"; then
+            SELECTED_PACKAGE="$package"
+            say "$purpose package already installed: $package"
+            return 0
+        fi
+    done
+    for package in "$@"; do
+        if apt-cache show "$package" >/dev/null 2>&1; then
+            CURRENT_STEP="installing $purpose package $package"
+            say "Installing $purpose package: $package"
+            if apt_get install -y "$package"; then
+                SELECTED_PACKAGE="$package"
+                return 0
+            fi
+            say "$package could not be installed; trying the next compatible package."
+        fi
+    done
+
+    show_apt_diagnostics
+    fail "No compatible $purpose package could be installed. Tried: $*."
 }
 
 CURRENT_STEP="refreshing Raspberry Pi package information"
@@ -152,32 +217,27 @@ if ! apt_get update; then
     fi
 fi
 
-GPIO_PACKAGE="python3-rpi.gpio"
-if dpkg-query -W -f='${Status}' python3-rpi-lgpio 2>/dev/null | grep -Fq 'install ok installed' || \
-   apt-cache show python3-rpi-lgpio >/dev/null 2>&1; then
-    GPIO_PACKAGE="python3-rpi-lgpio"
-fi
-NGINX_PACKAGE="nginx"
-if dpkg-query -W -f='${Status}' nginx-light 2>/dev/null | grep -Fq 'install ok installed' || \
-   apt-cache show nginx-light >/dev/null 2>&1; then
-    NGINX_PACKAGE="nginx-light"
-fi
+install_package ca-certificates
+CURRENT_STEP="refreshing the trusted CA certificate store after package validation"
+refresh_certificate_store
+install_package curl
+install_package git
+install_package avahi-daemon
+install_package libnss-mdns
+install_package python3
+install_package python3-pygame
+install_package python3-smbus
+install_package i2c-tools
+install_package bluez
 
-CURRENT_STEP="installing Raspberry Pi system packages"
-apt_require install -y \
-    ca-certificates \
-    curl \
-    git \
-    avahi-daemon \
-    libnss-mdns \
-    network-manager \
-    "$NGINX_PACKAGE" \
-    python3 \
-    python3-pygame \
-    python3-smbus \
-    i2c-tools \
-    "$GPIO_PACKAGE" \
-    bluez
+install_one_of "Raspberry Pi GPIO" python3-rpi-lgpio python3-rpi.gpio
+GPIO_PACKAGE="$SELECTED_PACKAGE"
+install_one_of "Nginx" nginx-light nginx
+NGINX_PACKAGE="$SELECTED_PACKAGE"
+
+# Install NetworkManager last because changing network managers can briefly
+# interrupt the active connection on older Raspberry Pi OS images.
+install_package network-manager
 
 if ! command -v labwc >/dev/null 2>&1 && \
    ! command -v startlxde-pi >/dev/null 2>&1; then

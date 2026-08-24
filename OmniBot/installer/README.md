@@ -136,7 +136,7 @@ python3 -m unittest discover -s tests -v
 | Problem | Check |
 | --- | --- |
 | Installer reports a certificate error | Confirm `timedatectl` shows the correct date and synchronized clock, complete any Wi-Fi captive-portal login, and remove broken HTTPS proxy/custom apt sources. The installer synchronizes time and rebuilds `/etc/ssl/certs` automatically; it never disables TLS verification |
-| Installer fails during other package setup | Read the named step and command in the final error. Check internet access, then run `sudo dpkg --configure -a` and `sudo apt-get update` before rerunning |
+| Installer fails during other package setup | The installer installs and reports each package separately, then prints the final 30 apt lines plus OS, architecture, and clock details. Fix the specifically named package/source error and rerun |
 | No `OmniBot` Wi-Fi network | Run `systemctl status omnibot-hotspot`, verify the Wi-Fi interface in `/etc/omnibot/config.env`, and confirm access-point support |
 | Dashboard does not open | Try `http://10.42.0.1:8080`, inspect `omnibot.log`, then check `systemctl status nginx` |
 | Dashboard stops while moving | This is the 200 ms safety watchdog; keep the page active and select **Enable** again |

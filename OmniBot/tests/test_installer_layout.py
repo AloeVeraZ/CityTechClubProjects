@@ -31,6 +31,10 @@ class InstallerLayoutTests(unittest.TestCase):
         self.assertIn("update-ca-certificates", script)
         self.assertIn("apt_log_has_certificate_error", script)
         self.assertIn("TLS verification was not disabled", script)
+        self.assertIn("install_package ca-certificates", script)
+        self.assertIn('install_one_of "Raspberry Pi GPIO"', script)
+        self.assertIn('install_one_of "Nginx"', script)
+        self.assertIn("===== Last apt output =====", script)
         self.assertNotIn('git -C "$APP_DIR"', script)
         self.assertNotIn("AloeVeraZ/OmniBot", script)
 
