@@ -1,6 +1,8 @@
+import json
 import unittest
+from urllib.request import urlopen
 
-from wifi_control import RemoteControlState
+from wifi_control import RemoteControlState, WifiControlServer
 
 
 class RemoteControlStateTests(unittest.TestCase):
@@ -134,6 +136,41 @@ class RemoteControlStateTests(unittest.TestCase):
         self.assertEqual(status["source"], "wifi")
         self.assertEqual(status["telemetry"], ["Motor 0: FWD"])
         self.assertEqual(status["watchdog_ms"], 300)
+
+
+class CameraHTTPTests(unittest.TestCase):
+    class FakeCamera:
+        def public_status(self):
+            return {"available": True, "name": "Test Camera", "error": ""}
+
+        def frames(self):
+            yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\njpeg\r\n"
+
+    def setUp(self):
+        self.server = WifiControlServer(
+            RemoteControlState(), host="127.0.0.1", port=0, camera=self.FakeCamera()
+        ).start()
+
+    def tearDown(self):
+        self.server.close()
+
+    def test_status_contains_camera_details(self):
+        with urlopen(
+            f"http://127.0.0.1:{self.server.port}/api/status", timeout=2
+        ) as response:
+            status = json.loads(response.read())
+        self.assertTrue(status["camera"]["available"])
+        self.assertEqual(status["camera"]["name"], "Test Camera")
+
+    def test_mjpeg_route_forwards_camera_frames(self):
+        with urlopen(
+            f"http://127.0.0.1:{self.server.port}/camera.mjpg", timeout=2
+        ) as response:
+            body = response.read()
+            content_type = response.headers["Content-Type"]
+        self.assertEqual(content_type, "multipart/x-mixed-replace; boundary=frame")
+        self.assertIn(b"Content-Type: image/jpeg", body)
+        self.assertTrue(body.endswith(b"jpeg\r\n"))
 
 
 if __name__ == "__main__":

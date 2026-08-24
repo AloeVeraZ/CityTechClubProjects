@@ -40,6 +40,18 @@ header p { color: #5a6069; margin: 4px 0 0; }
 .servo-controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
 .servo-controls button { background: #5a626c; }
 .servo-controls button.active { background: #343a41; }
+footer { margin: 12px 0 8px; }
+.camera-card { background: white; border: 2px solid #d2d7dc; border-radius: 16px; padding: 14px; }
+.camera-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.camera-heading h2 { font-size: 1.05rem; margin: 0; }
+.camera-heading p { color: #646b74; font-size: .82rem; margin: 3px 0 0; }
+.camera-badge { border-radius: 999px; color: white; font-size: .7rem; font-weight: 800; letter-spacing: .08em; padding: 6px 10px; }
+.camera-badge.live { background: #16834b; }
+.camera-badge.waiting { background: #737a83; }
+.camera-stage { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 16 / 9; max-height: 560px; overflow: hidden; border-radius: 11px; background: #15171a; }
+.camera-stage img { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: contain; }
+.camera-stage p { position: absolute; color: #d7dce2; font-size: .9rem; margin: 0; padding: 18px; text-align: center; }
+.camera-stage.camera-unavailable img { visibility: hidden; }
 #toast { position: fixed; left: 50%; bottom: 18px; translate: -50%; background: #24272b; border-radius: 9px; color: white; opacity: 0; padding: 10px 14px; pointer-events: none; transition: opacity .2s; }
 #toast.visible { opacity: 1; }
 
@@ -72,4 +84,6 @@ header p { color: #5a6069; margin: 4px 0 0; }
   .servo-controls { gap: 7px; margin-top: 7px; }
   .servo-controls button { padding: 8px; }
   footer { margin-top: 4px; }
+  .camera-card { padding: 9px; }
+  .camera-stage { max-height: 420px; }
 }

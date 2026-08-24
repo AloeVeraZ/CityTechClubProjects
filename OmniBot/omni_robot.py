@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import io
 import os
 import sys
 import time
@@ -10,6 +11,7 @@ import time
 import pygame
 import RPi.GPIO as GPIO
 
+from camera_stream import CameraStream
 from omni_kinematics import (
     THREE_OMNI_MOTOR_SIGNS,
     axis_deadzone,
@@ -171,11 +173,16 @@ def main() -> None:
     font_small = pygame.font.SysFont(None, 18)
     font_medium = pygame.font.SysFont(None, 22)
     font_bold = pygame.font.SysFont(None, 26, bold=True)
+    camera: CameraStream | None = None
+    last_camera_frame: bytes | None = None
+    camera_surface: pygame.Surface | None = None
+    camera_preview: pygame.Surface | None = None
 
     def render(text: str, font=font_medium, color=(25, 25, 28)):
         return font.render(text, True, color)
 
     def draw_ui(joy_name, lx, ly, rows, enabled, armed, servo_status):
+        nonlocal last_camera_frame, camera_surface, camera_preview
         screen.fill((245, 246, 248))
         center_x, center_y, radius = 140, SCREEN_HEIGHT // 2, 110
         pygame.draw.circle(screen, (255, 255, 255), (center_x, center_y), radius)
@@ -213,6 +220,64 @@ def main() -> None:
             screen.blit(render(row, font_medium), (panel_x + 12, y))
             y += 28
         screen.blit(render(servo_status, font_small, (70, 76, 85)), (panel_x + 12, y + 4))
+        y += 28
+        screen.blit(
+            render(
+                f"Server: http://10.42.0.1 · port {WIFI_CONTROL_PORT}",
+                font_small,
+                (70, 76, 85),
+            ),
+            (panel_x + 12, y),
+        )
+        y += 22
+
+        camera_status = camera.public_status() if camera is not None else {
+            "available": False,
+            "error": "Camera service is not running",
+        }
+        camera_label = camera_status.get("name") or "USB Camera"
+        state_label = "LIVE" if camera_status.get("available") else "WAITING"
+        screen.blit(
+            render(f"{camera_label} · {state_label}", font_small, (70, 76, 85)),
+            (panel_x + 12, y),
+        )
+        video_top = y + 20
+        video_rect = pygame.Rect(
+            panel_x + 12,
+            video_top,
+            panel[2] - 24,
+            max(80, panel[1] + panel[3] - video_top - 12),
+        )
+        pygame.draw.rect(screen, (20, 22, 26), video_rect, border_radius=8)
+
+        frame = camera.latest_jpeg() if camera is not None else None
+        if frame is not None and frame is not last_camera_frame:
+            try:
+                camera_surface = pygame.image.load(io.BytesIO(frame)).convert()
+                source_width, source_height = camera_surface.get_size()
+                scale = min(
+                    video_rect.width / source_width,
+                    video_rect.height / source_height,
+                )
+                size = (
+                    max(1, round(source_width * scale)),
+                    max(1, round(source_height * scale)),
+                )
+                camera_preview = pygame.transform.smoothscale(camera_surface, size)
+                last_camera_frame = frame
+            except pygame.error:
+                camera_surface = None
+                camera_preview = None
+                last_camera_frame = frame
+        if camera_preview is not None and camera_status.get("available"):
+            target = camera_preview.get_rect(center=video_rect.center)
+            screen.blit(camera_preview, target)
+        else:
+            message = str(camera_status.get("error") or "Waiting for camera")
+            if len(message) > 56:
+                message = message[:53] + "..."
+            placeholder = render(message, font_small, (202, 207, 214))
+            screen.blit(placeholder, placeholder.get_rect(center=video_rect.center))
         pygame.display.flip()
 
     GPIO.setwarnings(False)
@@ -229,10 +294,11 @@ def main() -> None:
         servo_error = f"Servo 0 unavailable: {error}"
     joystick = get_joystick()
     remote_control = RemoteControlState()
+    camera = CameraStream.from_environment().start()
     wifi_server: WifiControlServer | None = None
     try:
         wifi_server = WifiControlServer(
-            remote_control, port=WIFI_CONTROL_PORT
+            remote_control, port=WIFI_CONTROL_PORT, camera=camera
         ).start()
         print(f"OmniBot Wi-Fi controller listening on port {wifi_server.port}")
     except OSError as error:
@@ -462,6 +528,8 @@ def main() -> None:
             servo.close()
         if wifi_server is not None:
             wifi_server.close()
+        if camera is not None:
+            camera.close()
         GPIO.cleanup()
         pygame.quit()
 

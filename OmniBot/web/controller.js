@@ -13,6 +13,11 @@
   const direction = document.querySelector('#direction');
   const dot = document.querySelector('#stick-dot');
   const toast = document.querySelector('#toast');
+  const cameraFeed = document.querySelector('#camera-feed');
+  const cameraStatus = document.querySelector('#camera-status');
+  const cameraBadge = document.querySelector('#camera-badge');
+  const cameraMessage = document.querySelector('#camera-message');
+  const cameraStage = document.querySelector('.camera-stage');
   let enabled = false;
   let sequence = 0;
   let serverClockOffset = 0;
@@ -21,6 +26,8 @@
   let centerServo = false;
   let gamepadVector = null;
   let gamepadWasMoving = false;
+  let cameraAvailable = false;
+  let cameraRetryAt = 0;
 
   function showToast(message) {
     toast.textContent = message;
@@ -240,11 +247,40 @@
         const p = document.createElement('p'); p.textContent = row; return p;
       }));
       servo.textContent = data.servo || 'Servo 0 unavailable';
+      const camera = data.camera || {};
+      cameraAvailable = Boolean(camera.available);
+      cameraBadge.textContent = cameraAvailable ? 'LIVE' : 'WAITING';
+      cameraBadge.className = `camera-badge ${cameraAvailable ? 'live' : 'waiting'}`;
+      cameraStage.classList.toggle('camera-unavailable', !cameraAvailable);
+      if (cameraAvailable) {
+        const cameraName = camera.name || 'USB camera';
+        cameraStatus.textContent = `${cameraName} · ${camera.width || '?'}×${camera.height || '?'} at ${camera.fps || '?'} FPS`;
+        cameraMessage.textContent = '';
+      } else {
+        cameraStatus.textContent = camera.error || 'Looking for an attached USB camera';
+        cameraMessage.textContent = camera.error || 'Waiting for a working USB camera…';
+        if (Date.now() >= cameraRetryAt) {
+          cameraRetryAt = Date.now() + 5000;
+          cameraFeed.src = `/camera.mjpg?retry=${Date.now()}`;
+        }
+      }
     } catch (_) {
       link.textContent = 'OFFLINE'; link.className = 'pill offline';
       title.textContent = 'Status: CONNECTION LOST — robot watchdog stopped drive';
+      cameraBadge.textContent = 'OFFLINE';
+      cameraBadge.className = 'camera-badge waiting';
+      cameraStage.classList.add('camera-unavailable');
+      cameraStatus.textContent = 'Robot server is offline';
+      cameraMessage.textContent = 'Camera feed unavailable while the robot is offline';
     }
   }
+
+  cameraFeed.addEventListener('load', () => {
+    if (cameraAvailable) cameraStage.classList.remove('camera-unavailable');
+  });
+  cameraFeed.addEventListener('error', () => {
+    cameraStage.classList.add('camera-unavailable');
+  });
 
   setInterval(() => {
     const gamepadNeedsCommand = readGamepad();

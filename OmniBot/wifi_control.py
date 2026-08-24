@@ -19,6 +19,8 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
+from camera_stream import CameraStream
+
 
 DEFAULT_PORT = 8080
 DEFAULT_WATCHDOG_SECONDS = 0.20
@@ -221,9 +223,16 @@ class _ControlHTTPServer(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
-    def __init__(self, address, state: RemoteControlState, web_root: Path) -> None:
+    def __init__(
+        self,
+        address,
+        state: RemoteControlState,
+        web_root: Path,
+        camera: CameraStream | None,
+    ) -> None:
         self.control_state = state
         self.web_root = web_root
+        self.camera = camera
         super().__init__(address, _ControlHandler)
 
 
@@ -275,7 +284,36 @@ class _ControlHandler(BaseHTTPRequestHandler):
             self._json(HTTPStatus.OK, {"ok": True})
             return
         if path == "/api/status":
-            self._json(HTTPStatus.OK, self.server.control_state.public_status())
+            status = self.server.control_state.public_status()
+            status["camera"] = (
+                self.server.camera.public_status()
+                if self.server.camera is not None
+                else {
+                    "available": False,
+                    "name": "",
+                    "device": "",
+                    "error": "Camera service is not running",
+                }
+            )
+            self._json(HTTPStatus.OK, status)
+            return
+        if path == "/camera.mjpg":
+            if self.server.camera is None:
+                self._json(HTTPStatus.SERVICE_UNAVAILABLE, {"error": "Camera unavailable"})
+                return
+            self.send_response(HTTPStatus.OK)
+            self.send_header(
+                "Content-Type", "multipart/x-mixed-replace; boundary=frame"
+            )
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+            self.send_header("Pragma", "no-cache")
+            self.end_headers()
+            try:
+                for frame in self.server.camera.frames():
+                    self.wfile.write(frame)
+                    self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+                pass
             return
         static = self._STATIC_FILES.get(path)
         if static is None:
@@ -327,9 +365,10 @@ class WifiControlServer:
         host: str = "0.0.0.0",
         port: int = DEFAULT_PORT,
         web_root: Path | None = None,
+        camera: CameraStream | None = None,
     ) -> None:
         root = Path(__file__).with_name("web") if web_root is None else Path(web_root)
-        self._server = _ControlHTTPServer((host, port), state, root)
+        self._server = _ControlHTTPServer((host, port), state, root, camera)
         self._thread = threading.Thread(
             target=self._server.serve_forever,
             name="omnibot-wifi-control",

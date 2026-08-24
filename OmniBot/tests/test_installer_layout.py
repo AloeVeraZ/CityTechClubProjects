@@ -32,11 +32,35 @@ class InstallerLayoutTests(unittest.TestCase):
         self.assertIn("apt_log_has_certificate_error", script)
         self.assertIn("TLS verification was not disabled", script)
         self.assertIn("install_package ca-certificates", script)
+        self.assertIn("command sudo -n true", script)
+        self.assertIn('sudo() { command sudo -n "$@"; }', script)
+        self.assertNotIn("sudo -v", script)
+        self.assertIn("install_package python3-opencv", script)
+        self.assertIn("install_package v4l-utils", script)
+        self.assertIn('"$APP_DIR/camera_stream.py"', script)
         self.assertIn('install_one_of "Raspberry Pi GPIO"', script)
         self.assertIn('install_one_of "Nginx"', script)
         self.assertIn("===== Last apt output =====", script)
         self.assertNotIn('git -C "$APP_DIR"', script)
         self.assertNotIn("AloeVeraZ/OmniBot", script)
+
+    def test_reruns_skip_unchanged_installation_work(self):
+        script = (INSTALLER_DIR / "install.sh").read_text(encoding="utf-8")
+        self.assertIn("all_packages_ready", script)
+        self.assertIn("skipping apt", script)
+        self.assertIn("diff --quiet", script)
+        self.assertIn(
+            '"$REPO_COMMIT_BEFORE" "$REPO_COMMIT_AFTER" -- "$APP_SUBDIR"',
+            script,
+        )
+        self.assertIn("install_root_file_if_changed", script)
+        self.assertIn("install_user_file_if_changed", script)
+        self.assertIn("sudo cmp -s", script)
+        self.assertIn("Nginx configuration is unchanged", script)
+        self.assertIn("Code and dependencies are unchanged", script)
+        self.assertIn("Rolling the repository back", script)
+        self.assertIn("Restoring the previous repository", script)
+        self.assertIn("systemd-run", script)
 
 
 if __name__ == "__main__":

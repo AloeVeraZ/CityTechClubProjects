@@ -29,9 +29,10 @@ Use a Raspberry Pi with:
 - Three motor drivers wired to the BOARD pins documented in the [OmniBot guide](../#hardware-and-wiring).
 - A shared ground between the Raspberry Pi and motor drivers.
 - An optional PCA9685 servo HAT at I2C address `0x40` with a positional servo on channel 0.
+- An optional standard UVC/V4L2 USB camera; OmniBot discovers supported camera models automatically.
 
 > [!IMPORTANT]
-> Do not run the installer by putting `sudo` before the command. It requests elevated access only for the system operations that require it. Keep motor power disabled and raise the chassis during initial setup.
+> Do not run the installer by putting `sudo` before the command. It uses the standard Raspberry Pi OS passwordless-sudo policy for system operations and never opens a password prompt. If that policy was manually removed from the Pi account, restore it before installation. Keep motor power disabled and raise the chassis during initial setup.
 
 ## Quick Install
 
@@ -41,7 +42,7 @@ From a terminal on the Raspberry Pi, run:
 curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/OmniBot/installer/curl-install.sh | bash
 ```
 
-The installer reboots the Raspberry Pi five seconds after successful validation. Existing Bluetooth pairings are preserved.
+The installer schedules a Raspberry Pi reboot ten seconds after every successful fresh installation, update, repair, or already-current check. Existing Bluetooth pairings are preserved.
 
 To install from an existing local checkout instead:
 
@@ -60,7 +61,7 @@ OMNIBOT_REPO_DIR="$HOME/Robots/CityTechClubProjects" OMNIBOT_REPO_BRANCH=main ba
 
 | Component | Result |
 | --- | --- |
-| System packages | Curl, Git, Python 3, Pygame, SMBus, I2C tools, Raspberry Pi GPIO support, BlueZ, NetworkManager, Avahi, and Nginx |
+| System packages | Curl, Git, Python 3, Pygame, OpenCV, V4L utilities, SMBus, I2C tools, Raspberry Pi GPIO support, BlueZ, NetworkManager, Avahi, and Nginx |
 | Desktop | Uses the existing Raspberry Pi desktop or installs supported desktop packages when none are detected |
 | I2C | Enables the Raspberry Pi I2C interface through `raspi-config` when available |
 | Application | Clones or updates CityTechClubProjects in `~/CityTechClubProjects` and runs its `OmniBot` subdirectory |
@@ -76,7 +77,20 @@ OMNIBOT_REPO_DIR="$HOME/Robots/CityTechClubProjects" OMNIBOT_REPO_BRANCH=main ba
 
 ## Existing Installations and Updates
 
-The installer is safe to rerun. When the application directory is a clean Git checkout on the selected branch, it fetches the latest source and resets the checkout to the matching remote branch.
+The installer is safe to rerun and uses the same command for fresh installations and updates.
+
+| Rerun check | Update behavior |
+| --- | --- |
+| APT packages | Skips APT entirely when every dependency and a supported desktop are already installed; otherwise installs only missing packages |
+| Monorepo | Fetches the selected branch and checks whether the `OmniBot` directory changed; unrelated CityTechClubProjects commits do not trigger OmniBot validation |
+| Application validation | Runs compilation, asset checks, hardware imports, and tests only when OmniBot code or dependencies changed |
+| Failed code update | Restores the previous Git revision or repository checkout automatically and preserves the failed replacement for diagnosis |
+| Persistent configuration | Preserves `/etc/omnibot/config.env` values and adds only keys introduced by newer installer versions |
+| Hotspot and systemd files | Compares installed content and permissions, replacing files and reloading systemd only when changed |
+| Hostname and `/etc/hosts` | Leaves correct mappings untouched and creates a timestamped hosts backup only before a real change |
+| Nginx | Validates the candidate configuration but replaces/restarts Nginx only when the site or link changed |
+| Launcher and desktop auto-start | Compares generated files and the managed Labwc block, leaving identical files untouched |
+| Completion | Reports fresh/update/repair/current status and schedules a reboot after success |
 
 If the existing folder is damaged, is not a Git checkout, contains local changes, or has local commits, the installer preserves it in a timestamped backup such as:
 
@@ -84,7 +98,7 @@ If the existing folder is damaged, is not a Git checkout, contains local changes
 ~/CityTechClubProjects.backup.20260822-153000.1234
 ```
 
-It then installs a fresh copy. Generated `run_omnibot.sh` and `omnibot.log` files do not count as local source changes. The root-owned hotspot configuration lives outside the checkout and survives application upgrades.
+It then installs a fresh copy. Generated `run_omnibot.sh` and `omnibot.log` files do not count as local source changes. The root-owned hotspot configuration lives outside the checkout and survives application upgrades. A failed validation never reaches the scheduled reboot.
 
 ## Generated Files
 
@@ -109,6 +123,7 @@ After the Pi reboots:
 3. Open `http://10.42.0.1`, select **Enable**, and keep the controls neutral for 0.25 seconds.
 4. Test each direction with the robot raised off the floor, then select **Stop** and confirm every drive motor stops.
 5. For local control, connect the Bluetooth controller, press and release `A`, center both sticks for 0.25 seconds, and press `Y` to test the immediate stop.
+6. If a USB webcam is attached, confirm its live view appears beneath the dashboard control hint and in the Pi telemetry interface.
 
 `http://omnibot.local` is the friendly mDNS address when the client supports it, and `http://10.42.0.1:8080` bypasses Nginx as a direct fallback. To change the Wi-Fi name or password, edit `/etc/omnibot/config.env` with `sudo`, then reboot. WPA-PSK passwords must contain at least eight characters.
 
@@ -137,11 +152,13 @@ python3 -m unittest discover -s tests -v
 | --- | --- |
 | Installer reports a certificate error | Confirm `timedatectl` shows the correct date and synchronized clock, complete any Wi-Fi captive-portal login, and remove broken HTTPS proxy/custom apt sources. The installer synchronizes time and rebuilds `/etc/ssl/certs` automatically; it never disables TLS verification |
 | Installer fails during other package setup | The installer installs and reports each package separately, then prints the final 30 apt lines plus OS, architecture, and clock details. Fix the specifically named package/source error and rerun |
+| Installer reports passwordless sudo is unavailable | Use the normal Raspberry Pi OS administrator account and restore its passwordless-sudo policy; the installer deliberately never waits for a password prompt |
 | No `OmniBot` Wi-Fi network | Run `systemctl status omnibot-hotspot`, verify the Wi-Fi interface in `/etc/omnibot/config.env`, and confirm access-point support |
 | Dashboard does not open | Try `http://10.42.0.1:8080`, inspect `omnibot.log`, then check `systemctl status nginx` |
 | Dashboard stops while moving | This is the 200 ms safety watchdog; keep the page active and select **Enable** again |
 | No Pygame window | Confirm the Pi booted to the graphical desktop, then inspect `omnibot.log` |
 | Controller not found | Reconnect it in Bluetooth settings and restart the launcher |
+| Camera says waiting | Run `v4l2-ctl --list-devices`, reconnect the webcam, and check `omnibot.log`. OmniBot retries all usable `/dev/videoN` devices automatically |
 | Robot remains unarmed | Enable the selected input source, then hold every movement input neutral for 0.25 seconds |
 | Motors spin incorrectly | Verify the BOARD pin wiring and mirrored right-rear motor orientation |
 | Servo unavailable | Confirm I2C is enabled, address `0x40` appears in `i2cdetect -y 1`, and channel 0 is wired correctly |

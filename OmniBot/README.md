@@ -9,7 +9,7 @@
 [![Drive](https://img.shields.io/badge/Drive-3_Wheel_Omni-0a7f5a?style=flat-square)](#large-robot-system)
 [![License](https://img.shields.io/badge/License-CC_BY_4.0-0078d4?style=flat-square)](../LICENSE.md)
 
-OmniBot is a three-wheel holonomic robot controlled by a Raspberry Pi. Operators can drive with a Bluetooth gamepad connected to the Pi or from a laptop, phone, or gamepad through the robot's private Wi-Fi dashboard. The runtime calculates wheel commands, drives three H-bridge motor channels, and controls a positional servo through a PCA9685 HAT.
+OmniBot is a three-wheel holonomic robot controlled by a Raspberry Pi. Operators can drive with a Bluetooth gamepad connected to the Pi or from a laptop, phone, or gamepad through the robot's private Wi-Fi dashboard. The runtime calculates wheel commands, drives three H-bridge motor channels, controls a positional servo through a PCA9685 HAT, and shares an automatically detected USB-camera view between the Pi and web interfaces.
 
 <strong>Quick navigation:</strong><br>
 [Robot System](#large-robot-system) | [Robot Controller](#robot-controller) | [Installer](installer/) | [Connect & Drive](#connect-and-drive) | [Wiring](#hardware-and-wiring) | [Back to Club](../)
@@ -49,6 +49,7 @@ The Raspberry Pi runs the complete robot controller. The local Pygame applicatio
 | Main controller | Raspberry Pi running Raspberry Pi OS with Desktop |
 | Drivetrain | Three independently driven omni wheels mounted 120 degrees apart |
 | Operator input | Local Bluetooth gamepad or browser over the private OmniBot Wi-Fi network |
+| Camera | Optional generic V4L2 USB webcam with automatic discovery and hot-plug reconnection |
 | Motor output | Three bidirectional H-bridge channels using BOARD-numbered GPIO PWM |
 | Auxiliary actuator | goBILDA 25-2 Torque positional servo on PCA9685 channel 0 |
 | User interfaces | Local 800&times;480 Pygame display and responsive browser dashboard |
@@ -59,6 +60,7 @@ The Raspberry Pi runs the complete robot controller. The local Pygame applicatio
 | File or folder | Purpose |
 | --- | --- |
 | [`omni_robot.py`](omni_robot.py) | Main Pygame application, controller mapping, GPIO motor control, safety state, and telemetry UI |
+| [`camera_stream.py`](camera_stream.py) | USB-camera discovery, reconnecting capture, and shared MJPEG frame stream |
 | [`wifi_control.py`](wifi_control.py) | Thread-safe remote input state, command watchdog, HTTP API, and static web server |
 | [`web/`](web/) | Laptop/phone dashboard with keyboard, touch, and browser-gamepad controls |
 | [`omni_kinematics.py`](omni_kinematics.py) | Hardware-independent deadzones, input shaping, servo math, and three-wheel holonomic mixing |
@@ -83,7 +85,7 @@ Wi-Fi control uses one active browser session, increasing command sequence numbe
 
 ## Raspberry Pi Installer
 
-The [`installer/`](installer/) folder contains the automated deployment scripts. They install the graphical runtime, GPIO/I2C and Bluetooth dependencies, NetworkManager, Avahi, and Nginx; clone the current CityTechClubProjects repository and run OmniBot from `~/CityTechClubProjects/OmniBot`; validate the runtime; create the private hotspot and dashboard proxy; enable desktop auto-start; and reboot the Pi.
+The [`installer/`](installer/) folder contains the automated deployment scripts. The same command handles a fresh Pi and future updates: it installs only missing dependencies, updates OmniBot only when its monorepo directory changed, preserves persistent hotspot settings, replaces only changed system files, and reboots after a successful run.
 
 Run the one-command installer as the normal Raspberry Pi user, without putting `sudo` first:
 
@@ -106,6 +108,12 @@ After installation, OmniBot supports either control path.
 5. Press Space or Escape, select **Stop**, or leave the page to disable and stop.
 
 Use `[` and `]` or the dashboard servo buttons to move the servo, and `X` to center it. The browser refreshes moving commands every 80 ms; if updates stop for 200 ms, the Pi zeros the command, disables Wi-Fi control, and requires a fresh Enable.
+
+### USB camera
+
+Plug a standard UVC/V4L2 USB camera into the Pi before or after OmniBot starts. The runtime tries stable `/dev/v4l/by-id` paths first, falls back through available `/dev/videoN` image devices, and reconnects automatically after a disconnect. One capture is reused by the local Pygame preview and the live browser panel below the keyboard/touch/browser helper text. If no camera works, both interfaces show a waiting message while robot control continues normally.
+
+The default capture is 640&times;480 at 10 FPS. Advanced launch environments can override `OMNIBOT_CAMERA_DEVICE`, `OMNIBOT_CAMERA_WIDTH`, `OMNIBOT_CAMERA_HEIGHT`, and `OMNIBOT_CAMERA_FPS`; leave the device set to `auto` for multi-model discovery.
 
 ### Local Bluetooth controller
 
