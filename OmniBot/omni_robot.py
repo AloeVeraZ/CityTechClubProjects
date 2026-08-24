@@ -65,7 +65,17 @@ ZERO_EPSILON = 0.005
 # commands maximum hardware speed rather than a software-limited sweep.
 SERVO_SPEED_DEGREES_PER_SECOND = 1000.0
 
-SCREEN_WIDTH, SCREEN_HEIGHT = 800, 480
+# The common OmniBot touchscreen is 800x480.  Keep the desktop's top panel
+# exposed so its terminal, Wi-Fi, Bluetooth, and audio controls remain usable.
+DISPLAY_WIDTH, DISPLAY_HEIGHT = 800, 480
+try:
+    TOP_PANEL_HEIGHT = max(
+        0, min(120, int(os.environ.get("OMNIBOT_TOP_PANEL_HEIGHT", "40")))
+    )
+except ValueError:
+    TOP_PANEL_HEIGHT = 40
+SCREEN_WIDTH = DISPLAY_WIDTH
+SCREEN_HEIGHT = max(320, DISPLAY_HEIGHT - TOP_PANEL_HEIGHT)
 UI_FPS = 60
 WIFI_CONTROL_PORT = int(os.environ.get("OMNIBOT_PORT", "8080"))
 
@@ -165,9 +175,14 @@ def get_joystick() -> pygame.joystick.Joystick | None:
 
 
 def main() -> None:
+    # X11 honors this position directly.  On Wayland/labwc, the reduced window
+    # height lets the compositor place it below the panel's reserved area.
+    os.environ.setdefault("SDL_VIDEO_WINDOW_POS", f"0,{TOP_PANEL_HEIGHT}")
     pygame.init()
     pygame.joystick.init()
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    screen = pygame.display.set_mode(
+        (SCREEN_WIDTH, SCREEN_HEIGHT), pygame.NOFRAME
+    )
     pygame.display.set_caption("3-Motor Omni Wheel Drivetrain - Generic Controller")
     clock = pygame.time.Clock()
     font_small = pygame.font.SysFont(None, 18)

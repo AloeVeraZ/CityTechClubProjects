@@ -115,6 +115,8 @@ Plug a standard UVC/V4L2 USB camera into the Pi before or after OmniBot starts. 
 
 The default capture is 640&times;480 at 10 FPS. Advanced launch environments can override `OMNIBOT_CAMERA_DEVICE`, `OMNIBOT_CAMERA_WIDTH`, `OMNIBOT_CAMERA_HEIGHT`, and `OMNIBOT_CAMERA_FPS`; leave the device set to `auto` for multi-model discovery.
 
+The local Pygame interface reserves the top 40 pixels of the 800&times;480 display for the Raspberry Pi desktop panel, keeping its terminal, Wi-Fi, Bluetooth, and audio controls accessible. Set `OMNIBOT_TOP_PANEL_HEIGHT` in the launch environment only if a customized desktop panel needs a different reserved height.
+
 ### Local Bluetooth controller
 
 1. Pair the controller in Raspberry Pi OS Bluetooth settings.
