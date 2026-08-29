@@ -2,185 +2,122 @@
 
 # OmniBot
 
-### Raspberry Pi controller for a three-wheel holonomic robot, positional servo, and Wi-Fi dashboard
+### A low-cost, 3D-printed omnidirectional robot
 
-[![Platform](https://img.shields.io/badge/Platform-Raspberry_Pi-c51a4a?style=flat-square&logo=raspberrypi&logoColor=white)](https://www.raspberrypi.com/)
-[![Control](https://img.shields.io/badge/Control-Python_%2B_Pygame-3776ab?style=flat-square&logo=python&logoColor=white)](#robot-controller)
-[![Drive](https://img.shields.io/badge/Drive-3_Wheel_Omni-0a7f5a?style=flat-square)](#large-robot-system)
-[![License](https://img.shields.io/badge/License-CC_BY_4.0-0078d4?style=flat-square)](../LICENSE.md)
+OmniBot is a Raspberry Pi 4 robot built for the City Tech AI & Automation Club. Using MSRP prices and the lowest-cost suitable Raspberry Pi 4, the parts come in under $100.
 
-OmniBot is a three-wheel holonomic robot controlled by a Raspberry Pi. Operators can drive with a Bluetooth gamepad connected to the Pi or from a laptop, phone, or gamepad through the robot's private Wi-Fi dashboard. The runtime calculates wheel commands, drives three H-bridge motor channels, controls a positional servo through a PCA9685 HAT, and shares an automatically detected USB-camera view between the Pi and web interfaces.
-
-<strong>Quick navigation:</strong><br>
-[Robot System](#large-robot-system) | [Robot Controller](#robot-controller) | [Installer](installer/) | [Connect & Drive](#connect-and-drive) | [Wiring](#hardware-and-wiring) | [Back to Club](../)
+**[Motion Test](https://youtube.com/shorts/7Gmitm4C8bI)** | **[Servo & Camera Test](https://youtube.com/shorts/Lm-0vsGEmf4)** | **[CAD Files](#cad-files)** | **[Install](#install)**
 
 </div>
 
 ---
 
-## Large Robot System
-
-The Raspberry Pi runs the complete robot controller. The local Pygame application combines Bluetooth or Wi-Fi input with safety arming, drive mixing, GPIO motor output, servo movement, and on-screen telemetry. A background HTTP server supplies the browser dashboard and exchanges expiring commands and live status.
-
 <table>
   <tr>
-    <td align="center"><strong>Bluetooth Controller</strong></td>
-    <td align="center">&rarr;<br>BlueZ / SDL</td>
-    <td align="center"><strong>Raspberry Pi</strong></td>
-    <td align="center">&rarr;<br>Pygame Input</td>
-    <td align="center"><strong>OmniBot Runtime</strong></td>
-  </tr>
-  <tr>
-    <td colspan="2"></td>
-    <td align="center"><strong>OmniBot Runtime</strong></td>
-    <td align="center">&rarr;<br>BOARD GPIO PWM</td>
-    <td align="center"><strong>H-Bridges &amp; 3 Drive Motors</strong></td>
-  </tr>
-  <tr>
-    <td colspan="2"></td>
-    <td align="center"><strong>OmniBot Runtime</strong></td>
-    <td align="center">&rarr;<br>I2C / PCA9685</td>
-    <td align="center"><strong>300&deg; Positional Servo</strong></td>
+    <td align="center" width="50%">
+      <a href="images/Omni%20Bot%20CAD.png">
+        <img src="images/Omni%20Bot%20CAD.png" alt="CAD render of OmniBot" width="100%">
+      </a><br>
+      <strong>OmniBot CAD</strong>
+    </td>
+    <td align="center" width="50%" height="320">
+      <strong>IMAGE PLACEHOLDER 01</strong><br>
+      Real picture of OmniBot
+    </td>
   </tr>
 </table>
 
-| Subsystem | Technical configuration |
+## Overview
+
+We wanted a cheap robot that students could build, understand, and change. OmniBot is a simple platform for learning:
+
+- Omnidirectional drive code
+- Motors and servos
+- CAD and 3D printing
+- Raspberry Pi programming
+- Local image recognition
+
+The three omni wheels let it move forward, backward, sideways, diagonally, and rotate. It can be driven with a Bluetooth controller or from the Wi-Fi dashboard on a phone or laptop.
+
+The webcam supplies the live video and images used for vision. The goal is lightweight image recognition running locally on the Raspberry Pi, not an LLM. Image recognition is still being developed and is not included in the installer yet.
+
+## Videos
+
+| Motion Test | Servo & Camera Test |
 | --- | --- |
-| Main controller | Raspberry Pi running Raspberry Pi OS with Desktop |
-| Drivetrain | Three independently driven omni wheels mounted 120 degrees apart |
-| Operator input | Local Bluetooth gamepad or browser over the private OmniBot Wi-Fi network |
-| Camera | Optional generic V4L2 USB webcam with automatic discovery and hot-plug reconnection |
-| Motor output | Three bidirectional H-bridge channels using BOARD-numbered GPIO PWM |
-| Auxiliary actuator | goBILDA 25-2 Torque positional servo on PCA9685 channel 0 |
-| User interfaces | Local 800&times;480 Pygame display and responsive browser dashboard |
-| Safety behavior | Explicit enable, neutral-input arming, immediate stop, disconnect/expiry stop, session and sequence checks, and reversal dead time |
+| [![OmniBot motion test](https://img.youtube.com/vi/7Gmitm4C8bI/hqdefault.jpg)](https://youtube.com/shorts/7Gmitm4C8bI) | [![OmniBot servo and camera test](https://img.youtube.com/vi/Lm-0vsGEmf4/hqdefault.jpg)](https://youtube.com/shorts/Lm-0vsGEmf4) |
+| Three-wheel omni drive test | Servo movement with the USB webcam connected |
 
-## Repository Structure
+## 3D-Printed Build
 
-| File or folder | Purpose |
-| --- | --- |
-| [`omni_robot.py`](omni_robot.py) | Main Pygame application, controller mapping, GPIO motor control, safety state, and telemetry UI |
-| [`camera_stream.py`](camera_stream.py) | USB-camera discovery, reconnecting capture, and shared MJPEG frame stream |
-| [`wifi_control.py`](wifi_control.py) | Thread-safe remote input state, command watchdog, HTTP API, and static web server |
-| [`web/`](web/) | Laptop/phone dashboard with keyboard, touch, and browser-gamepad controls |
-| [`omni_kinematics.py`](omni_kinematics.py) | Hardware-independent deadzones, input shaping, servo math, and three-wheel holonomic mixing |
-| [`servo_hat.py`](servo_hat.py) | PCA9685 I2C setup and calibrated positional-servo pulse output |
-| [`installer/`](installer/) | Raspberry Pi deployment, hotspot configuration, Nginx proxy, launcher, and desktop auto-start |
-| [`tests/`](tests/) | Hardware-independent tests for kinematics, servo limits, and Wi-Fi command safety |
+Almost every structural part is 3D printed, including the chassis, mounts, wheel bodies, and wheel rollers. The motors, hubs, electronics, bearings, screws, and heat-set inserts are purchased parts.
 
-## Robot Controller
+The wheel bodies are rigid, while the rollers are TPU. The TPU gives the rollers some compliance and enough grip to drive. It can also slip slightly on rubber field tiles, which helps prevent too much rubber-on-rubber friction from loading the small motors.
 
-`omni_robot.py` is the robot runtime. It reads the selected controller at 60 frames per second, passes movement commands through the pure functions in `omni_kinematics.py`, and writes the resulting power levels to the three motors.
+The chassis prints in three sections and is joined by a piece on the bottom. This makes it easy to print, but it can flex slightly when lifted. Heat-set inserts make the robot easy to assemble and take apart.
 
-The drive software includes:
+## CAD Files
 
-- A circular deadzone and cardinal-direction lock for predictable translation.
-- A gated right-stick rotation axis that rejects accidental diagonal input.
-- Direction normalization so every travel direction can use the available motor range.
-- A short 100% breakaway pulse, followed by shaped 75–100% drive output.
-- An 80 ms coast period before reversing a motor.
-- Immediate motor stop when disabled, unarmed, disconnected, or when a moving Wi-Fi command expires.
+- [Fusion 360 archive (`Omni Bot.f3z`)](CAD%20Models/Omni%20Bot.f3z)
+- [STEP assembly (`Omni Bot.step`)](CAD%20Models/Omni%20Bot.step)
 
-Wi-Fi control uses one active browser session, increasing command sequence numbers, and a 200 ms moving-command watchdog. Stale, conflicting, non-finite, and implausibly timed commands are rejected. Enabling from the dashboard selects Wi-Fi control; pressing `A` on the local controller takes control back.
+This is the furthest version of the complete CAD. Some purchased parts, including the screen and webcam, did not have CAD files. We measured their outside dimensions and designed around them; we did not reverse engineer them. They may be simplified or missing from the assembly.
 
-## Raspberry Pi Installer
+## Interface
 
-The [`installer/`](installer/) folder contains the automated deployment scripts. The same command handles a fresh Pi and future updates: it installs only missing dependencies, updates OmniBot only when its monorepo directory changed, preserves persistent hotspot settings, replaces only changed system files, and reboots after a successful run.
+<table>
+  <tr>
+    <td align="center" width="900" height="320">
+      <strong>IMAGE PLACEHOLDER 02</strong><br>
+      Screenshot of the OmniBot interface
+    </td>
+  </tr>
+</table>
 
-Run the one-command installer as the normal Raspberry Pi user, without putting `sudo` first:
+The interface shows the webcam, motor output, servo position, and robot status. The web version supports keyboard, touch, and browser-gamepad controls.
+
+## Install
+
+Run this command on a Raspberry Pi with Raspberry Pi OS Desktop:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/OmniBot/installer/curl-install.sh | bash
 ```
 
-See the [installer guide](installer/README.md) for prerequisites, installed components, update behavior, generated files, verification, and troubleshooting.
+The installer pulls the project from GitHub and sets up the robot, servo, webcam, private Wi-Fi network, dashboard, and desktop auto-start. See the [installer guide](installer/README.md) for the full setup.
 
-## Connect and Drive
+After rebooting:
 
-After installation, OmniBot supports either control path.
+1. Join Wi-Fi network `OmniBot` with password `omnibot1`.
+2. Open `http://10.42.0.1`.
+3. Select **Enable** and drive.
 
-### Wi-Fi dashboard
+## Controls
 
-1. Join the `OmniBot` Wi-Fi network with password `omnibot1`.
-2. Open `http://10.42.0.1`. If mDNS is available, `http://omnibot.local` also works; `http://10.42.0.1:8080` is the direct fallback.
-3. Select **Enable**, then leave all movement controls neutral for 0.25 seconds.
-4. Drive with `W/S` for forward/reverse, `A/D` for strafe, and `Q/E` for rotation. Touch controls and a gamepad connected to the browser are also supported.
-5. Press Space or Escape, select **Stop**, or leave the page to disable and stop.
-
-Use `[` and `]` or the dashboard servo buttons to move the servo, and `X` to center it. The browser refreshes moving commands every 80 ms; if updates stop for 200 ms, the Pi zeros the command, disables Wi-Fi control, and requires a fresh Enable.
-
-### USB camera
-
-Plug a standard UVC/V4L2 USB camera into the Pi before or after OmniBot starts. The runtime tries stable `/dev/v4l/by-id` paths first, falls back through available `/dev/videoN` image devices, and reconnects automatically after a disconnect. One capture is reused by the local Pygame preview and the live browser panel below the keyboard/touch/browser helper text. If no camera works, both interfaces show a waiting message while robot control continues normally.
-
-The default capture is 640&times;480 at 10 FPS. Advanced launch environments can override `OMNIBOT_CAMERA_DEVICE`, `OMNIBOT_CAMERA_WIDTH`, `OMNIBOT_CAMERA_HEIGHT`, and `OMNIBOT_CAMERA_FPS`; leave the device set to `auto` for multi-model discovery.
-
-The local Pygame interface reserves the top 40 pixels of the 800&times;480 display for the Raspberry Pi desktop panel, keeping its terminal, Wi-Fi, Bluetooth, and audio controls accessible. Set `OMNIBOT_TOP_PANEL_HEIGHT` in the launch environment only if a customized desktop panel needs a different reserved height.
-
-### Local Bluetooth controller
-
-1. Pair the controller in Raspberry Pi OS Bluetooth settings.
-2. Power the robot and allow the Pi desktop and OmniBot application to start.
-3. Connect the controller if it was not already connected during startup.
-4. Press and release `A` to select local control and enable the system.
-5. Hold both sticks centered for 0.25 seconds to arm the motors.
-6. Drive with the controls below. Press `Y` at any time for a software stop.
-
-| Control | Action |
-| --- | --- |
-| Left stick up / down | Drive forward / backward |
-| Left stick left / right | Strafe left / right |
-| Right stick up / down | Rotate the chassis |
-| `A` | Select local control and enable, then wait for centered-stick arming |
-| `Y` | Disable and stop all drive motors immediately |
-| Left trigger | Move servo toward &minus;150&deg; |
-| Right trigger | Move servo toward +150&deg; |
-| `X` | Return the positional servo to 0&deg; |
-
-The left stick is cardinal-locked: when driving forward or backward, small sideways drift is ignored; when strafing, small vertical drift is ignored. Rotation works only while the other right-stick axis remains near center.
-
-## Hardware and Wiring
-
-GPIO mode is `BOARD`, so the values below are physical Raspberry Pi header pin numbers.
-
-| Motor | IN1 | IN2 |
-| --- | ---: | ---: |
-| Front | 40 | 38 |
-| Left rear | 15 | 35 |
-| Right rear | 12 | 16 |
-
-Motor 2 is inverted in software to account for its mirrored wiring or mounting direction. Exact forward and backward motion intentionally leaves the front wheel stopped while the rear wheels rotate in opposite directions; the omni rollers allow the front wheel to slide laterally. Pure rotation commands all three motors in the same direction.
-
-The supported servo interface is a Waveshare-style 16-channel PCA9685 Servo Driver HAT at I2C address `0x40`. Connect a 300-degree positional servo to channel 0. Before attaching a mechanism, test the servo unloaded and calibrate `SERVO_MIN_PULSE_US`, `SERVO_CENTER_PULSE_US`, and `SERVO_MAX_PULSE_US` in [`servo_hat.py`](servo_hat.py).
+| Input | Drive | Servo | Stop |
+| --- | --- | --- | --- |
+| Wi-Fi dashboard | `WASD` + `Q/E` | `[` / `]`, `X` to center | Space or Escape |
+| Bluetooth controller | Left stick + right-stick rotation | Triggers, `X` to center | `Y` |
 
 > [!CAUTION]
-> Raise the chassis so every wheel can spin freely during initial testing. Do not power drive motors from the Raspberry Pi 5 V rail. Verify motor power, driver capacity, a common Pi/driver ground, servo wire orientation, and mechanical clearance before enabling motion.
+> Raise the robot so every wheel can spin during the first test. Do not power the motors from the Raspberry Pi 5 V rail.
 
-## Runtime and Testing
+## Repository Contents
 
-The installer creates a launcher that starts OmniBot automatically with the desktop. To run it manually:
-
-```bash
-~/CityTechClubProjects/OmniBot/run_omnibot.sh
-```
-
-Follow the runtime log:
-
-```bash
-tail -f ~/CityTechClubProjects/OmniBot/omnibot.log
-```
-
-Run the hardware-independent tests:
-
-```bash
-cd ~/CityTechClubProjects/OmniBot
-python3 -m unittest discover -s tests -v
+```text
+.
+├── CAD Models/            # Fusion 360 and STEP files
+├── images/                # README images
+├── installer/             # Raspberry Pi installer
+├── tests/                 # Hardware-independent tests
+├── web/                   # Wi-Fi control interface
+├── camera_stream.py       # USB webcam and MJPEG stream
+├── omni_kinematics.py     # Three-wheel drive math
+├── omni_robot.py          # Main robot program
+├── servo_hat.py           # PCA9685 servo control
+└── wifi_control.py        # Web controls and safety watchdog
 ```
 
 ---
 
-<div align="center">
-
-Developed through the **[City Tech AI & Automation Club](../)**
-
-</div>
+Built through the **[City Tech AI & Automation Club](../)**.
