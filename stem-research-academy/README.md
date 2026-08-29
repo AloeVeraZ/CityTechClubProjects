@@ -2,200 +2,129 @@
 
 # STEM Research Academy Robot Lab
 
-### Six weeks of CAD/CAM, fabrication, electronics, and full-system robot integration
+### A six-week, full-system robotics program built around the 3TSahur mecanum robot
 
-[![Program](https://img.shields.io/badge/Program-STEM_Research_Academy-111111?style=flat-square)](#program-overview)
-[![Team](https://img.shields.io/badge/Team-2_Students_%2B_4_Mentors-6f42c1?style=flat-square)](#team-and-learning)
-[![Platform](https://img.shields.io/badge/Platform-Raspberry_Pi_4-c51a4a?style=flat-square&logo=raspberrypi&logoColor=white)](https://www.raspberrypi.com/)
-[![Control](https://img.shields.io/badge/Control-Python_3.11%2B-0a7f5a?style=flat-square&logo=python&logoColor=white)](robot_server/)
-[![License](https://img.shields.io/badge/License-CC_BY_4.0-0078d4?style=flat-square)](../LICENSE.md)
-
-<picture>
-  <img src="images/final-robot.jpg" alt="Completed 3TSahur Raspberry Pi mecanum robot" width="820" draggable="false">
-</picture>
-
-Documentation and control architecture for the **3TSahur** mecanum robot built during a six-week hands-on engineering research program.
+[![Program](https://img.shields.io/badge/Program-6_Weeks-111111?style=flat-square)](#overview)
+[![Team](https://img.shields.io/badge/Team-2_Students_%2B_4_Mentors-6f42c1?style=flat-square)](#what-the-team-learned)
+[![Platform](https://img.shields.io/badge/Platform-Raspberry_Pi_4-c51a4a?style=flat-square)](#robot-system)
+[![Software](https://img.shields.io/badge/Software-Python_%2B_Flask-0a7f5a?style=flat-square)](robot_server/)
 
 <strong>Quick navigation:</strong><br>
-[Meet the Team](#team-and-learning) | [System Architecture](#large-robot-system) | [Connect & Drive](#connect-and-drive) | [Robot Server](robot_server/) | [Installer](installer/) | [Back to Club](../)
+[Overview](#overview) | [Learning](#what-the-team-learned) | [Robot System](#robot-system) | [Repository Contents](#repository-contents) | [Connect and Drive](#connect-and-drive) | [Back to Club](../)
 
 </div>
 
 ---
 
-## Program Overview
+## Overview
 
-This was an intensive six-week robotics development program for **two high school students**, guided by **four collegiate mentors**. The project avoided pre-assembled commercial kits, guiding students through original CAD modeling, manual machining, custom PCB layout, embedded power electronics, and full-stack Python software development.
+The STEM Research Academy Robot Lab was a six-week program for **two high school students** supported by **four collegiate mentors**. Instead of assembling a pre-made kit, the team worked through the complete engineering process: CAD, fabrication, electrical power, custom PCB work, motors, servos, camera integration, networking, and Python software.
 
-| Part | What we used |
+The main result was **3TSahur**, a Raspberry Pi 4 robot with a four-wheel mecanum drivetrain, two-servo ramp, USB camera, standalone Wi-Fi network, and browser-based driving dashboard. It is a larger and more integrated system than the club's introductory robots.
+
+| Program | Details |
 | --- | --- |
-| Student researchers | 2 |
-| Technical mentors | 4 |
-| Program duration | Six-week intensive |
-| Robot platform | Custom 3TSahur Raspberry Pi 4 mecanum chassis |
-| Mechanical fabrication | 3D printing, bandsaw shaping, manual milling, and CNC prep |
-| Power & electronics | 5 V logic, 12 V fused power bus, custom PCBs, and buck regulation |
-| Sensor & vision integration | Logitech USB camera, LiDAR-ready headers, and WS2812 status LEDs |
-| Software architecture | Python Flask control daemon, local WebSockets, and HTML5 dashboard |
+| Duration | Six weeks |
+| Team | 2 student researchers and 4 mentors |
+| Main platform | Custom Raspberry Pi 4 mecanum robot |
+| Mechanical work | CAD/CAM, 3D printing, bandsaw work, drilling, manual milling, and CNC preparation |
+| Electrical work | 5 V logic, 12 V motor power, fused distribution, buck regulation, custom PCBs, motors, servos, camera, and status-light interfaces |
+| Software | Python robot server, local hotspot, camera stream, safety watchdog, and responsive web dashboard |
 
 > [!NOTE]
-> The program also produced two compact experimental robots utilizing ESP32-S3 and ESP32-CAM microcontrollers. Those prototypes operate on independent local networks and are documented in lab archives.
+> The program also produced two smaller ESP32-S3 and ESP32-CAM experimental robots that create their own local Wi-Fi networks. Their source files are not included in this repository.
 
-## Team and Learning
+## What the team learned
 
-<div align="center">
-
-| Completed Robot | Research Presentation | Lab Build Session |
-| :---: | :---: | :---: |
-| <img src="images/final-robot.jpg" width="100%" alt="Completed 3TSahur Raspberry Pi mecanum robot"> | <img src="images/group-photo-01.png" width="100%" alt="STEM Research Academy team presenting certificates with the completed robot"> | <img src="images/group-photo-02.jpg" width="100%" alt="STEM Research Academy students and mentors with the robot in the lab"> |
-
-</div>
-
-The program encompassed the complete product design cycle:
-
-| Stage | Practical Skills Acquired |
+| Stage | Skills |
 | --- | --- |
-| 01 / Design | Parametric component design, assembly clearances, and engineering drawing standards in CAD |
-| 02 / Prototyping | Additive manufacturing tolerances, material selection (PLA/PETG), and rapid iteration |
-| 03 / Fabrication | Safe operation of manual vertical mills, metal bandsaws, drill presses, and tapping tooling |
-| 04 / Electrical | Soldering, heat-shrink harness routing, common grounding, and dual-rail power supplies |
-| 05 / Integration | Interfacing H-bridge drivers, high-torque servos, USB video devices, and status LEDs |
-| 06 / Software | Asynchronous Python services, Linux systemd daemons, local Wi-Fi routing, and responsive web UI |
+| 01 · Design | Parametric CAD, assembly clearances, component placement, and engineering drawings. |
+| 02 · Prototype | 3D-printing tolerances, material choices, fit checks, and rapid revision. |
+| 03 · Fabricate | Safe use of mills, bandsaws, drill presses, tapping tools, and power tools. |
+| 04 · Wire | Soldering, harness routing, common grounding, fused power, buck converters, and custom PCBs. |
+| 05 · Integrate | H-bridge drivers, mecanum motors, ramp servos, USB video, and status modules. |
+| 06 · Program | Python services, Linux systemd, local networking, camera streaming, web controls, and safety timeouts. |
 
-## Large Robot System
+This project connects the club's foundational work to more advanced automation. The camera, network, motor-control, actuator, and software layers create the kind of complete platform that can later support computer vision and autonomous behavior.
 
-3TSahur is driven by a Raspberry Pi 4 controlling four independent mecanum wheels, an automated two-servo ramp mechanism, and a Logitech HD camera stream. The Pi hosts its own standalone Wi-Fi hotspot, allowing operators to connect directly from any phone, tablet, or PC without internet access.
+## Robot system
 
-<table>
-  <tr>
-    <td align="center"><strong>Operator Browser UI</strong></td>
-    <td align="center">&harr;<br>Local Wi-Fi</td>
-    <td align="center"><strong>Raspberry Pi 4</strong></td>
-    <td align="center">&rarr;<br>BCM GPIO PWM</td>
-    <td align="center"><strong>Dual H-Bridge Drivers</strong></td>
-    <td align="center">&rarr;</td>
-    <td align="center"><strong>Four Mecanum Motors</strong></td>
-  </tr>
-  <tr>
-    <td colspan="2"></td>
-    <td align="center"><strong>Raspberry Pi 4</strong></td>
-    <td align="center">&rarr;<br>V4L2 USB</td>
-    <td align="center"><strong>Logitech HD Camera</strong></td>
-    <td colspan="2"></td>
-  </tr>
-  <tr>
-    <td colspan="2"></td>
-    <td align="center"><strong>Raspberry Pi 4</strong></td>
-    <td align="center">&rarr;<br>pigpio PWM</td>
-    <td align="center"><strong>Dual Ramp Servos</strong></td>
-    <td colspan="2"></td>
-  </tr>
-</table>
-
-| Subsystem | Technical Specifications |
+| Subsystem | Implementation |
 | --- | --- |
-| Drivetrain | 4-wheel independent mecanum (holonomic: forward, strafe, rotate) |
-| Local hotspot | Hostapd / NetworkManager 2.4 GHz network (`3TSahur-Swarm`) |
-| Control protocol | Low-latency HTTP/JSON command streaming with heartbeat validation |
-| Video streaming | Hardware-accelerated MJPEG video endpoint at `/video_feed` |
-| Ramp mechanism | Mirrored 180° metal-gear servos powered via dedicated 5.0 V buck converter |
-| Safety systems | Command auto-timeout, sequence rejection, focus-loss stop, and emergency killswitch |
+| Drive | Four independently controlled mecanum wheels for forward, reverse, strafe, and rotation |
+| Controller | Raspberry Pi 4 running Raspberry Pi OS |
+| Motor output | Two H-bridge drivers controlled through BCM GPIO PWM |
+| Auxiliary motion | Two mirrored ramp servos driven through `pigpio` |
+| Vision | Automatically detected Logitech USB camera with MJPEG streaming |
+| Interface | Local Flask dashboard with keyboard controls, telemetry, and camera view |
+| Networking | Standalone `3TSahur-Swarm` Wi-Fi hotspot |
+| Safety | Command heartbeat, stale-sequence rejection, focus-loss stop, soft stop, and emergency kill |
 
-## Repository Structure
+The operator connects directly to the robot's hotspot. Browser commands go to the Raspberry Pi, which mixes mecanum-wheel outputs, controls the ramp servos, and streams the camera back to the dashboard. The system does not require an internet connection while driving.
 
-### 01 / [Robot Server](robot_server/)
+## Repository contents
 
-The [`robot_server/`](robot_server/) package contains the core Python service and hardware interface layers.
+```text
+stem-research-academy/
+|-- images/         # Club, team, and completed-robot photos
+|-- robot_server/   # Flask app, motors, servos, camera, health, and dashboard
+|-- installer/      # Raspberry Pi deployment and systemd services
+|-- docs/           # Wiring, setup, and ramp-actuator references
+|-- tests/          # Hardware-independent safety and behavior tests
+|-- requirements.txt
+|-- run.py
+`-- README.md
+```
 
-| Module | Technical Function |
+| Area | Start here |
 | --- | --- |
-| `app.py` | Flask API routing, watchdog timing, and command sequence verification |
-| `motor.py` | Holonomic kinematics mixing, deadband filtering, and GPIO PWM output |
-| `actuators.py` | Synchronized ramp servo positioning via `pigpiod` |
-| `camera.py` | Dynamic USB camera discovery, frame capture, and MJPEG encoder |
-| `health.py` | Real-time monitoring of CPU temp, voltage throttling, RAM, and storage |
+| Robot software | [`robot_server/`](robot_server/) |
+| Raspberry Pi installation | [`installer/README.md`](installer/README.md) |
+| Wiring and GPIO | [`docs/WIRING.md`](docs/WIRING.md) |
+| Ramp servos | [`docs/3TSAHUR_AUXILIARY_ACTUATORS.md`](docs/3TSAHUR_AUXILIARY_ACTUATORS.md) |
+| Bench setup | [`docs/SETUP.md`](docs/SETUP.md) |
+| Automated checks | [`tests/`](tests/) |
 
-[Browse the Robot Server](robot_server/)
-
-Start the service in local development mode with:
+Run the server on a development computer with mock hardware:
 
 ```bash
 python -m robot_server.app
 ```
 
-On a Raspberry Pi, the service uses the GPIO, camera, and servo hardware. On a
-development computer it automatically uses mock hardware for dry-run testing.
-If `pigpiod` is unavailable, ramp control is disabled while the motor API and
-telemetry remain available. A lost command heartbeat stops all motor output
-within 500 ms.
-
----
-
-### 02 / [Raspberry Pi Installer](installer/)
-
-The scripts in [`installer/`](installer/) turn a fresh Raspberry Pi OS install into the robot controller.
-
-| Script / Service | Purpose |
-| --- | --- |
-| `install.sh` | Automated deployment script for dependencies, virtual environment, and systemd units |
-| `hotspot.sh` | Creates standalone `3TSahur-Swarm` Wi-Fi access point (`10.42.0.1`) |
-| `kiosk.sh` | Launches an optional fullscreen local dashboard window |
-| `systemd/` | Production service definitions for auto-starting the server on boot |
-
-[Browse the Installer](installer/) | [Read Installer Guide](installer/README.md)
-
----
-
-### 03 / [Engineering Documentation & Tests](docs/)
-
-| Resource | Scope & Contents |
-| --- | --- |
-| [`docs/WIRING.md`](docs/WIRING.md) | Complete schematic, BCM GPIO pin assignments, and power distribution map |
-| [`docs/3TSAHUR_AUXILIARY_ACTUATORS.md`](docs/3TSAHUR_AUXILIARY_ACTUATORS.md) | Ramp servo geometry, pulse-width ranges, and travel limit calibration |
-| [`docs/SETUP.md`](docs/SETUP.md) | Step-by-step bench commissioning and initial power-up verification |
-| [`tests/`](tests/) | Hardware-agnostic unit tests covering kinematics, watchdog expiry, and API safety |
-
-## Connect and Drive
-
-After powering the robot and waiting for the Raspberry Pi to boot:
-
-| Network / Service | Default Configuration |
-| --- | --- |
-| Wi-Fi SSID | `3TSahur-Swarm` |
-| Wi-Fi Password | `roboswarm1` |
-| Gateway IP | `10.42.0.1` |
-| Dashboard Web Portal | [http://10.42.0.1](http://10.42.0.1) |
-| Direct API Port | [http://10.42.0.1:8080](http://10.42.0.1:8080) |
-| Local mDNS | [http://3tsahur.local](http://3tsahur.local) |
-
-| Keyboard Key | Control Action |
-| :---: | --- |
-| `W` / `S` | Drive forward / backward |
-| `A` / `D` | Strafe left / right |
-| `Q` / `E` | Rotate counter-clockwise / clockwise (75% power) |
-| `R` | Toggle ramp open / closed |
-| `Space` | Immediate soft stop |
-| `Esc` | Hardware emergency kill |
-
-## Safety & Bench Testing
-
-> [!CAUTION]
-> Always prop the chassis up on a stand so all four mecanum wheels spin freely in the air during initial testing. Never apply battery power to motor drivers without a verified common ground.
-
-- **Separate Power Rails:** Keep 12 V motor power completely isolated from the Raspberry Pi 5 V logic rail.
-- **Buck Converter Verification:** Calibrate the servo buck converter to exactly 5.0 V with a multimeter before attaching servo leads.
-- **Watchdog Validation:** Confirm that closing the browser or disconnecting Wi-Fi stops all motors within 500 ms.
-
-Run the hardware-independent server tests with:
+Run the hardware-independent tests with:
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
+## Connect and drive
+
+| Setting | Default |
+| --- | --- |
+| Wi-Fi network | `3TSahur-Swarm` |
+| Wi-Fi password | `roboswarm1` |
+| Dashboard | `http://10.42.0.1` |
+| Direct API | `http://10.42.0.1:8080` |
+| Local hostname | `http://3tsahur.local` |
+
+| Key | Action |
+| --- | --- |
+| `W` / `S` | Drive forward / backward |
+| `A` / `D` | Strafe left / right |
+| `Q` / `E` | Rotate left / right |
+| `R` | Open or close the ramp |
+| `Space` | Soft stop |
+| `Esc` | Emergency kill |
+
+Change the default hotspot password before a public deployment.
+
+## Safety
+
+> [!CAUTION]
+> Raise the chassis so all four wheels can spin freely during the first test. Keep the 12 V motor supply separate from the Raspberry Pi 5 V logic rail, verify a common ground, and set the servo buck converter to 5.0 V before connecting the servos.
+
+Confirm that closing the browser, losing Wi-Fi, pressing `Space` or `Esc`, and allowing the command heartbeat to expire all stop the drivetrain.
+
 ---
 
-<div align="center">
-
-Developed through the **City Tech AI & Automation Club** · **STEM Research Academy**
-
-</div>E.md).
+[Back to the City Tech AI & Automation Club](../)

@@ -2,128 +2,83 @@
 
 # Crab Crawler Walking Robot
 
-### Three generations of servo walking, printed-frame iteration, and wireless control
+### An educational platform for learning servos, gait sequencing, and wireless modules
 
-[![Status](https://img.shields.io/badge/Status-Complete-22c55e?style=flat-square)](#project-overview)
-[![Controller](https://img.shields.io/badge/Controller-ESP32--CAM-6f42c1?style=flat-square)](#control-system)
-[![Motion](https://img.shields.io/badge/Motion-Servo_Walking-0a7f5a?style=flat-square)](#control-system)
-[![CAD](https://img.shields.io/badge/CAD-Fusion_360_%2B_STEP-f57c00?style=flat-square)](cad/)
-[![License](https://img.shields.io/badge/License-CC_BY_4.0-0078d4?style=flat-square)](../LICENSE.md)
-[![Parent](https://img.shields.io/badge/Club-City_Tech_Robotics-111111?style=flat-square)](../)
-
-<picture>
-  <img src="https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=1200,h=675,fit=crop/A85rnnzK6qs5qxKB/img_20260515_125209039-aa3XkdHF9OBnSOx5.jpg" alt="Crab crawler walking robot" width="820" draggable="false">
-</picture>
-
-A small four-leg walker that went through three frames, a few gait changes, and a final wireless ESP32-CAM build.
+[![Status](https://img.shields.io/badge/Status-Complete-22c55e?style=flat-square)](#overview)
+[![Controller](https://img.shields.io/badge/Controller-ESP32--CAM-6f42c1?style=flat-square)](#how-it-works)
+[![Motion](https://img.shields.io/badge/Motion-Servo_Gait-0a7f5a?style=flat-square)](#how-it-works)
+[![Files](https://img.shields.io/badge/Files-Fusion_%2B_STEP-2563eb?style=flat-square)](#repository-contents)
 
 <strong>Quick navigation:</strong><br>
-[Project Overview](#project-overview) | [Development Path](#development-path) | [CAD Collection](cad/) | [Build Videos](#build-videos) | [Back to Club](../)
+[Overview](#overview) | [What Students Learn](#what-students-learn) | [Development](#development) | [How It Works](#how-it-works) | [Repository Contents](#repository-contents) | [Back to Club](../)
 
 </div>
 
 ---
 
-## Project Overview
+## Overview
 
-Crab Crawler started as a heavy tethered prototype and ended as a smaller wireless robot with stronger joints and a live camera feed. Each version fixed something that showed up during real walking tests.
+Crab Crawler is a four-leg walking robot built to teach a different kind of motion control from the Self Balancing Robot. Instead of continuously adjusting DC motors from sensor feedback, it moves positional servos through a timed gait sequence.
 
-| System | Implementation |
+The robot developed from a large Arduino Nano prototype into smaller ESP32-CAM versions with wireless commands and live video. Each physical version exposed a new mechanical problem, giving students a direct example of how software, electronics, and frame design affect one another.
+
+| System | What it uses |
 | --- | --- |
-| Locomotion | Four servo-driven articulated legs |
-| Early controller | Arduino Nano with external servo driver |
-| Final controller | ESP32-CAM (Wi-Fi access point + video streaming) |
-| Servo control | Dedicated multi-channel PCA9685 PWM driver |
-| Mechanical frame | Custom 3D-printed modular chassis |
-| User interface | Browser-based directional control panel |
-| Development stages | 3 physical revisions documented |
+| Motion | Four servo-driven articulated legs |
+| Early controller | Arduino Nano |
+| Later controller | ESP32-CAM with local Wi-Fi and camera streaming |
+| Servo module | PCA9685 multi-channel PWM driver |
+| Interface | Browser-based directional controls |
+| Mechanical design | Three generations of custom 3D-printed frames |
 
-## Development Path
+## What students learn
 
-### 01 / Arduino Prototype
-
-[![Play Crab crawler Arduino prototype video](https://i.ytimg.com/vi_webp/WJB2is0cYr0/hqdefault.webp)](https://www.youtube.com/watch?v=WJB2is0cYr0)
-
-> **Click the preview to watch the first prototype.** Tested the fundamental gait sequence on an Arduino Nano.
-
-| Parameter | Configuration & Result |
+| Topic | Practical lesson |
 | --- | --- |
-| Controller | Arduino Nano |
-| Structure | Large single-piece 3D-printed body |
-| Failure mode | Frame mass placed excessive torque demand on the micro-servos |
+| Servos | Command repeatable positions instead of raw motor speed and direction. |
+| Gaits | Coordinate several joints into a stable walking sequence. |
+| Modules | Connect an ESP32-CAM, PCA9685 driver, servos, display hardware, and power system. |
+| Wireless control | Host a local network and send movement commands from a browser. |
+| Camera streaming | Use the ESP32-CAM for live visual feedback. |
+| Mechanical iteration | Improve torque distribution, joint strength, frame size, and wire routing after real walking tests. |
 
----
+## Development
 
-### 02 / Small ESP32-CAM Robot
-
-[![Play Small ESP32-CAM walking robot video](https://i.ytimg.com/vi_webp/dIKoLMmPl84/hqdefault.webp)](https://www.youtube.com/watch?v=dIKoLMmPl84)
-
-> **Click the preview to watch the compact ESP32-CAM version.** Added wireless control and camera streaming.
-
-| Parameter | Configuration & Result |
-| --- | --- |
-| Controller | ESP32-CAM |
-| Structure | Scaled-down lightweight skeleton |
-| Failure mode | Thin leg pivots cracked under lateral load; internal electronics space was too restricted |
-
----
-
-### 03 / Stronger Final Version
-
-[![Play Final crab crawler robot video](https://i.ytimg.com/vi_webp/3YAVgb8yF3U/hqdefault.webp)](https://www.youtube.com/watch?v=3YAVgb8yF3U)
-
-> **Click the preview to watch the final walker.** This version has the stable gait and stronger joints.
-
-| Parameter | Configuration & Result |
-| --- | --- |
-| Controller | ESP32-CAM |
-| Structure | Reinforced ribbing, thickened joint geometry, and organized wire channels |
-| Outcome | Reliable, repeatable walking with onboard wireless telemetry |
-
-## Control System
-
-The ESP32-CAM hosts a local Wi-Fi web server. The operator interface sends directional commands over HTTP/WebSockets, which the microcontroller translates into coordinated multi-servo gait steps.
-
-<table>
-  <tr>
-    <td align="center"><strong>Operator Browser</strong><br>Directional commands</td>
-    <td align="center">&rarr;</td>
-    <td align="center"><strong>ESP32-CAM</strong><br>Local Wi-Fi server</td>
-    <td align="center">&rarr;</td>
-    <td align="center"><strong>PCA9685 Driver</strong></td>
-    <td align="center">&rarr;</td>
-    <td align="center"><strong>Four Articulated Legs</strong></td>
-  </tr>
-  <tr>
-    <td align="center"><strong>Operator Browser</strong></td>
-    <td align="center">&larr;</td>
-    <td align="center"><strong>ESP32-CAM</strong><br>MJPEG video stream</td>
-    <td colspan="4"></td>
-  </tr>
-</table>
-
-## CAD Collection
-
-The [`cad/`](cad/) directory contains source Autodesk Fusion archives (`.f3z`) and neutral STEP exports (`.step`) for the prototype and production revisions.
-
-| Revision | Fusion Archive | STEP Export | Purpose |
+| Version | Build | What it taught | Video |
 | --- | --- | --- | --- |
-| 01 / Small prototype | [`cad/small/small.f3z`](cad/small/small.f3z) | [`cad/small/small.step`](cad/small/small.step) | Lightweight early test chassis |
-| 02 / Final reinforced | [`cad/final/final.f3z`](cad/final/final.f3z) | [`cad/final/final.step`](cad/final/final.step) | Thickened production frame |
+| 01 | Large Arduino Nano prototype | Validated the first gait, but the heavy body overloaded and stripped servos. | [Watch](https://www.youtube.com/watch?v=WJB2is0cYr0) |
+| 02 | Small ESP32-CAM robot | Added wireless control and video, but the thin frame cracked and the wiring space was too tight. | [Watch](https://www.youtube.com/watch?v=dIKoLMmPl84) |
+| 03 | Reinforced ESP32-CAM robot | Thickened the high-stress areas and cleaned up the wiring for more reliable walking. | [Watch](https://www.youtube.com/watch?v=3YAVgb8yF3U) |
 
-[Browse the CAD folder](cad/)
+## How it works
 
-## Build Videos
+| Step | Process |
+| --- | --- |
+| 1 | A phone or computer connects to the robot's local Wi-Fi interface. |
+| 2 | The operator sends a directional command from the browser. |
+| 3 | The ESP32-CAM selects the matching gait sequence. |
+| 4 | The PCA9685 produces stable PWM signals for the leg servos. |
+| 5 | The servos move through coordinated positions while the camera returns live video. |
 
-| Prototype 1 (Arduino) | Prototype 2 (ESP32-CAM) | Final Version (Reinforced) |
-| :---: | :---: | :---: |
-| [![Version 1](https://i.ytimg.com/vi_webp/WJB2is0cYr0/hqdefault.webp)](https://www.youtube.com/watch?v=WJB2is0cYr0) | [![Version 2](https://i.ytimg.com/vi_webp/dIKoLMmPl84/hqdefault.webp)](https://www.youtube.com/watch?v=dIKoLMmPl84) | [![Version 3](https://i.ytimg.com/vi_webp/3YAVgb8yF3U/hqdefault.webp)](https://www.youtube.com/watch?v=3YAVgb8yF3U) |
+## Repository contents
 
-## Assembly & Safety
+```text
+crab-crawler/
+|-- cad/
+|   |-- small/   # Compact design Fusion archive and STEP export
+|   `-- final/   # Reinforced final Fusion archive and STEP export
+`-- README.md
+```
+
+The [`cad/`](cad/) folder contains Autodesk Fusion archives (`.f3z`) and STEP exports (`.step`) for the compact and reinforced designs. The smaller model documents the earlier lightweight iteration; the final model thickens the structure where development testing showed failures.
+
+Before printing, confirm the dimensions of the exact servos, horns, controller, battery, and fasteners being used. Check linkage clearance through the full gait and reinforce high-load joints for the chosen material and print orientation.
+
+## Safety
 
 > [!CAUTION]
-> Servos can rotate abruptly upon power application. Keep fingers clear of linkages and disconnect the battery before making mechanical or electrical adjustments.
+> Servos can move unexpectedly when power is applied and can draw high current when stalled. Keep fingers clear of the linkages, use a properly rated servo power supply, and disconnect power before changing wiring or mechanical parts.
 
-- Confirm servo arm zero positions before installing leg linkages.
-- Use high-infill settings (≥40% PETG/ABS) on the leg pivots for structural rigidity.
-- Ensure the external battery pack can supply peak concurrent servo stall currents without browning out the ESP32-CAM.
+---
+
+[Back to the City Tech AI & Automation Club](../)
