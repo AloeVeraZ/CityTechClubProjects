@@ -6,7 +6,7 @@
 
 OmniBot is a Raspberry Pi 4 robot built for the City Tech AI & Automation Club. Using MSRP prices and the lowest-cost suitable Raspberry Pi 4, the parts come in under $100.
 
-**[Motion Test](https://youtube.com/shorts/7Gmitm4C8bI)** | **[Servo & Camera Test](https://youtube.com/shorts/Lm-0vsGEmf4)** | **[CAD Files](#cad-files)** | **[Install](#install)**
+**[50% Speed Drive Test](https://youtube.com/shorts/8odiWHJd5yY)** | **[Motion Test](https://youtube.com/shorts/7Gmitm4C8bI)** | **[Servo & Camera Test](https://youtube.com/shorts/Lm-0vsGEmf4)** | **[CAD Files](#cad-files)** | **[Install](#install)**
 
 </div>
 
@@ -20,9 +20,11 @@ OmniBot is a Raspberry Pi 4 robot built for the City Tech AI & Automation Club. 
       </a><br>
       <strong>OmniBot CAD</strong>
     </td>
-    <td align="center" width="50%" height="320">
-      <strong>IMAGE PLACEHOLDER 01</strong><br>
-      Real picture of OmniBot
+    <td align="center" width="50%">
+      <a href="images/omnibot-assembled.jpg">
+        <img src="images/omnibot-assembled.jpg" alt="Assembled OmniBot robot" width="100%">
+      </a><br>
+      <strong>Assembled OmniBot</strong>
     </td>
   </tr>
 </table>
@@ -43,10 +45,10 @@ The webcam supplies the live video and images used for vision. The goal is light
 
 ## Videos
 
-| Motion Test | Servo & Camera Test |
-| --- | --- |
-| [![OmniBot motion test](https://img.youtube.com/vi/7Gmitm4C8bI/hqdefault.jpg)](https://youtube.com/shorts/7Gmitm4C8bI) | [![OmniBot servo and camera test](https://img.youtube.com/vi/Lm-0vsGEmf4/hqdefault.jpg)](https://youtube.com/shorts/Lm-0vsGEmf4) |
-| Three-wheel omni drive test | Servo movement with the USB webcam connected |
+| 50% Speed Drive Test | Motion Test | Servo & Camera Test |
+| --- | --- | --- |
+| [![OmniBot driving at 50 percent speed](https://img.youtube.com/vi/8odiWHJd5yY/hqdefault.jpg)](https://youtube.com/shorts/8odiWHJd5yY) | [![OmniBot motion test](https://img.youtube.com/vi/7Gmitm4C8bI/hqdefault.jpg)](https://youtube.com/shorts/7Gmitm4C8bI) | [![OmniBot servo and camera test](https://img.youtube.com/vi/Lm-0vsGEmf4/hqdefault.jpg)](https://youtube.com/shorts/Lm-0vsGEmf4) |
+| Forward drive followed by a left turn and left rotation, all at 50% speed | Three-wheel omni drive test | Servo movement with the USB webcam connected |
 
 ## 3D-Printed Build
 
@@ -67,9 +69,17 @@ This is the furthest version of the complete CAD. Some purchased parts, includin
 
 <table>
   <tr>
-    <td align="center" width="900" height="320">
-      <strong>IMAGE PLACEHOLDER 02</strong><br>
-      Screenshot of the OmniBot interface
+    <td align="center" width="50%">
+      <a href="images/onboard-interface.jpg">
+        <img src="images/onboard-interface.jpg" alt="OmniBot interface displayed on the robot's onboard screen" width="100%">
+      </a><br>
+      <strong>Onboard Screen</strong>
+    </td>
+    <td align="center" width="50%">
+      <a href="images/laptop-interface.jpg">
+        <img src="images/laptop-interface.jpg" alt="OmniBot control dashboard displayed on a laptop" width="100%">
+      </a><br>
+      <strong>Laptop Dashboard</strong>
     </td>
   </tr>
 </table>
