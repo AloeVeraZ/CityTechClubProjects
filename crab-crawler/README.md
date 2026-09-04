@@ -10,11 +10,19 @@
 [![Files](https://img.shields.io/badge/Files-Fusion_%2B_STEP-2563eb?style=flat-square)](#repository-contents)
 
 <strong>Quick navigation:</strong><br>
-[Overview](#overview) | [What Students Learn](#what-students-learn) | [Development](#development) | [How It Works](#how-it-works) | [Repository Contents](#repository-contents) | [Back to Club](../)
+[Development](#development) | [Overview](#overview) | [What Students Learn](#what-students-learn) | [How It Works](#how-it-works) | [Repository Contents](#repository-contents) | [Back to Club](../)
 
 </div>
 
 ---
+
+## Development
+
+| Version 01 · Large Arduino Nano prototype | Version 02 · Small ESP32-CAM robot | Version 03 · Reinforced ESP32-CAM robot |
+| --- | --- | --- |
+| [![Large Arduino Nano prototype](https://img.youtube.com/vi/WJB2is0cYr0/hqdefault.jpg)](https://www.youtube.com/watch?v=WJB2is0cYr0) | [![Small ESP32-CAM robot](https://img.youtube.com/vi/dIKoLMmPl84/hqdefault.jpg)](https://www.youtube.com/watch?v=dIKoLMmPl84) | [![Reinforced ESP32-CAM robot](https://img.youtube.com/vi/3YAVgb8yF3U/hqdefault.jpg)](https://www.youtube.com/watch?v=3YAVgb8yF3U) |
+| Validated the first gait, but the heavy body overloaded and stripped servos. | Added wireless control and video, but the thin frame cracked and the wiring space was too tight. | Thickened the high-stress areas and cleaned up the wiring for more reliable walking. |
+| [Watch](https://www.youtube.com/watch?v=WJB2is0cYr0) | [Watch](https://www.youtube.com/watch?v=dIKoLMmPl84) | [Watch](https://www.youtube.com/watch?v=3YAVgb8yF3U) |
 
 ## Overview
 
@@ -41,14 +49,6 @@ The robot developed from a large Arduino Nano prototype into smaller ESP32-CAM v
 | Wireless control | Host a local network and send movement commands from a browser. |
 | Camera streaming | Use the ESP32-CAM for live visual feedback. |
 | Mechanical iteration | Improve torque distribution, joint strength, frame size, and wire routing after real walking tests. |
-
-## Development
-
-| Version | Build | What it taught | Video |
-| --- | --- | --- | --- |
-| 01 | Large Arduino Nano prototype | Validated the first gait, but the heavy body overloaded and stripped servos. | [Watch](https://www.youtube.com/watch?v=WJB2is0cYr0) |
-| 02 | Small ESP32-CAM robot | Added wireless control and video, but the thin frame cracked and the wiring space was too tight. | [Watch](https://www.youtube.com/watch?v=dIKoLMmPl84) |
-| 03 | Reinforced ESP32-CAM robot | Thickened the high-stress areas and cleaned up the wiring for more reliable walking. | [Watch](https://www.youtube.com/watch?v=3YAVgb8yF3U) |
 
 ## How it works
 

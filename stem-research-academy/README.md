@@ -10,11 +10,30 @@
 [![Software](https://img.shields.io/badge/Software-Python_%2B_Flask-0a7f5a?style=flat-square)](robot_server/)
 
 <strong>Quick navigation:</strong><br>
-[Overview](#overview) | [Learning](#what-the-team-learned) | [Robot System](#robot-system) | [Repository Contents](#repository-contents) | [Connect and Drive](#connect-and-drive) | [Back to Club](../)
+[Overview](#overview) | [Learning](#what-the-team-learned) | [Project Gallery](#project-gallery) | [Robot System](#robot-system) | [Repository Contents](#repository-contents) | [Connect and Drive](#connect-and-drive) | [Back to Club](../)
 
 </div>
 
 ---
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <a href="images/final-robot.jpg">
+        <img src="images/final-robot.jpg" alt="Completed 3TSahur mecanum robot" width="100%">
+      </a><br>
+      <strong>3TSahur Robot</strong>
+      <p>The completed mecanum robot brings together the custom chassis, ramp, USB camera, and Raspberry Pi control system.</p>
+    </td>
+    <td align="center" width="50%">
+      <a href="images/group-photo-02.jpg">
+        <img src="images/group-photo-02.jpg" alt="STEM Research Academy team with the robot" width="100%">
+      </a><br>
+      <strong>The Team and Build</strong>
+      <p>The team with the robot's enclosure open, showing the component placement and wiring behind the finished build.</p>
+    </td>
+  </tr>
+</table>
 
 ## Overview
 
@@ -46,6 +65,27 @@ The main result was **3TSahur**, a Raspberry Pi 4 robot with a four-wheel mecanu
 | 06 · Program | Python services, Linux systemd, local networking, camera streaming, web controls, and safety timeouts. |
 
 This project connects the club's foundational work to more advanced automation. The camera, network, motor-control, actuator, and software layers create the kind of complete platform that can later support computer vision and autonomous behavior.
+
+## Project gallery
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <a href="images/group-photo-01.png">
+        <img src="images/group-photo-01.png" alt="STEM Research Academy team presenting their robotics research" width="100%">
+      </a><br>
+      <strong>Research Presentation</strong>
+      <p>The team presenting its robotics research with project posters, completion certificates, and the robot.</p>
+    </td>
+    <td align="center" width="50%">
+      <a href="images/club-cover.jpg">
+        <img src="images/club-cover.jpg" alt="City Tech AI and Automation Club at the 2026 Experiential Learning Symposium" width="100%">
+      </a><br>
+      <strong>City Tech Club Showcase</strong>
+      <p>The wider City Tech AI &amp; Automation Club at the 2026 Experiential Learning Symposium.</p>
+    </td>
+  </tr>
+</table>
 
 ## Robot system
 

@@ -49,7 +49,7 @@ The projects are organized as a learning path. The first two robots focus on the
       <p><a href="stem-research-academy/README.md"><strong>Open project →</strong></a></p>
     </td>
     <td width="50%" align="center" valign="top">
-      <a href="OmniBot/README.md"><img src="OmniBot/images/Omni%20Bot%20CAD.png" width="100%" alt="OmniBot CAD"></a>
+      <a href="OmniBot/README.md"><img src="OmniBot/images/omnibot-assembled.jpg" width="100%" alt="Assembled OmniBot robot"></a>
       <h3>04 · OmniBot</h3>
       <p>Explore three-wheel holonomic control, Raspberry Pi software, live vision, and lightweight local image recognition.</p>
       <p><a href="OmniBot/README.md"><strong>Open project →</strong></a></p>

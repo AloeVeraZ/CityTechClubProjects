@@ -10,11 +10,19 @@
 [![Files](https://img.shields.io/badge/Files-CAD_%2B_Firmware-2563eb?style=flat-square)](#repository-contents)
 
 <strong>Quick navigation:</strong><br>
-[Overview](#overview) | [What Students Learn](#what-students-learn) | [Development](#development) | [How It Works](#how-it-works) | [Repository Contents](#repository-contents) | [Back to Club](../)
+[Development](#development) | [Overview](#overview) | [What Students Learn](#what-students-learn) | [How It Works](#how-it-works) | [Repository Contents](#repository-contents) | [Back to Club](../)
 
 </div>
 
 ---
+
+## Development
+
+| Version 01 · Modified car chassis | Version 02 · Custom 3D-printed body | Version 03 · Raspberry Pi Pico controller |
+| --- | --- | --- |
+| [![Modified car chassis](https://img.youtube.com/vi/-mdpzGmiDxs/hqdefault.jpg)](https://www.youtube.com/watch?v=-mdpzGmiDxs) | [![Custom 3D-printed body](https://img.youtube.com/vi/whE-oMi1N7U/hqdefault.jpg)](https://www.youtube.com/watch?v=whE-oMi1N7U) | [![Raspberry Pi Pico controller](https://img.youtube.com/vi/JzyDli07yCE/hqdefault.jpg)](https://www.youtube.com/watch?v=JzyDli07yCE) |
+| Verified sensor orientation, motor direction, and the first balance corrections. | Improved component placement, center of gravity, and mechanical stability. | Tested faster loop timing and smoother motor response. |
+| [Watch](https://www.youtube.com/watch?v=-mdpzGmiDxs) | [Watch](https://www.youtube.com/watch?v=whE-oMi1N7U) | [Watch](https://www.youtube.com/watch?v=JzyDli07yCE) |
 
 ## Overview
 
@@ -41,14 +49,6 @@ Three versions were used to compare controller hardware, chassis layouts, and PI
 | DC motors | Control speed and direction through an H-bridge instead of driving motors directly from a microcontroller. |
 | Electronics | Connect an IMU, controller, motor driver, motors, and battery with a shared ground. |
 | Mechanical design | See how wheel size, frame stiffness, battery position, and center of gravity change the same control code. |
-
-## Development
-
-| Version | Build | What it taught | Video |
-| --- | --- | --- | --- |
-| 01 | Modified car chassis | Verified sensor orientation, motor direction, and the first balance corrections. | [Watch](https://www.youtube.com/watch?v=-mdpzGmiDxs) |
-| 02 | Custom 3D-printed body | Improved component placement, center of gravity, and mechanical stability. | [Watch](https://www.youtube.com/watch?v=whE-oMi1N7U) |
-| 03 | Raspberry Pi Pico controller | Tested faster loop timing and smoother motor response. | [Watch](https://www.youtube.com/watch?v=JzyDli07yCE) |
 
 ## How it works
 
