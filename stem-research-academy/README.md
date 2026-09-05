@@ -78,11 +78,11 @@ This project connects the club's foundational work to more advanced automation. 
       <p>The team presenting its robotics research with project posters, completion certificates, and the robot.</p>
     </td>
     <td align="center" width="50%">
-      <a href="images/club-cover.jpg">
-        <img src="images/club-cover.jpg" alt="City Tech AI and Automation Club at the 2026 Experiential Learning Symposium" width="100%">
+      <a href="images/final-robot.jpg">
+        <img src="images/final-robot.jpg" alt="Completed 3TSahur mecanum robot" width="100%">
       </a><br>
-      <strong>City Tech Club Showcase</strong>
-      <p>The wider City Tech AI &amp; Automation Club at the 2026 Experiential Learning Symposium.</p>
+      <strong>Completed Robot</strong>
+      <p>The completed 3TSahur robot, including its mecanum drivetrain, ramp, camera, and Raspberry Pi control system.</p>
     </td>
   </tr>
 </table>
