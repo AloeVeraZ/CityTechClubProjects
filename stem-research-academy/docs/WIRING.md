@@ -1,82 +1,91 @@
 # 3TSahur Wiring Reference
 
-### Mecanum motor-driver mapping, ramp-servo signals, and power boundaries
+### MotionModule harness: four motor ports, one PCA9685 servo board, one BNO055 IMU
 
-<img alt="Drive: 4 mecanum motors" src="https://img.shields.io/badge/drive-4%20mecanum%20motors-6f42c1?style=flat-square"> <img alt="Motor power: external supply" src="https://img.shields.io/badge/motor%20power-external%20supply-f39c12?style=flat-square"> <img alt="Servo power: regulated 5 V" src="https://img.shields.io/badge/servo%20power-regulated%205%20V-00979d?style=flat-square">
+<img alt="Drive: 4 mecanum motors" src="https://img.shields.io/badge/drive-4%20mecanum%20motors-6f42c1?style=flat-square"> <img alt="Servos: PCA9685" src="https://img.shields.io/badge/servos-PCA9685%20I2C-00979d?style=flat-square"> <img alt="IMU: BNO055" src="https://img.shields.io/badge/IMU-BNO055-f39c12?style=flat-square">
 
-[Project overview](../README.md) · [Setup](SETUP.md) · [Ramp details](3TSAHUR_AUXILIARY_ACTUATORS.md) · [Motor code](../robot_server/motor.py)
+[Project overview](../README.md) · [Setup](SETUP.md) · [Ramp details](3TSAHUR_AUXILIARY_ACTUATORS.md) · [Pin definitions](../robot_server/hardware.py)
 
 ---
 
-## 01 / Mecanum Drivetrain
+3TSahur uses the [MotionModule](https://github.com/AloeVeraZ/MotionModule)
+reference wiring, cut down to what this robot has: **Drivers 1 and 2** (four
+motor ports), the **PCA9685 servo board**, and a **BNO055 IMU**. MotionModule's
+Drivers 3 and 4 are not fitted. Nothing is selected in software: wire it as
+below and it works.
 
-The chassis uses two DC 3–18 V, 10 A dual H-bridge motor drivers. All numbers
-below are Raspberry Pi **BCM GPIO** numbers and intentionally retain the tested
-mecanum assignment.
+Which port drives which wheel is **not** part of the wiring. Plug the four
+wheels into any of the four ports, then set the mapping and any inversions on
+the Debug page (`http://10.42.0.1/debug`). All numbers below are BCM GPIO /
+physical header pin.
 
-| Wheel | Driver input pair | Positive PWM leg | Negative PWM leg |
-| --- | --- | ---: | ---: |
-| Front left | Driver 1 IN1 / IN2 | GPIO 5 | GPIO 6 |
-| Rear left | Driver 1 IN3 / IN4 | GPIO 19 | GPIO 16 |
-| Front right | Driver 2 IN1 / IN2 | GPIO 20 | GPIO 21 |
-| Rear right | Driver 2 IN3 / IN4 | GPIO 26 | GPIO 13 |
+## 01 / Motor ports (two dual H-bridge boards)
 
-This mapping is implemented in [`robot_server/motor.py`](../robot_server/motor.py)
-and checked by [`tests/test_motor.py`](../tests/test_motor.py).
+Each driver's control header reads `IN1 IN2 IN3 IN4 GND`. IN1/IN2 drive output
+A; IN3/IN4 drive output B. The forward wire goes to the first input of each pair.
 
-The installed chassis uses inverted longitudinal polarity: `W` drives GPIO 6,
-16, 21, and 13, while `S` drives GPIO 5, 19, 20, and 26. Strafe polarity is
-unchanged. `Q` and `E` rotate about the robot center with all four wheels at
-75% magnitude.
+| Port | Driver · output | Forward input | Reverse input | Driver ground | Default wheel |
+| ---: | --- | --- | --- | ---: | --- |
+| 1 | Driver 1 · A | pin 37 / GPIO26 → IN1 | pin 35 / GPIO19 → IN2 | pin 39 | Front left |
+| 2 | Driver 1 · B | pin 33 / GPIO13 → IN3 | pin 31 / GPIO6 → IN4 | pin 39 | Rear left |
+| 3 | Driver 2 · A | pin 40 / GPIO21 → IN1 | pin 38 / GPIO20 → IN2 | pin 34 | Front right |
+| 4 | Driver 2 · B | pin 36 / GPIO16 → IN3 | pin 32 / GPIO12 → IN4 | pin 34 | Rear right |
 
-| Rotation | Active PWM legs |
+Each driver is one short bundle: Driver 1 is pins 31–39 down the left column,
+Driver 2 is pins 32–40 down the right column. A wheel that spins the wrong way
+is fixed with that port's **Invert** switch on the Debug page, never by moving
+wires.
+
+## 02 / Servo board (PCA9685)
+
+Five wires in one run down the top of the left column:
+
+| Pi header | PCA9685 |
 | --- | --- |
-| `E` | FL GPIO6, FR GPIO21, RL GPIO19, RR GPIO26 |
-| `Q` | Opposite leg of each motor pair |
+| pin 1 / 3.3 V | VCC (chip logic only) |
+| pin 3 / GPIO2 | SDA |
+| pin 5 / GPIO3 | SCL |
+| pin 7 / GPIO4 | OE (output enable, active low) |
+| pin 9 / GND | GND |
 
-> [!WARNING]
-> Never connect one GPIO output to more than one driver input. If one physical
-> wheel is reversed, swap only that motor's leads or only its `MotorPins` pair.
+The two ramp servos plug into the board's outputs (channels 0 and 1 by
+default; change them on the Debug page). Servo **V+** comes from its own
+regulated 5–6 V supply on the screw terminal. Never connect the board's V+
+header pin to the Pi.
 
-## 02 / Direct Ramp Servos
+## 03 / IMU (BNO055)
 
-The two ramp servos use `pigpio`-timed signals from otherwise unused Pi pins.
-The code uses BCM numbering; physical header numbers are included below.
+The BNO055 shares the servo board's I2C bus. Chain SDA/SCL from the PCA9685
+side header (or tee them at pins 3 and 5).
 
-| Servo | Wire | Raspberry Pi connection |
-| --- | --- | --- |
-| Ramp Servo 1 | Signal | BCM GPIO12, physical pin 32 |
-| Ramp Servo 1 | +5 V | Buck-converter +5 V output |
-| Ramp Servo 1 | Ground | Buck-converter ground |
-| Ramp Servo 2 | Signal | BCM GPIO18, physical pin 12 |
-| Ramp Servo 2 | +5 V | Buck-converter +5 V output |
-| Ramp Servo 2 | Ground | Buck-converter ground |
-| Common reference | Ground jumper | Buck ground to Pi ground, physical pin 6 or 14 |
+| Pi header | BNO055 |
+| --- | --- |
+| pin 17 / 3.3 V | VIN |
+| pin 6 / GND | GND |
+| pin 3 / GPIO2 | SDA |
+| pin 5 / GPIO3 | SCL |
 
-GPIO12 and GPIO18 are 3.3 V signal outputs. Never connect a servo's red 5 V
-wire to either GPIO signal pin.
+Leave ADR low for address `0x28`. Mount the board flat, as close to the
+robot's centre as practical.
 
-| Logical position | Servo 1 | Servo 2 |
-| --- | ---: | ---: |
-| Closed / startup | 0° | 0° |
-| Open | 120° | 120° |
+## 04 / Pins that stay free
 
-Servo 2 on physical pin 12 is reversed in software so the mechanism moves in
-the correct direction. Servo 1 on physical pin 32 keeps the normal direction.
+UART (pins 8, 10), the ID EEPROM (27, 28), and MotionModule's Driver 3 and 4
+pins (13, 15, 16, 18, 21, 23, 24, 26) are unused. GPIO12 and GPIO18 no longer
+carry servo signals: GPIO12 is now port 4's reverse input.
 
 ## Power and First Test
 
 > [!CAUTION]
-> Power the motors from their rated external supply and the servos from a
-> regulated 5 V supply. Do not use the Raspberry Pi logic rail as the motor or
-> servo power source.
+> Motor battery power goes only to the drivers' power terminals, and servo V+
+> only to its regulator. Neither ever touches a Pi header pin.
 
-1. Set the servo buck converter to 5.0 V before connecting the servos.
-2. Connect all required logic, motor, servo, and Pi grounds.
+1. Set the servo regulator to 5.0 V before connecting the servos.
+2. Join the motor, servo, and Pi grounds at one common point.
 3. Install the correct fuse and an accessible physical power switch.
-4. Raise every wheel before applying motor power.
-5. Test one direction at a time at low speed.
-6. Confirm the common ground first if the servos jitter.
+4. Raise every wheel, open **Debug**, and hold **Run** on each port at low power.
+5. Assign each port to its wheel, tick **Invert** where needed, and **Save**.
+6. Use the **wheel check** buttons: each wheel should roll the robot forward.
 
 ---
 

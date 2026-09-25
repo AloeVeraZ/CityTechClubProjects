@@ -1,134 +1,102 @@
-import importlib
-import time
 import unittest
-from unittest.mock import patch
 
-from robot_server.app import app, drive, drive_sequences
+from robot_server.app import create_app
 
-app_module = importlib.import_module("robot_server.app")
+from helpers import make_robot
+
+
+class FakeCamera:
+    available = False
+    error = None
+    camera_name = "USB camera"
+    selected_device = None
+    width, height, fps = 640, 480, 10
+    capture_width = capture_height = capture_fps = None
+    frame_age_seconds = float("inf")
+
+    def configure(self, *args):
+        self.configured = args
+
+
+class FakeHealth:
+    def snapshot(self):
+        return {"status": "ok"}
 
 
 class ServerTests(unittest.TestCase):
     def setUp(self):
-        app.config.update(TESTING=True)
-        self.client = app.test_client()
+        self.robot, self.gpio = make_robot(self)
+        self.app = create_app(self.robot, FakeCamera(), FakeHealth())
+        self.client = self.app.test_client()
+        self.headers = {"X-Robot-Token": self.app.config["ROBOT_TOKEN"]}
 
-    def tearDown(self):
-        drive.stop()
-        app_module.last_drive_at = 0
-        drive_sequences.clear()
+    def post(self, url, body, headers=True):
+        return self.client.post(url, json=body, headers=self.headers if headers else {})
 
-    @staticmethod
-    def current_command(**values):
-        values["expires_at_ms"] = round(time.time() * 1000) + 1000
-        return values
+    def test_only_the_driver_station_and_debug_pages_exist(self):
+        self.assertEqual(self.client.get("/").status_code, 200)
+        self.assertEqual(self.client.get("/debug").status_code, 200)
+        self.assertEqual(self.client.get("/code").status_code, 404)
+        self.assertEqual(self.client.post("/api/projects/deploy").status_code, 404)
 
-    def test_health(self):
-        response = self.client.get("/healthz")
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.get_json()["ok"])
+    def test_commands_need_the_page_token_but_stop_never_does(self):
+        self.assertEqual(self.post("/api/drive", {"sequence": 1, "forward": 1}, headers=False).status_code, 403)
+        self.assertEqual(self.post("/api/settings", {}, headers=False).status_code, 403)
+        self.assertEqual(self.post("/api/stop", {}, headers=False).status_code, 200)
 
-    def test_status_exposes_big_robot_hardware(self):
-        response = self.client.get("/api/status")
-        self.assertEqual(response.status_code, 200)
-        data = response.get_json()
-        self.assertEqual(data["name"], "3TSahur")
-        self.assertIn(data["camera_profile"], {"control", "balanced", "detail"})
-        self.assertEqual(data["camera_mode"], "automatic")
-        self.assertIn("camera_name", data)
-        self.assertIn("system_health", data)
-        self.assertIn("actuators", data)
+    def test_drive_and_stale_sequences(self):
+        response = self.post("/api/drive", {"sequence": 5, "forward": 1, "speed": 0.5})
+        self.assertEqual(response.json["wheels"]["front_left"], 0.5)
+        self.assertEqual(self.robot.controller.motor_values[1], 0.5)
+        stale = self.post("/api/drive", {"sequence": 4, "forward": 0})
+        self.assertEqual(stale.json["ignored"], "stale sequence")
+        self.assertEqual(self.robot.controller.motor_values[1], 0.5)
+        bad = self.post("/api/drive", {"sequence": 6, "forward": "fast"})
+        self.assertEqual(bad.status_code, 400)
+        self.assertEqual(self.robot.controller.motor_values[1], 0)
 
-    def test_drive_command(self):
-        response = self.client.post(
-            "/api/drive",
-            json=self.current_command(forward=1, strafe=0, rotate=0, speed=0.5),
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(drive.last_command["forward"], 1)
-        self.assertEqual(drive.last_command["speed"], 0.5)
+    def test_status_reports_wheels_ramp_imu_and_servo_board(self):
+        robot = self.client.get("/api/status").json["robot"]
+        self.assertEqual(robot["wheels"]["front_right"]["port"], 3)
+        self.assertEqual(robot["ramp"]["state"], "closed")
+        self.assertTrue(robot["imu"]["connected"])
+        self.assertTrue(robot["servo_board"]["available"])
+        self.assertEqual(sorted(robot["ports"]), ["1", "2", "3", "4"])
 
-    def test_invalid_drive_command(self):
-        response = self.client.post("/api/drive", json=self.current_command(forward="fast"))
+    def test_settings_remap_from_the_debug_page(self):
+        settings = self.client.get("/api/config").json["settings"]
+        settings["wheels"].update(front_left=2, rear_left=1)
+        self.assertEqual(self.post("/api/settings", settings).status_code, 200)
+        self.assertEqual(self.robot.settings.port_for("front_left"), 2)
+        settings["wheels"]["rear_left"] = 2
+        response = self.post("/api/settings", settings)
         self.assertEqual(response.status_code, 400)
+        self.assertIn("port 2", response.json["error"])
 
-    def test_non_finite_drive_command(self):
-        response = self.client.post("/api/drive", json=self.current_command(forward="NaN"))
-        self.assertEqual(response.status_code, 400)
+    def test_debug_outputs_require_confirmation(self):
+        self.assertEqual(self.post("/api/debug/motor", {"port": 1, "power": 0.2}).status_code, 400)
+        self.assertEqual(self.post("/api/debug/motor", {"port": 1, "power": 0.2, "confirmed": True}).status_code, 200)
+        self.assertEqual(self.robot.controller.motor_values[1], 0.2)
+        self.assertEqual(self.post("/api/debug/motor", {"port": 1, "power": 0.8, "confirmed": True}).status_code, 400)
+        response = self.post("/api/debug/servo", {"channel": 5, "angle": 45, "confirmed": True})
+        self.assertEqual(response.json["pulse_us"], 1000.0)
+        self.post("/api/debug/servo/release", {"channel": 5})
+        self.assertNotIn(5, self.robot.controller.servos.pulses)
 
-    def test_stale_command_is_ignored(self):
-        self.client.post(
-            "/api/drive",
-            json=self.current_command(forward=0, session="test", sequence=2),
-        )
-        response = self.client.post(
-            "/api/drive",
-            json=self.current_command(forward=1, session="test", sequence=1),
-        )
-        self.assertTrue(response.get_json()["stale"])
-        self.assertEqual(drive.last_command["forward"], 0)
-
-    def test_expired_command_cannot_replay(self):
-        drive.drive(1, 0, 0, 0.5)
-        response = self.client.post("/api/drive", json={"forward": 1, "expires_at_ms": 1})
+    def test_debug_motor_refused_while_driving(self):
+        self.post("/api/drive", {"sequence": 1, "forward": 0.5})
+        response = self.post("/api/debug/motor", {"port": 1, "power": 0.2, "confirmed": True})
         self.assertEqual(response.status_code, 409)
-        self.assertTrue(response.get_json()["expired"])
-        self.assertEqual(drive.last_command["forward"], 0)
 
-    def test_implausible_future_command_is_rejected(self):
-        response = self.client.post(
-            "/api/drive",
-            json={"forward": 1, "expires_at_ms": round(time.time() * 1000) + 60_000},
-        )
-        self.assertEqual(response.status_code, 409)
-        self.assertEqual(drive.last_command["forward"], 0)
+    def test_ramp_emergency_stop_and_output_enable(self):
+        self.assertEqual(self.post("/api/ramp", {"state": "open"}).json["ramp"]["state"], "open")
+        self.post("/api/stop", {"emergency": True})
+        self.assertEqual(self.robot.ramp_state, "released")
+        self.assertFalse(self.robot.controller.servo_outputs_enabled)
+        self.assertTrue(self.post("/api/servos/output-enable", {"enabled": True}).json["enabled"])
 
-    def test_dashboard_renders_only_the_large_robot(self):
-        response = self.client.get("/")
-        self.assertIn(b'data-robot-panel="3tsahur"', response.data)
-        self.assertIn(b'data-stream-for="3tsahur"', response.data)
-        self.assertIn(b"3TSahur", response.data)
-
-    def test_ramp_accepts_two_positions_without_drive_changes(self):
-        ramp = self.client.post("/api/actuators/ramp", json={"state": "open"})
-        self.assertEqual(ramp.status_code, 200)
-        self.assertEqual(ramp.get_json()["ramp"]["state"], "open")
-        self.assertEqual(drive.last_command["forward"], 0)
-
-    def test_ramp_rejects_invalid_values(self):
-        response = self.client.post("/api/actuators/ramp", json={"state": "sideways"})
-        self.assertEqual(response.status_code, 400)
-
-    @patch("robot_server.app.camera.configure")
-    def test_camera_profile_isolated_from_drive(self, configure):
-        response = self.client.post("/api/camera/profile", json={"profile": "control"})
-        self.assertEqual(response.status_code, 200)
-        configure.assert_called_once_with(320, 240, 6)
-        drive_response = self.client.post("/api/drive", json=self.current_command(forward=1))
-        self.assertEqual(drive_response.status_code, 200)
-        self.assertEqual(drive.last_command["forward"], 1)
-
-    def test_invalid_camera_profile_is_rejected(self):
-        response = self.client.post("/api/camera/profile", json={"profile": "unsafe"})
-        self.assertEqual(response.status_code, 400)
-
-    def test_activity_log_is_bounded_and_hardware_independent(self):
-        created = self.client.post(
-            "/api/events",
-            json={"kind": "test", "source": "test", "message": "activity ok"},
-        )
-        self.assertEqual(created.status_code, 200)
-        listed = self.client.get("/api/events")
-        self.assertTrue(any(event["message"] == "activity ok" for event in listed.get_json()["events"]))
-
-    @patch("robot_server.app._snapshot_bytes", return_value=None)
-    def test_unavailable_snapshot_does_not_affect_drive(self, snapshot):
-        response = self.client.post("/api/snapshots/3tsahur")
-        self.assertEqual(response.status_code, 503)
-        self.assertEqual(drive.last_command["forward"], 0)
-
-    def test_snapshot_accepts_only_the_large_robot_camera(self):
-        self.assertEqual(self.client.post("/api/snapshots/other").status_code, 404)
+    def test_zero_heading(self):
+        self.assertEqual(self.post("/api/imu/zero", {}).json["imu"]["yaw"], 0.0)
 
 
 if __name__ == "__main__":

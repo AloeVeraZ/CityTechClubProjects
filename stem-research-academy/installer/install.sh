@@ -10,7 +10,6 @@ CONFIG_DIR="/etc/stem-research-academy"
 CONFIG_FILE="$CONFIG_DIR/config.env"
 APP_USER="$(id -un)"
 TEMP_CHECKOUT=""
-PIGPIO_BUILD_DIR=""
 STAGED_APP_DIR=""
 APP_SWAPPED=0
 CONFIG_ROLLBACK=""
@@ -49,9 +48,6 @@ cleanup() {
     if [ -n "$TEMP_CHECKOUT" ] && [ -d "$TEMP_CHECKOUT" ]; then
         rm -rf -- "$TEMP_CHECKOUT"
     fi
-    if [ -n "$PIGPIO_BUILD_DIR" ] && [ -d "$PIGPIO_BUILD_DIR" ]; then
-        sudo rm -rf -- "$PIGPIO_BUILD_DIR" || true
-    fi
     if [ -n "$STAGED_APP_DIR" ] && [ -d "$STAGED_APP_DIR" ]; then
         rm -rf -- "$STAGED_APP_DIR"
     fi
@@ -89,39 +85,6 @@ apt_has_candidate() {
         $1 == "Candidate:" && $2 != "(none)" { found = 1 }
         END { exit(found ? 0 : 1) }
     '
-}
-
-install_pigpio() {
-    if command -v pigpiod >/dev/null 2>&1 && \
-       python3 -c 'import pigpio' >/dev/null 2>&1; then
-        say "pigpio is already installed; skipping its download and build."
-        return 0
-    fi
-
-    if apt_has_candidate pigpio && apt_has_candidate python3-pigpio; then
-        say "Installing pigpio from the Raspberry Pi OS package repository..."
-        apt_get install -y pigpio python3-pigpio
-    else
-        say "The pigpio daemon has no APT candidate; building official pigpio v79..."
-        apt_get install -y build-essential python3-setuptools
-        PIGPIO_BUILD_DIR="$(mktemp -d)"
-        curl --fail --location --retry 3 --retry-delay 2 \
-            https://github.com/joan2937/pigpio/archive/refs/tags/v79.tar.gz \
-            --output "$PIGPIO_BUILD_DIR/pigpio-v79.tar.gz"
-        tar -xzf "$PIGPIO_BUILD_DIR/pigpio-v79.tar.gz" -C "$PIGPIO_BUILD_DIR"
-        make -C "$PIGPIO_BUILD_DIR/pigpio-79" -j"$(nproc)"
-        sudo make -C "$PIGPIO_BUILD_DIR/pigpio-79" install
-        # `sudo make install` can leave root-owned Python build files here.
-        # Remove the exact mktemp directory with sudo so successful installs
-        # cannot fail during cleanup with "Permission denied".
-        sudo rm -rf -- "$PIGPIO_BUILD_DIR"
-        PIGPIO_BUILD_DIR=""
-    fi
-
-    command -v pigpiod >/dev/null 2>&1 || \
-        fail "pigpiod was not installed by either APT or the official source fallback."
-    python3 -c 'import pigpio' >/dev/null 2>&1 || \
-        fail "The pigpio Python module is unavailable after installation."
 }
 
 prune_old_installations() {
@@ -188,7 +151,19 @@ apt_get install -y \
     util-linux \
     v4l-utils
 
-install_pigpio
+# MotionModule GPIO backend (lgpio) and the I2C bus for the PCA9685 servo
+# board and BNO055 IMU. pigpio is no longer used.
+apt_get install -y i2c-tools python3-lgpio
+if apt_has_candidate python3-smbus2; then
+    apt_get install -y python3-smbus2
+else
+    apt_get install -y python3-smbus
+fi
+if command -v raspi-config >/dev/null 2>&1; then
+    sudo raspi-config nonint do_i2c 0 || true
+    # GPIO7-11 are not used by 3TSahur, but SPI stays off like MotionModule.
+    sudo raspi-config nonint do_spi 1 || true
+fi
 
 # Package and command names differ between Raspberry Pi OS generations.
 if apt-cache show chromium >/dev/null 2>&1; then
@@ -210,12 +185,6 @@ if ! command -v labwc >/dev/null 2>&1 && \
     else
         fail "Raspberry Pi desktop packages were not found. Use a current Raspberry Pi OS image."
     fi
-fi
-
-if apt-cache show python3-rpi-lgpio >/dev/null 2>&1; then
-    apt_get install -y python3-rpi-lgpio
-else
-    apt_get install -y python3-rpi.gpio
 fi
 
 # Package downloads are no longer needed after installation. Reclaim them
@@ -306,6 +275,10 @@ if [ "$SOURCE_SUBDIR" != "." ] && [ -n "$SOURCE_SUBDIR" ]; then
 fi
 [ -f "$FRESH_SOURCE/run.py" ] || fail "Robot project was not found in the downloaded repository."
 python3 -m compileall -q "$FRESH_SOURCE/robot_server" "$FRESH_SOURCE/run.py"
+(
+    cd "$FRESH_SOURCE"
+    STEM_ROBOT_MOCK=1 python3 -m unittest discover -s tests
+) || fail "The downloaded robot software failed its tests; the current installation was left in place."
 
 say "Building and validating the replacement application..."
 STAGED_APP_DIR="${APP_DIR}.installing.$$"
@@ -321,7 +294,7 @@ python3 -m venv --without-pip --system-site-packages "$STAGED_APP_DIR/.venv"
 (
     cd "$STAGED_APP_DIR"
     "$STAGED_APP_DIR/.venv/bin/python" -c \
-        'import flask; import cv2; print("Flask and OpenCV imports passed.")'
+        'import flask, cv2, lgpio; print("Flask, OpenCV and lgpio imports passed.")'
 )
 
 # Keep the current robot dashboard running until the replacement has passed
@@ -359,14 +332,7 @@ CAMERA_DEVICE=auto
 CAMERA_WIDTH=640
 CAMERA_HEIGHT=480
 CAMERA_FPS=10
-DRIVE_WATCHDOG_SECONDS=0.20
 KIOSK_URL=http://127.0.0.1:8080
-RAMP_SERVO_0_GPIO_BCM=12
-RAMP_SERVO_1_GPIO_BCM=18
-RAMP_SERVO_0_REVERSED=0
-RAMP_SERVO_1_REVERSED=1
-RAMP_SERVO_MIN_PULSE_US=1000
-RAMP_SERVO_MAX_PULSE_US=2000
 EOF
     sudo install -m 0600 "$CONFIG_TEMP" "$CONFIG_FILE"
     rm -f "$CONFIG_TEMP"
@@ -392,13 +358,10 @@ ensure_config_key CAMERA_DEVICE "auto"
 ensure_config_key CAMERA_WIDTH "640"
 ensure_config_key CAMERA_HEIGHT "480"
 ensure_config_key CAMERA_FPS "10"
-ensure_config_key DRIVE_WATCHDOG_SECONDS "0.20"
-ensure_config_key RAMP_SERVO_0_GPIO_BCM "12"
-ensure_config_key RAMP_SERVO_1_GPIO_BCM "18"
-ensure_config_key RAMP_SERVO_0_REVERSED "0"
-ensure_config_key RAMP_SERVO_1_REVERSED "1"
-ensure_config_key RAMP_SERVO_MIN_PULSE_US "1000"
-ensure_config_key RAMP_SERVO_MAX_PULSE_US "2000"
+ensure_config_key STEM_ROBOT_SETTINGS "$HOME/.config/3tsahur/robot-settings.json"
+# Direct-GPIO ramp servos and the old drive watchdog were replaced by the
+# PCA9685 servo board and the MotionModule controller's own watchdog.
+sudo sed -i -E '/^(RAMP_SERVO_[A-Z0-9_]+|DRIVE_WATCHDOG_SECONDS)=/d' "$CONFIG_FILE"
 
 # Hotspot credentials are installer-managed so firmware and Pi stay in sync.
 sudo sed -i -E \
@@ -408,7 +371,6 @@ sudo sed -i -E \
     -e 's/^CAMERA_WIDTH=.*/CAMERA_WIDTH=640/' \
     -e 's/^CAMERA_HEIGHT=.*/CAMERA_HEIGHT=480/' \
     -e 's/^CAMERA_FPS=.*/CAMERA_FPS=10/' \
-    -e 's/^DRIVE_WATCHDOG_SECONDS=.*/DRIVE_WATCHDOG_SECONDS=0.20/' \
     "$CONFIG_FILE"
 sudo chmod 0600 "$CONFIG_FILE"
 
@@ -452,23 +414,20 @@ sed -e "s|@APP_USER@|$APP_USER|g" -e "s|@APP_DIR@|$APP_DIR|g" \
     "$APP_DIR/installer/systemd/stem-robot-dashboard.service" > "$SERVICE_TEMP"
 sudo install -m 0644 "$SERVICE_TEMP" /etc/systemd/system/stem-robot-dashboard.service
 rm -f "$SERVICE_TEMP"
-PIGPIOD_BIN="$(command -v pigpiod)"
-SERVICE_TEMP="$(mktemp)"
-sed -e "s|@PIGPIOD_BIN@|$PIGPIOD_BIN|g" \
-    "$APP_DIR/installer/systemd/pigpiod.service" > "$SERVICE_TEMP"
-sudo install -m 0644 "$SERVICE_TEMP" /etc/systemd/system/pigpiod.service
-rm -f "$SERVICE_TEMP"
 sudo install -m 0644 \
     "$APP_DIR/installer/systemd/stem-robot-hotspot.service" \
     /etc/systemd/system/stem-robot-hotspot.service
 
 getent group gpio >/dev/null && sudo usermod -aG gpio "$APP_USER" || true
 getent group video >/dev/null && sudo usermod -aG video "$APP_USER" || true
+getent group i2c >/dev/null && sudo usermod -aG i2c "$APP_USER" || true
 sudo systemctl daemon-reload
 sudo systemctl enable NetworkManager.service
 sudo systemctl enable avahi-daemon.service
-sudo systemctl enable pigpiod.service
-sudo systemctl start pigpiod.service
+# Earlier versions ran pigpiod for the ramp servos. It is no longer needed.
+if systemctl list-unit-files pigpiod.service >/dev/null 2>&1; then
+    sudo systemctl disable --now pigpiod.service 2>/dev/null || true
+fi
 sudo systemctl set-default graphical.target
 sudo systemctl enable lightdm.service 2>/dev/null || true
 sudo systemctl enable stem-robot-hotspot.service stem-robot-dashboard.service
@@ -592,7 +551,7 @@ fi
 
 say "Validating the server before enabling it..."
 "$VENV_DIR/bin/python" -m compileall -q "$APP_DIR/robot_server" "$APP_DIR/run.py"
-"$VENV_DIR/bin/python" -c 'import flask; import cv2; print("Flask and OpenCV imports passed.")'
+"$VENV_DIR/bin/python" -c 'import flask, cv2, lgpio; print("Flask, OpenCV and lgpio imports passed.")'
 sudo systemctl restart stem-robot-dashboard.service
 DASHBOARD_READY=0
 for attempt in $(seq 1 30); do
@@ -619,6 +578,7 @@ echo "Hotspot password: roboswarm1"
 echo "Dashboard: http://10.42.0.1"
 echo "Dashboard name: http://3tsahur.local"
 echo "Direct fallback: http://10.42.0.1:8080"
+echo "Driver Station: http://10.42.0.1   Debug (port and servo mapping): http://10.42.0.1/debug"
 echo "The hotspot starts at boot and can accept both ESP32 robots."
 echo "The attached Pi screen opens the dashboard in a resizable application window."
 echo "The Pi will reboot automatically in 10 seconds."

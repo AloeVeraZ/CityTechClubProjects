@@ -30,7 +30,8 @@ This installer takes a normal Raspberry Pi OS setup and configures the robot ser
 | Daemon service | `stem-robot-dashboard.service` managed via systemd |
 | Wi-Fi access point | NetworkManager 2.4 GHz hotspot (`3TSahur-Swarm` @ `10.42.0.1`) |
 | Local hostname | `3tsahur.local` broadcast via Avahi / mDNS |
-| PWM daemon | `pigpiod.service` for accurate hardware timing on ramp servos |
+| Motor and servo I/O | `python3-lgpio` for the four motor ports, I2C enabled for the PCA9685 servo board and BNO055 IMU (MotionModule layout) |
+| Robot settings | Port and servo mapping saved from the Debug page to `~/.config/3tsahur/robot-settings.json`, kept across reinstalls |
 | Reverse proxy | Optional Nginx proxy serving dashboard traffic on HTTP port 80 |
 
 ## Installation Guide
@@ -53,7 +54,7 @@ bash install.sh
 | `curl-install.sh` | Remote bootstrap script for single-command curl installation |
 | `hotspot.sh` | NetworkManager hotspot and static IP (`10.42.0.1`) configuration |
 | `kiosk.sh` | Launches dedicated Chromium fullscreen UI on attached HDMI monitors |
-| `start-dashboard.sh` | Service wrapper that activates venv and launches Flask daemon |
+| `start-dashboard.sh` | Service wrapper that activates venv and launches the driver station |
 | `systemd/` | Unit files for auto-restarting services on startup |
 
 ---

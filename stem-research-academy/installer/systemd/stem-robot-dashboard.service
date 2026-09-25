@@ -1,7 +1,6 @@
 [Unit]
-Description=3TSahur mecanum robot dashboard
-Requires=pigpiod.service
-After=network.target pigpiod.service
+Description=3TSahur driver station (MotionModule controller)
+After=network.target
 
 [Service]
 Type=simple
@@ -13,7 +12,7 @@ ExecStart=/bin/bash @APP_DIR@/installer/start-dashboard.sh @APP_DIR@
 Restart=always
 RestartSec=2
 TimeoutStopSec=5
-# Hard ceiling for the dashboard, camera stream, and control service.
+# Hard ceiling for the driver station, camera stream, and control service.
 MemoryMax=1G
 
 [Install]

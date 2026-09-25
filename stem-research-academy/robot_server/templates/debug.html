@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#080b10">
+<title>3TSahur Debug</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='station.css') }}">
+<style>
+main { display: grid; gap: 12px; padding: 12px 16px 96px; }
+.safety-bar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 11px 13px; border: 1px solid #5f4c1c; border-radius: var(--radius); background: var(--amber-soft);
+}
+.safety-bar .check { color: #ffecc2; }
+.safety-bar .stop-button { width: auto; min-height: 38px; padding: 0 16px; }
+
+.port-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.port-card { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--line-soft); border-radius: 12px; background: var(--panel-2); }
+.port-card header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.port-card h3 { margin: 0; font-size: 15px; }
+.port-card header small { color: var(--faint); font-size: 10px; }
+.pins { color: var(--faint); font: 600 9px/1.6 var(--mono); }
+.field { display: grid; gap: 5px; color: var(--muted); font-size: 10px; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 11px; }
+.toggle-row input { width: 16px; height: 16px; accent-color: var(--amber); }
+.live { display: grid; grid-template-columns: 1fr 44px; gap: 8px; align-items: center; }
+.live output { text-align: right; font: 700 11px var(--mono); }
+.test-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
+.port-card.duplicate { border-color: #71323b; }
+.port-card.dirty h3::after { content: " •"; color: var(--amber); }
+
+.wheel-check { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+
+.two-col { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 12px; }
+.ramp-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.ramp-card { display: grid; gap: 9px; padding: 11px; border: 1px solid var(--line-soft); border-radius: 11px; background: var(--panel-2); }
+.ramp-card strong { font-size: 12px; }
+.number-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+.button-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.channel-grid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; }
+.channel {
+  min-height: 58px; display: grid; align-content: center; gap: 2px; padding: 6px 4px;
+  border: 1px solid var(--line-soft); border-radius: 9px; background: var(--panel-2); text-align: center;
+}
+.channel b { font: 800 14px/1 var(--mono); }
+.channel small { overflow: hidden; color: var(--faint); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.channel.held { border-color: #26684f; background: var(--green-soft); }
+.channel.held small { color: var(--green); }
+.channel.selected { outline: 2px solid var(--blue); outline-offset: 1px; }
+.servo-controls { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: end; margin-top: 12px; }
+
+.imu-values { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.value { padding: 9px 6px; border: 1px solid var(--line-soft); border-radius: 9px; background: var(--panel-2); text-align: center; }
+.value small { display: block; color: var(--faint); font-size: 8px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.value strong { display: block; margin-top: 4px; font: 700 13px var(--mono); }
+
+table { width: 100%; border-collapse: collapse; font-size: 11px; }
+th, td { padding: 7px 8px; border-bottom: 1px solid var(--line-soft); text-align: left; }
+th { color: var(--faint); font-size: 8px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+td.mono { font-family: var(--mono); }
+tr[data-group="motor"] td:first-child { color: var(--green); }
+tr[data-group="servo"] td:first-child, tr[data-group="i2c"] td:first-child { color: var(--blue); }
+tr[data-group="imu"] td:first-child { color: var(--amber); }
+
+.save-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 11px 16px; border-top: 1px solid var(--line); background: rgba(8,11,16,.96); backdrop-filter: blur(14px);
+}
+.save-bar strong { font-size: 12px; }
+.save-bar small { display: block; color: var(--faint); font-size: 10px; }
+.save-bar.dirty strong { color: var(--amber); }
+.save-bar.error strong { color: var(--red); }
+
+@media (max-width: 1100px) {
+  .port-grid, .wheel-check { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .two-col { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .port-grid, .wheel-check, .ramp-grid, .number-grid, .imu-values { grid-template-columns: minmax(0, 1fr); }
+  .channel-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .servo-controls { grid-template-columns: 1fr 1fr; }
+  .servo-controls .range-label { grid-column: 1 / -1; }
+}
+</style>
+</head>
+<body>
+<header class="station-header">
+  <div class="brand">
+    <div class="brand-mark debug" aria-hidden="true">DB</div>
+    <div><strong>3TSahur Debug</strong><small>Ports, servos, IMU and wiring · {{ hostname }}</small></div>
+  </div>
+  <div class="header-tools">
+    <a class="link-button" href="/">↖&nbsp; Driver Station</a>
+  </div>
+</header>
+
+<div class="signal-strip" aria-label="Hardware status">
+  <div class="signal" id="gpioSignal"><i></i><small>Motor outputs</small><strong>Checking</strong></div>
+  <div class="signal" id="servoSignal"><i></i><small>Servo board</small><strong>Checking</strong></div>
+  <div class="signal" id="imuSignal"><i></i><small>IMU</small><strong>Checking</strong></div>
+  <div class="signal" id="watchdogSignal"><i></i><small>Watchdog</small><strong>Checking</strong></div>
+</div>
+<div class="banner" id="connectionBanner"><strong>Robot connection lost.</strong> Tests stop until it answers again.</div>
+<div class="banner info" id="settingsBanner"></div>
+
+<main>
+  <div class="safety-bar">
+    <label class="check"><input id="safeConfirm" type="checkbox"><span><strong>Wheels are off the ground and the ramp is clear.</strong> Required before any motor or servo test.</span></label>
+    <button class="stop-button" id="stopAll" type="button">■ &nbsp; STOP EVERYTHING</button>
+  </div>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Motor ports</h2><span>Choose which port drives each wheel</span></div>
+    <div class="panel-body">
+      <div class="port-grid" id="portGrid"></div>
+      <p class="note" style="margin-top:12px">Hold a port's <b>Run</b> button to drive it at the chosen power; it stops the moment you let go.
+        If a wheel turns backwards when driven forward, tick <b>Invert</b>. Never rewire a motor to fix direction.</p>
+      <div class="wheel-check" id="wheelCheck"></div>
+    </div>
+  </section>
+
+  <div class="two-col">
+    <section class="panel">
+      <div class="panel-head"><h2>Servo board</h2><span id="servoBoardLabel">PCA9685</span></div>
+      <div class="panel-body">
+        <div class="channel-grid" id="channelGrid"></div>
+        <div class="servo-controls">
+          <label class="range-label"><span><span>Channel <b id="selectedChannel">0</b> angle</span><output id="servoAngleValue">90°</output></span>
+            <input id="servoAngle" type="range" min="0" max="180" step="1" value="90"></label>
+          <button class="button primary" id="servoSet" type="button">Move &amp; hold</button>
+          <button class="button" id="servoRelease" type="button">Release</button>
+        </div>
+        <div class="button-row" style="margin-top:12px">
+          <button class="button" id="releaseAll" type="button">Release all servos</button>
+          <button class="button" id="oeToggle" type="button">Cut outputs (OE)</button>
+        </div>
+        <p class="note" style="margin-top:10px">Angles map 0–180° onto <span id="pulseRange">500–2500</span> µs. A held servo keeps its position until released.
+          OE on GPIO4 switches all 16 outputs off in hardware; it is not a power cutoff.</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Ramp servos</h2><span>Channels and positions</span></div>
+      <div class="panel-body">
+        <div class="ramp-grid" id="rampGrid"></div>
+        <div class="number-grid">
+          <label class="field">Closed angle<input id="rampClosed" type="number" min="0" max="180" step="1"></label>
+          <label class="field">Open angle<input id="rampOpen" type="number" min="0" max="180" step="1"></label>
+          <label class="field">Min pulse µs<input id="rampMin" type="number" min="500" max="2500" step="10"></label>
+          <label class="field">Max pulse µs<input id="rampMax" type="number" min="500" max="2500" step="10"></label>
+        </div>
+        <div class="button-row" style="margin-top:12px">
+          <button class="button primary" type="button" data-ramp="open">Test open</button>
+          <button class="button" type="button" data-ramp="closed">Test closed</button>
+        </div>
+        <p class="note" style="margin-top:10px" id="rampNote">Both ramp servos move together. A mirrored servo turns the opposite way so the two sides match. Save before testing.</p>
+      </div>
+    </section>
+  </div>
+
+  <div class="two-col">
+    <section class="panel">
+      <div class="panel-head"><h2>IMU</h2><span id="imuLabel">BNO055</span></div>
+      <div class="panel-body stack">
+        <div class="imu-values">
+          <div class="value"><small>Yaw</small><strong id="imuYaw">—</strong></div>
+          <div class="value"><small>Pitch</small><strong id="imuPitch">—</strong></div>
+          <div class="value"><small>Roll</small><strong id="imuRoll">—</strong></div>
+          <div class="value"><small>Rate</small><strong id="imuRate">—</strong></div>
+        </div>
+        <div class="imu-values">
+          <div class="value"><small>System cal</small><strong id="calSystem">—</strong></div>
+          <div class="value"><small>Gyro cal</small><strong id="calGyro">—</strong></div>
+          <div class="value"><small>Accel cal</small><strong id="calAccel">—</strong></div>
+          <div class="value"><small>Address</small><strong id="imuAddress">—</strong></div>
+        </div>
+        <div class="button-row"><button class="button" id="zeroHeading" type="button">Zero heading</button></div>
+        <p class="note" id="imuNote">Runs in IMU fusion mode (gyro + accelerometer, no compass), so heading starts at zero on power-up. Leave the robot still for a few seconds to calibrate the gyro.</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Wiring</h2><span>Fixed · MotionModule harness</span></div>
+      <div class="panel-body">
+        <table>
+          <thead><tr><th>Pin</th><th>Signal</th><th>Connects to</th></tr></thead>
+          <tbody id="wiringTable"></tbody>
+        </table>
+        <p class="note" style="margin-top:10px">Motor battery power goes to the drivers' power terminals and servo V+ to its own 5–6 V regulator.
+          Never connect either to a Pi header pin. MotionModule Drivers 3 and 4 are not used on this robot.</p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<div class="save-bar" id="saveBar">
+  <div><strong id="saveTitle">Settings saved</strong><small id="saveDetail">Loading…</small></div>
+  <div class="button-row">
+    <button class="button" id="defaultsButton" type="button">Restore defaults</button>
+    <button class="button" id="revertButton" type="button" disabled>Revert</button>
+    <button class="button go" id="saveButton" type="button" disabled>Save settings</button>
+  </div>
+</div>
+
+<script>window.ROBOT_TOKEN = {{ token | tojson }};</script>
+<script src="{{ url_for('static', filename='debug.js') }}"></script>
+</body>
+</html>

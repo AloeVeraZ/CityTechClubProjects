@@ -1,81 +1,59 @@
 # 3TSahur Ramp Actuators
 
-### Two direct-GPIO servos with fixed, mirrored open and closed positions
+### Two servos on the PCA9685 board with fixed, mirrored open and closed positions
 
-<img alt="Timing: pigpio" src="https://img.shields.io/badge/timing-pigpio-00979d?style=flat-square"> <img alt="Positions: 0 and 120 degrees" src="https://img.shields.io/badge/positions-0%C2%B0%20%2F%20120%C2%B0-f39c12?style=flat-square">
+<img alt="Driver: PCA9685" src="https://img.shields.io/badge/driver-PCA9685-00979d?style=flat-square"> <img alt="Positions: 0 and 120 degrees" src="https://img.shields.io/badge/positions-0%C2%B0%20%2F%20120%C2%B0-f39c12?style=flat-square">
 
-[Project overview](../README.md) · [Wiring](WIRING.md) · [Setup](SETUP.md) · [Actuator code](../robot_server/actuators.py)
+[Project overview](../README.md) · [Wiring](WIRING.md) · [Setup](SETUP.md) · [Robot code](../robot_server/robot.py)
 
 ---
 
-The Logitech camera is fixed and has no actuator controls. Two hobby servos
-operate the robot's ramp directly from Raspberry Pi GPIO signals.
+The two ramp servos now plug into the MotionModule PCA9685 servo board instead
+of direct Pi GPIO, so `pigpio` is no longer used. The board holds each pulse in
+hardware, and its OE pin (GPIO4) can cut every servo output at once.
 
-## 01 / Pinout
+## 01 / Connections
 
-| Servo | Signal | Power | Ground |
-| --- | --- | --- | --- |
-| Ramp Servo 1 | BCM GPIO12, physical pin 32 | Buck +5 V | Buck ground |
-| Ramp Servo 2 | BCM GPIO18, physical pin 12 | Buck +5 V | Buck ground |
+| Servo | Default board channel | Power |
+| --- | ---: | --- |
+| Ramp servo A | 0 | Board V+ (regulated 5 V) |
+| Ramp servo B | 1, mirrored | Board V+ (regulated 5 V) |
 
-Connect the buck-converter ground to a Pi ground such as physical pin 6 or 14.
-Typical servo colors are red for power, brown/black for ground, and
-orange/white/yellow for signal; verify the exact servo before applying power.
-
-> [!CAUTION]
-> GPIO12 and GPIO18 are 3.3 V signal pins. Never connect a servo's red 5 V wire
-> to either signal pin.
+Change either channel, or which one is mirrored, on the Debug page. Both
+servos always move together.
 
 ## 02 / Positions and Controls
 
-| Position | Servo 1 | Servo 2 |
+| Position | Servo A | Servo B (mirrored) |
 | --- | ---: | ---: |
-| Closed / startup | 0° logical | 0° logical |
-| Open | 120° logical | 120° logical |
+| Closed / startup | 0° · 1000 µs | 120° · 1667 µs |
+| Open | 120° · 1667 µs | 0° · 1000 µs |
 
-Servo 2 on physical pin 12 is mirrored in software: logical 0° uses its 120°
-electrical position, while logical 120° uses its 0° electrical position. Servo
-1 retains normal direction.
+These match the original robot: 0–180° maps onto 1000–2000 µs. The closed and
+open angles and the pulse range are editable on the Debug page (within the
+board's 500–2500 µs safety envelope).
 
-Use **Open ramp** / **Close ramp** in the dashboard or press `R`. There is no
-intermediate position and no camera movement mode.
+| Control | Effect |
+| --- | --- |
+| **Open ramp** / **Close ramp**, `R`, gamepad Y / A | Move both servos (robot must be enabled) |
+| `Space`, Disable, losing focus | Drive stops; the ramp keeps holding |
+| `Esc`, **Stop all outputs** | Drive stops, servos released, OE cuts all outputs |
 
-## 03 / Runtime and Configuration
+After an emergency stop the next ramp command re-enables the outputs.
 
-Persistent settings in `/etc/stem-research-academy/config.env`:
-
-```text
-RAMP_SERVO_0_GPIO_BCM=12
-RAMP_SERVO_1_GPIO_BCM=18
-RAMP_SERVO_0_REVERSED=0
-RAMP_SERVO_1_REVERSED=1
-RAMP_SERVO_MIN_PULSE_US=1000
-RAMP_SERVO_MAX_PULSE_US=2000
-```
-
-| Servo state | Normal servo pulse | Reversed servo pulse |
-| --- | ---: | ---: |
-| Closed | 1000 µs | 1667 µs |
-| Open | 1667 µs | 1000 µs |
-
-The installer starts `pigpiod` before the dashboard. `pigpio` continuously
-holds the selected pulse, while the server serializes commands and suppresses
-duplicate writes.
+## 03 / API
 
 | API | Request |
 | --- | --- |
-| `GET /api/status` | Read actuator state and availability |
-| `POST /api/actuators/ramp` | `{"state":"closed"}` or `{"state":"open"}` |
+| `GET /api/status` | `robot.ramp` shows state, holding, and each servo's pulse |
+| `POST /api/ramp` | `{"state":"closed"}` or `{"state":"open"}` |
 
-## 04 / Buck-Converter Checks
+## 04 / Supply Checks
 
-1. Set the converter to 5.0 V before connecting either servo.
+1. Set the regulator to 5.0 V before connecting either servo.
 2. Confirm its continuous and peak current ratings cover both servos together.
-3. Disconnect drivetrain power and remove the ramp linkages for the first test.
-4. If jitter remains, verify the buck-to-Pi common ground.
-5. Measure voltage while both servos move to identify supply sag.
-
-A noisy supply or mechanically stalled servo cannot be corrected in software.
+3. Remove the ramp linkages for the first test and use Debug → **Test open**.
+4. If a servo jitters, check the servo supply ground to the common ground point.
 
 ---
 

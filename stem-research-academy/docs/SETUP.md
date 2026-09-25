@@ -17,8 +17,10 @@
 
 - Install a correctly rated fuse and physical motor-power switch.
 - Connect a shared ground between the Pi, both motor drivers, and motor supply.
-- Wire the drivetrain exactly as [WIRING.md](WIRING.md) specifies.
-- Connect the ramp servos to their regulated 5 V supply and common ground.
+- Wire the two drivers, the PCA9685 servo board, and the BNO055 IMU exactly as
+  [WIRING.md](WIRING.md) specifies. The wheels may go on any of the four ports.
+- Plug the ramp servos into servo board channels 0 and 1 and power the board's
+  V+ from the regulated 5 V supply.
 - Attach the Logitech USB camera.
 
 ## 02 / Install on the Raspberry Pi
@@ -39,7 +41,8 @@ bash installer/install.sh
 | Hotspot | `3TSahur-Swarm` |
 | Dashboard service | `stem-robot-dashboard.service` |
 | Hotspot service | `stem-robot-hotspot.service` |
-| Servo timing service | `pigpiod.service` |
+| Motor and servo I/O | `lgpio` GPIO, I2C enabled |
+| Port/servo mapping | `~/.config/3tsahur/robot-settings.json` |
 
 The installer validates the application, enables the services, and reboots.
 
@@ -49,22 +52,33 @@ The installer validates the application, enables the services, and reboots.
 | --- | --- |
 | Wi-Fi name | `3TSahur-Swarm` |
 | Raspberry Pi address | `10.42.0.1` |
-| Dashboard | `http://10.42.0.1` |
+| Driver Station | `http://10.42.0.1` |
+| Debug page | `http://10.42.0.1/debug` |
 | Direct service | `http://10.42.0.1:8080` |
 | mDNS | `http://3tsahur.local` |
 
 Change the default hotspot password before a public deployment.
 
-## 04 / Validate Without Floor Driving
+## 04 / Map the Ports, Then Validate Without Floor Driving
 
-1. Confirm that the dashboard loads and the Logitech camera stream appears.
-2. Confirm that GPIO, camera, and servo status appear in the system panel.
-3. Keep the wheels raised and select a low speed.
-4. Test forward, reverse, both strafes, and both rotations.
-5. Release each input and verify that all four motors stop.
-6. Test the ramp with its linkage disconnected or clear of obstructions.
-7. Verify that `Space`, `Esc`, focus loss, and the watchdog stop the drivetrain.
-8. Perform a floor test only after every direction and stop path is correct.
+The robot code is built in; there is nothing to upload. Everything that
+depends on how you plugged things in is set on the Debug page.
+
+1. Open `http://10.42.0.1/debug` and confirm Motor outputs, Servo board, and IMU
+   are green.
+2. Raise the wheels and tick the safety check.
+3. Hold **Run** on each port and note which wheel turns. Set that port's
+   **Drives wheel** to it. Choosing a wheel already on another port swaps them.
+4. Tick **Invert** on any port whose wheel turns backwards at positive power.
+5. Press **Save settings**, then hold each **wheel check** button: every wheel
+   should roll the robot forward.
+6. Check the ramp channels, press **Test closed** / **Test open** with the
+   linkage clear, and leave the robot still until the gyro reports 3/3.
+7. On the Driver Station (`http://10.42.0.1`), enable at low speed and test
+   forward, reverse, both strafes, and both turns.
+8. Verify that `Space`, `Esc`, Disable, switching tabs, and closing the page
+   stop the drivetrain, and that the watchdog stops it if Wi-Fi drops.
+9. Perform a floor test only after every direction and stop path is correct.
 
 ## Nginx Validation During an Update
 

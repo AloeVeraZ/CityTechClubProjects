@@ -1,0 +1,130 @@
+/* Shared look for the 3TSahur Driver Station and Debug pages. */
+:root {
+  color-scheme: dark;
+  --bg: #080b10;
+  --panel: #10151d;
+  --panel-2: #151b24;
+  --panel-3: #1b2330;
+  --line: #26303d;
+  --line-soft: #1c2530;
+  --text: #f5f7fa;
+  --muted: #9aa5b4;
+  --faint: #7f8899;
+  --blue: #78a4ff;
+  --blue-soft: #172541;
+  --green: #3de0a1;
+  --green-soft: #102d24;
+  --amber: #f7c75f;
+  --amber-soft: #322814;
+  --red: #ff6572;
+  --red-soft: #35171d;
+  --radius: 14px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body {
+  margin: 0; min-width: 320px; min-height: 100vh;
+  color: var(--text); background: var(--bg); font: 14px/1.45 var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select { color: inherit; font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .45; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+/* Header ------------------------------------------------------------------ */
+.station-header {
+  position: sticky; top: 0; z-index: 30;
+  min-height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 10px 18px; border-bottom: 1px solid var(--line); background: rgba(8,11,16,.94);
+  backdrop-filter: blur(14px);
+}
+.brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.brand-mark {
+  width: 37px; height: 37px; flex: 0 0 auto; display: grid; place-items: center;
+  border-radius: 10px; background: var(--blue); color: #08101e; font-weight: 900; letter-spacing: -.02em;
+}
+.brand-mark.debug { background: var(--amber); color: #1d1606; }
+.brand strong { display: block; font-size: 13px; letter-spacing: .02em; }
+.brand small { display: block; margin-top: 2px; color: var(--faint); font-size: 9px; letter-spacing: .13em; text-transform: uppercase; }
+.header-tools { display: flex; align-items: center; gap: 8px; }
+.chip, .link-button {
+  min-height: 35px; display: inline-flex; align-items: center; gap: 8px; padding: 0 11px;
+  border: 1px solid var(--line); border-radius: 9px; background: var(--panel); color: var(--muted);
+  font-size: 11px; text-decoration: none; white-space: nowrap;
+}
+.chip { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.link-button:hover { border-color: var(--faint); color: var(--text); }
+
+/* Status strip ------------------------------------------------------------- */
+.signal-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 10px 16px 0; }
+.signal {
+  min-width: 0; display: grid; grid-template-columns: 8px minmax(0,1fr); column-gap: 9px; align-items: center;
+  padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel);
+}
+.signal i { grid-row: span 2; width: 7px; height: 7px; border-radius: 50%; background: var(--faint); }
+.signal.good i { background: var(--green); box-shadow: 0 0 0 3px var(--green-soft); }
+.signal.warn i { background: var(--amber); box-shadow: 0 0 0 3px var(--amber-soft); }
+.signal.bad i { background: var(--red); box-shadow: 0 0 0 3px var(--red-soft); }
+.signal small { color: var(--faint); font-size: 8px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.signal strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.banner { display: none; margin: 10px 16px 0; padding: 10px 12px; border: 1px solid #71323b; border-radius: 9px; background: var(--red-soft); color: #ffd9dd; font-size: 11px; }
+.banner.visible { display: block; }
+.banner.info { border-color: #5f4c1c; background: var(--amber-soft); color: #ffecc2; }
+
+/* Panels ------------------------------------------------------------------- */
+.column { min-width: 0; display: grid; gap: 12px; align-content: start; }
+.panel { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.panel-head {
+  min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 11px 13px; border-bottom: 1px solid var(--line-soft);
+}
+.panel-head h2 { margin: 0; font-size: 12px; letter-spacing: .01em; }
+.panel-head span { color: var(--faint); font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
+.panel-body { padding: 13px; }
+.stack { display: grid; gap: 11px; }
+.eyebrow { color: var(--faint); font-size: 8px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.note { margin: 0; color: var(--faint); font-size: 10px; line-height: 1.6; }
+
+/* Buttons and inputs --------------------------------------------------------- */
+.button {
+  min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel-2);
+  font-size: 11px; font-weight: 700; letter-spacing: .02em;
+}
+.button:hover:not(:disabled) { border-color: var(--faint); }
+.button.primary { border-color: #355c9f; background: var(--blue-soft); color: var(--blue); }
+.button.go { border-color: #26684f; background: var(--green-soft); color: var(--green); }
+.button.danger { border-color: #71323b; background: var(--red-soft); color: var(--red); }
+.button.hold.active { border-color: var(--green); background: var(--green-soft); color: var(--green); }
+.stop-button {
+  width: 100%; min-height: 48px; border: 1px solid #8a3642; border-radius: 9px; background: #511d25; color: #ffe6e8;
+  font-size: 11px; font-weight: 900; letter-spacing: .06em;
+}
+.check { display: flex; gap: 9px; align-items: flex-start; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.check input { flex: 0 0 auto; width: 16px; height: 16px; margin-top: 1px; accent-color: var(--green); }
+.range-label { display: grid; gap: 7px; color: var(--muted); font-size: 10px; }
+.range-label span { display: flex; justify-content: space-between; }
+.range-label output { color: var(--text); font: 700 10px var(--mono); }
+input[type="range"] { width: 100%; accent-color: var(--blue); }
+select, input[type="number"] {
+  min-height: 34px; width: 100%; padding: 0 9px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--panel-2); font-size: 12px;
+}
+.segmented { display: inline-flex; gap: 3px; padding: 3px; border-radius: 9px; background: var(--panel-2); }
+.segmented button { padding: 6px 9px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); font-size: 9px; font-weight: 700; }
+.segmented button.active { background: var(--panel-3); color: var(--text); }
+
+/* Power bars ----------------------------------------------------------------- */
+.power-bar { position: relative; height: 6px; border-radius: 99px; background: var(--panel-3); overflow: hidden; }
+.power-bar::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--line); }
+.power-bar i { position: absolute; top: 0; bottom: 0; left: 50%; width: 0; background: var(--green); }
+.power-bar i.reverse { background: var(--amber); }
+
+@media (max-width: 700px) {
+  .station-header { flex-wrap: wrap; }
+  .signal-strip { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }

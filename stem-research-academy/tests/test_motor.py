@@ -1,147 +1,85 @@
+import time
 import unittest
 from unittest.mock import patch
 
-from robot_server.motor import MecanumDrive
+from robot_server import hardware
+from robot_server.controller import MotionController
+from robot_server.errors import RobotError
+from robot_server.gpio import MockGPIO
+from robot_server.servo import MockServoBoard
 
 
-class FakePWM:
-    def __init__(self):
-        self.duty = None
-        self.running = False
-        self.change_count = 0
-        self.start_count = 0
+class WiringTests(unittest.TestCase):
+    def test_ports_use_the_locked_motionmodule_driver_1_and_2_pins(self):
+        pins = {port: (item.forward_gpio, item.reverse_gpio) for port, item in hardware.MOTOR_PORTS.items()}
+        self.assertEqual(pins, {1: (26, 19), 2: (13, 6), 3: (21, 20), 4: (16, 12)})
+        self.assertEqual(hardware.SERVO_OE_GPIO, 4)
+        self.assertEqual(hardware.SERVO_ADDRESS, 0x40)
 
-    def start(self, duty):
-        self.duty = duty
-        self.running = True
-        self.start_count += 1
-
-    def ChangeDutyCycle(self, duty):
-        self.duty = duty
-        self.change_count += 1
-
-    def stop(self):
-        self.running = False
+    def test_only_four_ports_exist_and_no_gpio_is_shared(self):
+        self.assertEqual(sorted(hardware.MOTOR_PORTS), [1, 2, 3, 4])
+        used = [gpio for item in hardware.MOTOR_PORTS.values() for gpio in (item.forward_gpio, item.reverse_gpio)]
+        used.append(hardware.SERVO_OE_GPIO)
+        self.assertEqual(len(used), len(set(used)))
+        self.assertFalse({2, 3} & set(used), "I2C pins must stay free for the servo board and IMU")
 
 
-class FakeGPIO:
-    BCM = "BCM"
-    OUT = "OUT"
-    LOW = 0
+class ControllerTests(unittest.TestCase):
+    def setUp(self):
+        self.gpio = MockGPIO()
+        self.controller = MotionController(self.gpio, MockServoBoard())
 
-    def __init__(self):
-        self.pwms = {}
+    def tearDown(self):
+        self.controller.close()
 
-    def setwarnings(self, _enabled):
-        pass
+    def test_positive_drives_only_the_forward_input(self):
+        self.controller.set_ports({1: 0.5, 2: 0.5, 3: 0.5, 4: 0.5})
+        for pin in (26, 13, 21, 16):
+            self.assertEqual(self.gpio.values[pin], 0.5)
+        for pin in (19, 6, 20, 12):
+            self.assertEqual(self.gpio.values[pin], 0)
 
-    def setmode(self, _mode):
-        pass
+    def test_inversion_swaps_the_driven_input(self):
+        self.controller.set_inverted(1, True)
+        self.controller.set_ports({1: 0.4})
+        self.assertEqual(self.gpio.values[19], 0.4)
+        self.assertEqual(self.gpio.values[26], 0)
 
-    def setup(self, _pin, _mode, initial=0):
-        pass
-
-    def PWM(self, pin, _frequency):
-        self.pwms[pin] = FakePWM()
-        return self.pwms[pin]
-
-    def output(self, _pins, _value):
-        pass
-
-    def cleanup(self):
-        pass
-
-
-class MecanumMixTests(unittest.TestCase):
-    def test_forward_moves_every_wheel_forward(self):
-        self.assertEqual(
-            MecanumDrive.mix(1, 0, 0),
-            {"front_left": -1, "front_right": -1, "rear_left": -1, "rear_right": -1},
-        )
-
-    def test_backward_moves_every_wheel_in_the_opposite_direction(self):
-        self.assertEqual(
-            MecanumDrive.mix(-1, 0, 0),
-            {"front_left": 1, "front_right": 1, "rear_left": 1, "rear_right": 1},
-        )
-
-    def test_strafe_uses_opposite_diagonals(self):
-        self.assertEqual(
-            MecanumDrive.mix(0, 1, 0),
-            {"front_left": 1, "front_right": -1, "rear_left": -1, "rear_right": 1},
-        )
-
-    def test_combined_commands_are_normalized(self):
-        result = MecanumDrive.mix(1, 1, 1)
-        self.assertLessEqual(max(abs(value) for value in result.values()), 1)
-        self.assertEqual(result["rear_left"], -1)
-
-    def test_forward_uses_the_inverted_longitudinal_pin_directions(self):
-        gpio = FakeGPIO()
-        drive = MecanumDrive(gpio_module=gpio)
-        drive.drive(1, 0, 0, 0.75)
-        for reverse_pin in (6, 16, 21, 13):
-            self.assertEqual(gpio.pwms[reverse_pin].duty, 75)
-        for forward_pin in (5, 19, 20, 26):
-            self.assertFalse(gpio.pwms[forward_pin].running)
-        self.assertEqual(sum(pwm.running for pwm in gpio.pwms.values()), 4)
-        drive.close()
-
-    def test_q_rotates_about_center_with_all_four_motors_at_75_percent(self):
-        gpio = FakeGPIO()
-        drive = MecanumDrive(gpio_module=gpio)
-        drive.drive(0, 0, 1, 0.75)
-
-        self.assertEqual(
-            MecanumDrive.mix(0, 0, 1),
-            {"front_left": 1, "front_right": 1, "rear_left": -1, "rear_right": -1},
-        )
-        for active_pin in (5, 20, 16, 13):
-            self.assertEqual(gpio.pwms[active_pin].duty, 75)
-        for inactive_pin in (6, 21, 19, 26):
-            self.assertFalse(gpio.pwms[inactive_pin].running)
-        self.assertEqual(sum(pwm.running for pwm in gpio.pwms.values()), 4)
-        drive.close()
-
-    def test_e_is_the_exact_opposite_center_rotation_at_75_percent(self):
-        gpio = FakeGPIO()
-        drive = MecanumDrive(gpio_module=gpio)
-        drive.drive(0, 0, -1, 0.75)
-
-        self.assertEqual(
-            MecanumDrive.mix(0, 0, -1),
-            {"front_left": -1, "front_right": -1, "rear_left": 1, "rear_right": 1},
-        )
-        for active_pin in (6, 21, 19, 26):
-            self.assertEqual(gpio.pwms[active_pin].duty, 75)
-        for inactive_pin in (5, 20, 16, 13):
-            self.assertFalse(gpio.pwms[inactive_pin].running)
-        self.assertEqual(sum(pwm.running for pwm in gpio.pwms.values()), 4)
-        drive.close()
-
-    def test_full_reversal_uses_one_shared_deadtime(self):
-        gpio = FakeGPIO()
-        drive = MecanumDrive(gpio_module=gpio)
-        drive.drive(1, 0, 0, 0.75)
-        with patch("robot_server.motor.time.sleep") as sleep:
-            drive.drive(-1, 0, 0, 0.75)
+    def test_reversal_uses_one_shared_deadtime(self):
+        self.controller.set_ports({port: 0.4 for port in range(1, 5)})
+        with patch("robot_server.controller.time.sleep") as sleep:
+            self.controller.set_ports({port: -0.4 for port in range(1, 5)})
         sleep.assert_called_once_with(0.015)
-        self.assertEqual(sum(pwm.running for pwm in gpio.pwms.values()), 4)
-        drive.close()
 
-    def test_identical_watchdog_heartbeat_skips_redundant_pwm_writes(self):
-        gpio = FakeGPIO()
-        drive = MecanumDrive(gpio_module=gpio)
-        drive.drive(1, 0, 0, 0.75)
-        starts = sum(pwm.start_count for pwm in gpio.pwms.values())
-        changes = sum(pwm.change_count for pwm in gpio.pwms.values())
+    def test_values_are_clamped_and_validated(self):
+        self.controller.set_ports({2: 3})
+        self.assertEqual(self.controller.motor_values[2], 1.0)
+        with self.assertRaises(ValueError):
+            self.controller.set_ports({5: 0.2})
+        with self.assertRaises(ValueError):
+            self.controller.set_ports({1: float("nan")})
 
-        drive.drive(1, 0, 0, 0.75)
+    def test_watchdog_stops_stale_outputs(self):
+        self.controller.close()
+        self.gpio = MockGPIO()
+        self.controller = MotionController(self.gpio, MockServoBoard(), watchdog_ms=50)
+        self.controller.set_ports({3: 0.3})
+        time.sleep(0.15)
+        self.assertEqual(self.controller.motor_values[3], 0)
+        self.assertTrue(self.controller.snapshot()["watchdog_tripped"])
 
-        self.assertEqual(sum(pwm.start_count for pwm in gpio.pwms.values()), starts)
-        self.assertEqual(sum(pwm.change_count for pwm in gpio.pwms.values()), changes)
-        self.assertEqual(drive.last_command["forward"], 1)
-        drive.close()
+    def test_oe_is_active_low_and_blocks_servo_commands_when_cut(self):
+        self.assertEqual(self.gpio.values[4], 0)
+        self.controller.set_servo_outputs_enabled(False)
+        self.assertEqual(self.gpio.values[4], 1)
+        with self.assertRaises(RobotError):
+            self.controller.set_servo_pulse(0, 1500)
+
+    def test_close_stops_motors_and_cuts_servo_outputs(self):
+        self.controller.set_ports({1: 0.5})
+        self.controller.close()
+        self.assertTrue(self.gpio.closed)
+        self.assertEqual(self.gpio.values[26], 0)
 
 
 if __name__ == "__main__":
