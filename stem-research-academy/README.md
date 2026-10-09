@@ -10,7 +10,7 @@
 [![Software](https://img.shields.io/badge/Software-MotionModule-0a7f5a?style=flat-square)](robot/3TSahur/)
 
 <strong>Quick navigation:</strong><br>
-[Overview](#overview) | [Learning](#what-the-team-learned) | [Project Gallery](#project-gallery) | [Robot System](#robot-system) | [Repository Contents](#repository-contents) | [Connect and Drive](#connect-and-drive) | [Back to Club](../)
+[Overview](#overview) | [Install](#install-on-the-robot) | [Learning](#what-the-team-learned) | [Project Gallery](#project-gallery) | [Robot System](#robot-system) | [Repository Contents](#repository-contents) | [Connect and Drive](#connect-and-drive) | [Back to Club](../)
 
 </div>
 
@@ -52,6 +52,48 @@ The main result was **3TSahur**, a Raspberry Pi 4 robot with a four-wheel mecanu
 
 > [!NOTE]
 > The program also produced two smaller ESP32-S3 and ESP32-CAM experimental robots that create their own local Wi-Fi networks. Their source files are not included in this repository.
+
+## Install on the robot
+
+One command sets up the whole robot: the [MotionModule](https://github.com/AloeVeraZ/MotionModule) runtime and Driver Station, the 3TSahur robot project, ramp-servo timing, and camera support. Everything happens over SSH, so the robot needs no monitor, keyboard, or mouse.
+
+1. **Flash the SD card.** In Raspberry Pi Imager, choose Raspberry Pi OS. In its settings, enter a Wi-Fi network with internet access and turn on SSH.
+2. **Power the Pi.** Raise the chassis so all four wheels spin freely. The Pi needs internet for the install, through that Wi-Fi network or an Ethernet cable.
+3. **Connect over SSH** from a laptop on the same network. Use the username you set in Imager, and `3tsahur.local` instead if the robot was set up before:
+
+   ```bash
+   ssh pi@raspberrypi.local
+   ```
+
+4. **Run the installer** as the normal user, not with `sudo`:
+
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/curl-install.sh | bash
+   ```
+
+5. **Wait for the reboot.** MotionModule tests itself before switching over, so the install takes a while. The Pi restarts on its own when it finishes.
+6. **Open the dashboard** at `http://3tsahur.local`. If the Pi cannot find a saved Wi-Fi network, it starts the `3TSahur-Swarm` hotspot (password `roboswarm1`) after 30 seconds; join it and open `http://10.42.0.1`.
+7. **Check every direction with the wheels raised** before driving on the floor. The checklist is in [`docs/SETUP.md`](docs/SETUP.md#04--validate-without-floor-driving).
+
+| The installer | Result |
+| --- | --- |
+| Removes the original server | Old dashboard, always-on hotspot service, kiosk window, and `~/STEMResearchAcademy` |
+| Installs `pigpiod` | Steady pulses for the two ramp servos on GPIO12 and GPIO18 |
+| Installs camera packages | The Logitech USB camera streams in the Driver Station |
+| Keeps GPIO18 free | MotionModule's IMU bus is turned off; 3TSahur has no IMU and uses GPIO18 for ramp servo 2 |
+| Adds the robot project | `robot/3TSahur` becomes `~/MotionModule/robots/3TSahur`, the active robot |
+| Installs MotionModule | Tests the release, names the Pi `3tsahur`, starts the dashboard, and reboots |
+
+Running the same command again is safe. It keeps the previous robot folder under `~/MotionModule/backups`.
+
+| Later change | How |
+| --- | --- |
+| Edit robot code from a laptop | Dashboard → **Code** → choose the `3TSahur` folder → **Deploy and run** |
+| Update MotionModule | Dashboard → **Update** |
+| Take the robot folder from GitHub | Run the install command ending in `bash -s -- --robot-only` |
+| Install without the final reboot | Run the install command ending in `bash -s -- --no-reboot` |
+
+More detail is in the [installer README](installer/README.md).
 
 ## What the team learned
 
@@ -123,12 +165,6 @@ stem-research-academy/
 | Bench setup | [`docs/SETUP.md`](docs/SETUP.md) |
 | Automated checks | [`tests/`](tests/) |
 
-Install on the robot's Raspberry Pi over SSH (no monitor, keyboard, or mouse needed):
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/curl-install.sh | bash
-```
-
 Run the hardware-independent tests with:
 
 ```bash
@@ -157,13 +193,7 @@ Open the dashboard, then **Open Driver Station**, tick the safety box and press 
 
 A game controller (left stick drives and strafes, right stick turns, `Y` toggles the ramp) and phone touch sticks work too.
 
-| Task, all over Wi-Fi | Where |
-| --- | --- |
-| Deploy edited robot code | Dashboard → **Code** → choose the `3TSahur` folder → **Deploy and run** |
-| Update MotionModule | Dashboard → **Update** |
-| Change Wi-Fi or hotspot | Dashboard → **Debug → Network** |
-
-Change the default hotspot password before a public deployment.
+Change Wi-Fi networks or the hotspot from Dashboard → **Debug → Network**. Change the default hotspot password before a public deployment.
 
 ## Safety
 
