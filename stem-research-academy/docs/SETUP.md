@@ -2,7 +2,7 @@
 
 ### Installation, first boot, and raised-wheel validation for the large robot
 
-<img alt="Platform: Raspberry Pi 4" src="https://img.shields.io/badge/platform-Raspberry%20Pi%204-C51A4A?style=flat-square&logo=raspberrypi&logoColor=white"> <img alt="Network: local 2.4 GHz hotspot" src="https://img.shields.io/badge/network-local%202.4%20GHz%20hotspot-00979d?style=flat-square">
+<img alt="Platform: Raspberry Pi 4" src="https://img.shields.io/badge/platform-Raspberry%20Pi%204-C51A4A?style=flat-square&logo=raspberrypi&logoColor=white"> <img alt="Runtime: MotionModule" src="https://img.shields.io/badge/runtime-MotionModule-6f42c1?style=flat-square">
 
 [Project overview](../README.md) · [Wiring](WIRING.md) · [Ramp actuators](3TSAHUR_AUXILIARY_ACTUATORS.md) · [Installer](../installer/)
 
@@ -23,62 +23,60 @@
 
 ## 02 / Install on the Raspberry Pi
 
-Use a current Raspberry Pi OS image with internet access. Run the installer as
-the normal Pi user, not as root:
+Flash a current Raspberry Pi OS image with Raspberry Pi Imager and set the Wi-Fi
+network and SSH there. Then SSH in as the normal Pi user, not as root:
 
 ```bash
-git clone https://github.com/AloeVeraZ/CityTechClubProjects.git
-cd CityTechClubProjects/stem-research-academy
-bash installer/install.sh
+curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/curl-install.sh | bash
 ```
 
 | Installer result | Value |
 | --- | --- |
-| Application directory | `~/STEMResearchAcademy` |
+| Runtime | MotionModule, `~/.local/share/motionmodule` |
+| Robot project | `~/MotionModule/robots/3TSahur` (active) |
 | Hostname | `3tsahur` |
-| Hotspot | `3TSahur-Swarm` |
-| Dashboard service | `stem-robot-dashboard.service` |
-| Hotspot service | `stem-robot-hotspot.service` |
+| Fallback hotspot | `3TSahur-Swarm` |
+| Dashboard service | `motionmodule.service` |
 | Servo timing service | `pigpiod.service` |
 
-The installer validates the application, enables the services, and reboots.
+The installer removes the original 3TSahur server, tests the MotionModule
+release, and reboots. See the [installer README](../installer/README.md).
 
 ## 03 / Connect
 
-| Setting | Value |
-| --- | --- |
-| Wi-Fi name | `3TSahur-Swarm` |
-| Raspberry Pi address | `10.42.0.1` |
-| Dashboard | `http://10.42.0.1` |
-| Direct service | `http://10.42.0.1:8080` |
-| mDNS | `http://3tsahur.local` |
+The Pi joins the Wi-Fi saved by Raspberry Pi Imager. If no saved network
+connects within 30 seconds of boot, it starts its own hotspot.
 
-Change the default hotspot password before a public deployment.
+| Setting | On saved Wi-Fi | On the hotspot |
+| --- | --- | --- |
+| Wi-Fi name | your network | `3TSahur-Swarm` |
+| Password | your network | `roboswarm1` |
+| Dashboard | `http://3tsahur.local` | `http://10.42.0.1` |
+| Driver Station | Dashboard → **Open Driver Station** | same |
+
+Change Wi-Fi networks, the hotspot and the hostname from the dashboard. Change
+the default hotspot password before a public deployment.
 
 ## 04 / Validate Without Floor Driving
 
-1. Confirm that the dashboard loads and the Logitech camera stream appears.
-2. Confirm that GPIO, camera, and servo status appear in the system panel.
-3. Keep the wheels raised and select a low speed.
-4. Test forward, reverse, both strafes, and both rotations.
-5. Release each input and verify that all four motors stop.
-6. Test the ramp with its linkage disconnected or clear of obstructions.
-7. Verify that `Space`, `Esc`, focus loss, and the watchdog stop the drivetrain.
-8. Perform a floor test only after every direction and stop path is correct.
+1. Open the dashboard and run the **Debug** checks. The IMU check reports no
+   IMU bus; that is expected on 3TSahur.
+2. Open the Driver Station and confirm the Logitech camera stream appears.
+3. Confirm that the Ramp line under Raspberry Pi Inputs reads `closed`, not an error.
+4. Keep the wheels raised, enable the Driver Station and set a low drive output.
+5. Test forward, reverse, both strafes, and both rotations.
+6. Release each key and verify that all four motors stop.
+7. Test the ramp with its linkage disconnected or clear of obstructions.
+8. Verify that Space, **STOP ALL OUTPUTS**, closing the page and losing Wi-Fi stop the drivetrain.
+9. Perform a floor test only after every direction and stop path is correct.
 
-## Nginx Validation During an Update
+## 05 / Change Code and Update, Over Wi-Fi
 
-The installer resolves Nginx at `/usr/sbin/nginx` when it is not in the normal
-user's `PATH`. It validates the generated proxy before changing active sites
-and avoids declarations that conflict with the Raspberry Pi OS default site.
-
-If validation fails, the installer prints the diagnostic and removes the new
-site link. Repair the reported site or reinstall Nginx, then rerun the same
-installer command:
-
-```bash
-sudo apt-get install --reinstall nginx-light
-```
+| Task | Where |
+| --- | --- |
+| Deploy edited robot code | Dashboard → **Code** → choose the `3TSahur` folder → **Deploy and run** |
+| Update MotionModule | Dashboard → **Update** |
+| Take the robot folder from GitHub | Rerun the install command with `bash -s -- --robot-only` |
 
 ---
 

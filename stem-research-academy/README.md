@@ -7,7 +7,7 @@
 [![Program](https://img.shields.io/badge/Program-6_Weeks-111111?style=flat-square)](#overview)
 [![Team](https://img.shields.io/badge/Team-2_Students_%2B_4_Mentors-6f42c1?style=flat-square)](#what-the-team-learned)
 [![Platform](https://img.shields.io/badge/Platform-Raspberry_Pi_4-c51a4a?style=flat-square)](#robot-system)
-[![Software](https://img.shields.io/badge/Software-Python_%2B_Flask-0a7f5a?style=flat-square)](robot_server/)
+[![Software](https://img.shields.io/badge/Software-MotionModule-0a7f5a?style=flat-square)](robot/3TSahur/)
 
 <strong>Quick navigation:</strong><br>
 [Overview](#overview) | [Learning](#what-the-team-learned) | [Project Gallery](#project-gallery) | [Robot System](#robot-system) | [Repository Contents](#repository-contents) | [Connect and Drive](#connect-and-drive) | [Back to Club](../)
@@ -48,7 +48,7 @@ The main result was **3TSahur**, a Raspberry Pi 4 robot with a four-wheel mecanu
 | Main platform | Custom Raspberry Pi 4 mecanum robot |
 | Mechanical work | CAD/CAM, 3D printing, bandsaw work, drilling, manual milling, and CNC preparation |
 | Electrical work | 5 V logic, 12 V motor power, fused distribution, buck regulation, custom PCBs, motors, servos, camera, and status-light interfaces |
-| Software | Python robot server, local hotspot, camera stream, safety watchdog, and responsive web dashboard |
+| Software | [MotionModule](https://github.com/AloeVeraZ/MotionModule) runtime and Driver Station, over-the-air code deploys and updates, camera stream, and safety watchdog |
 
 > [!NOTE]
 > The program also produced two smaller ESP32-S3 and ESP32-CAM experimental robots that create their own local Wi-Fi networks. Their source files are not included in this repository.
@@ -96,39 +96,37 @@ This project connects the club's foundational work to more advanced automation. 
 | Motor output | Two H-bridge drivers controlled through BCM GPIO PWM |
 | Auxiliary motion | Two mirrored ramp servos driven through `pigpio` |
 | Vision | Automatically detected Logitech USB camera with MJPEG streaming |
-| Interface | Local Flask dashboard with keyboard controls, telemetry, and camera view |
-| Networking | Standalone `3TSahur-Swarm` Wi-Fi hotspot |
-| Safety | Command heartbeat, stale-sequence rejection, focus-loss stop, soft stop, and emergency kill |
+| Interface | MotionModule Driver Station: keyboard, game controller or phone touch sticks, camera view, ramp controls |
+| Networking | Saved Wi-Fi, with a `3TSahur-Swarm` hotspot fallback |
+| Safety | 300 ms motor watchdog, reversal deadtime, page-hidden stop, STOP and E-stop |
 
-The operator connects directly to the robot's hotspot. Browser commands go to the Raspberry Pi, which mixes mecanum-wheel outputs, controls the ramp servos, and streams the camera back to the dashboard. The system does not require an internet connection while driving.
+The robot runs on [MotionModule](https://github.com/AloeVeraZ/MotionModule), the club's Raspberry Pi robot runtime, with 3TSahur's own wiring kept exactly as built. Browser commands go to the Raspberry Pi, which mixes mecanum-wheel outputs, controls the ramp servos, and streams the camera back to the Driver Station. Driving needs no internet connection; code changes and updates happen over Wi-Fi from the dashboard, with no monitor, keyboard, or mouse on the robot.
 
 ## Repository contents
 
 ```text
 stem-research-academy/
 |-- images/         # Club, team, and completed-robot photos
-|-- robot_server/   # Flask app, motors, servos, camera, health, and dashboard
-|-- installer/      # Raspberry Pi deployment and systemd services
+|-- robot/3TSahur/  # MotionModule robot project: drive, pins, ramp, Driver Station
+|-- installer/      # One-command Raspberry Pi install on MotionModule
 |-- docs/           # Wiring, setup, and ramp-actuator references
 |-- tests/          # Hardware-independent safety and behavior tests
-|-- requirements.txt
-|-- run.py
 `-- README.md
 ```
 
 | Area | Start here |
 | --- | --- |
-| Robot software | [`robot_server/`](robot_server/) |
+| Robot software | [`robot/3TSahur/`](robot/3TSahur/) |
 | Raspberry Pi installation | [`installer/README.md`](installer/README.md) |
 | Wiring and GPIO | [`docs/WIRING.md`](docs/WIRING.md) |
 | Ramp servos | [`docs/3TSAHUR_AUXILIARY_ACTUATORS.md`](docs/3TSAHUR_AUXILIARY_ACTUATORS.md) |
 | Bench setup | [`docs/SETUP.md`](docs/SETUP.md) |
 | Automated checks | [`tests/`](tests/) |
 
-Run the server on a development computer with mock hardware:
+Install on the robot's Raspberry Pi over SSH (no monitor, keyboard, or mouse needed):
 
 ```bash
-python -m robot_server.app
+curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/curl-install.sh | bash
 ```
 
 Run the hardware-independent tests with:
@@ -137,15 +135,17 @@ Run the hardware-independent tests with:
 python -m unittest discover -s tests -v
 ```
 
+The MotionModule integration tests run when MotionModule is installed (`pip install -e` a MotionModule checkout) and are skipped otherwise.
+
 ## Connect and drive
 
 | Setting | Default |
 | --- | --- |
-| Wi-Fi network | `3TSahur-Swarm` |
-| Wi-Fi password | `roboswarm1` |
-| Dashboard | `http://10.42.0.1` |
-| Direct API | `http://10.42.0.1:8080` |
-| Local hostname | `http://3tsahur.local` |
+| Dashboard | `http://3tsahur.local` |
+| Fallback hotspot | `3TSahur-Swarm`, password `roboswarm1`, after 30 s without saved Wi-Fi |
+| Dashboard on the hotspot | `http://10.42.0.1` |
+
+Open the dashboard, then **Open Driver Station**, tick the safety box and press **Enable**.
 
 | Key | Action |
 | --- | --- |
@@ -153,8 +153,15 @@ python -m unittest discover -s tests -v
 | `A` / `D` | Strafe left / right |
 | `Q` / `E` | Rotate left / right |
 | `R` | Open or close the ramp |
-| `Space` | Soft stop |
-| `Esc` | Emergency kill |
+| `Space` | Stop and disable |
+
+A game controller (left stick drives and strafes, right stick turns, `Y` toggles the ramp) and phone touch sticks work too.
+
+| Task, all over Wi-Fi | Where |
+| --- | --- |
+| Deploy edited robot code | Dashboard → **Code** → choose the `3TSahur` folder → **Deploy and run** |
+| Update MotionModule | Dashboard → **Update** |
+| Change Wi-Fi or hotspot | Dashboard → **Debug → Network** |
 
 Change the default hotspot password before a public deployment.
 
@@ -163,7 +170,7 @@ Change the default hotspot password before a public deployment.
 > [!CAUTION]
 > Raise the chassis so all four wheels can spin freely during the first test. Keep the 12 V motor supply separate from the Raspberry Pi 5 V logic rail, verify a common ground, and set the servo buck converter to 5.0 V before connecting the servos.
 
-Confirm that closing the browser, losing Wi-Fi, pressing `Space` or `Esc`, and allowing the command heartbeat to expire all stop the drivetrain.
+Confirm that closing the browser, losing Wi-Fi, pressing `Space` or **STOP ALL OUTPUTS**, and letting the 300 ms watchdog expire all stop the drivetrain.
 
 ---
 

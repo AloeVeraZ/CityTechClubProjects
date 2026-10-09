@@ -4,7 +4,7 @@
 
 <img alt="Drive: 4 mecanum motors" src="https://img.shields.io/badge/drive-4%20mecanum%20motors-6f42c1?style=flat-square"> <img alt="Motor power: external supply" src="https://img.shields.io/badge/motor%20power-external%20supply-f39c12?style=flat-square"> <img alt="Servo power: regulated 5 V" src="https://img.shields.io/badge/servo%20power-regulated%205%20V-00979d?style=flat-square">
 
-[Project overview](../README.md) · [Setup](SETUP.md) · [Ramp details](3TSAHUR_AUXILIARY_ACTUATORS.md) · [Motor code](../robot_server/motor.py)
+[Project overview](../README.md) · [Setup](SETUP.md) · [Ramp details](3TSAHUR_AUXILIARY_ACTUATORS.md) · [Pin map](../robot/3TSahur/hardware.py)
 
 ---
 
@@ -21,8 +21,10 @@ mecanum assignment.
 | Front right | Driver 2 IN1 / IN2 | GPIO 20 | GPIO 21 |
 | Rear right | Driver 2 IN3 / IN4 | GPIO 26 | GPIO 13 |
 
-This mapping is implemented in [`robot_server/motor.py`](../robot_server/motor.py)
-and checked by [`tests/test_motor.py`](../tests/test_motor.py).
+This mapping is the robot's MotionModule pin map,
+[`robot/3TSahur/hardware.py`](../robot/3TSahur/hardware.py), with the drive math in
+[`mixer.py`](../robot/3TSahur/mixer.py). [`tests/test_mixer.py`](../tests/test_mixer.py)
+checks every direction below at these GPIO pins.
 
 The installed chassis uses inverted longitudinal polarity: `W` drives GPIO 6,
 16, 21, and 13, while `S` drives GPIO 5, 19, 20, and 26. Strafe polarity is
@@ -36,7 +38,7 @@ unchanged. `Q` and `E` rotate about the robot center with all four wheels at
 
 > [!WARNING]
 > Never connect one GPIO output to more than one driver input. If one physical
-> wheel is reversed, swap only that motor's leads or only its `MotorPins` pair.
+> wheel is reversed, swap only that motor's leads, or set only its `inverted` value in `hardware.py`.
 
 ## 02 / Direct Ramp Servos
 
@@ -53,7 +55,9 @@ The code uses BCM numbering; physical header numbers are included below.
 | Ramp Servo 2 | Ground | Buck-converter ground |
 | Common reference | Ground jumper | Buck ground to Pi ground, physical pin 6 or 14 |
 
-GPIO12 and GPIO18 are 3.3 V signal outputs. Never connect a servo's red 5 V
+GPIO12 and GPIO18 are 3.3 V signal outputs. MotionModule normally reserves GPIO17
+and GPIO18 for an IMU bus; 3TSahur has no IMU, so the installer keeps that bus off
+and GPIO18 free for this servo. Never connect a servo's red 5 V
 wire to either GPIO signal pin.
 
 | Logical position | Servo 1 | Servo 2 |

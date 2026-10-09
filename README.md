@@ -101,7 +101,7 @@ Each project is self-contained. Its folder owns its README, code, CAD, images, i
 CityTechClubProjects/
 |-- self-balancing-robot/   # IMU, PID, DC motors, CAD, and firmware
 |-- crab-crawler/           # Servo walker and Fusion/STEP CAD
-|-- stem-research-academy/  # 3TSahur server, installer, docs, tests, and images
+|-- stem-research-academy/  # 3TSahur MotionModule project, installer, docs, tests, and images
 |-- OmniBot/                # Holonomic drive, web control, camera, and vision work
 |-- CITATION.cff
 |-- LICENSE.md

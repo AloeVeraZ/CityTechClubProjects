@@ -2,59 +2,62 @@
 
 # 3TSahur Raspberry Pi Installer
 
-### Automated deployment scripts for Wi-Fi hotspot, dashboard, GPIO services, and systemd units
+### One command puts 3TSahur on MotionModule: browser driving, over-the-air code deploys, and dashboard updates
 
 [![Platform](https://img.shields.io/badge/Platform-Raspberry_Pi_OS-c51a4a?style=flat-square&logo=raspberrypi&logoColor=white)](https://www.raspberrypi.com/)
-[![Services](https://img.shields.io/badge/Daemon-systemd-6f42c1?style=flat-square)](#installed-components)
-[![Networking](https://img.shields.io/badge/Network-NetworkManager-0a7f5a?style=flat-square)](#installer-files)
+[![Runtime](https://img.shields.io/badge/Runtime-MotionModule-6f42c1?style=flat-square)](https://github.com/AloeVeraZ/MotionModule)
 [![License](https://img.shields.io/badge/License-CC_BY_4.0-0078d4?style=flat-square)](../../LICENSE.md)
 [![Parent](https://img.shields.io/badge/Project-STEM_Research_Academy-111111?style=flat-square)](../)
 
-This installer takes a normal Raspberry Pi OS setup and configures the robot server, hotspot, dashboard, GPIO access, and startup services.
-
 <strong>Quick navigation:</strong><br>
-[Installed Components](#installed-components) | [Installation Guide](#installation-guide) | [Installer Files](#installer-files) | [Back to STEM Project](../)
+[Install](#install) | [What It Does](#what-it-does) | [Updating](#updating) | [Options](#options) | [Back to STEM Project](../)
 
 </div>
 
 ---
 
-## Installed Components
+## Install
 
-`install.sh` handles the setup in one run:
-
-| Subsystem | Resulting Configuration |
-| --- | --- |
-| Target location | Clean virtual environment deployed to `~/STEMResearchAcademy` |
-| Python environment | Python 3 virtual environment with isolated dependency tree |
-| Daemon service | `stem-robot-dashboard.service` managed via systemd |
-| Wi-Fi access point | NetworkManager 2.4 GHz hotspot (`3TSahur-Swarm` @ `10.42.0.1`) |
-| Local hostname | `3tsahur.local` broadcast via Avahi / mDNS |
-| PWM daemon | `pigpiod.service` for accurate hardware timing on ramp servos |
-| Reverse proxy | Optional Nginx proxy serving dashboard traffic on HTTP port 80 |
-
-## Installation Guide
-
-Run the installer from a local git checkout as the normal `pi` user (do not run as root):
+Flash Raspberry Pi OS with Raspberry Pi Imager, set the Wi-Fi network and enable SSH there, then SSH in
+as the normal Pi user (not root) and run:
 
 ```bash
-cd ~/STEMResearchAcademy/installer
-bash install.sh
+curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/curl-install.sh | bash
 ```
 
-> [!IMPORTANT]
-> The installer automatically restarts the Raspberry Pi upon successful verification to initialize network interfaces and GPIO permissions. Complete all hardware wiring before applying high-voltage motor power.
+The Pi reboots when it finishes. No monitor, keyboard or mouse is needed at any point.
 
-## Installer Files
+## What It Does
 
-| File | Technical Responsibility |
+| Step | Result |
 | --- | --- |
-| `install.sh` | Main idempotent installer script with automatic dependency validation |
-| `curl-install.sh` | Remote bootstrap script for single-command curl installation |
-| `hotspot.sh` | NetworkManager hotspot and static IP (`10.42.0.1`) configuration |
-| `kiosk.sh` | Launches dedicated Chromium fullscreen UI on attached HDMI monitors |
-| `start-dashboard.sh` | Service wrapper that activates venv and launches Flask daemon |
-| `systemd/` | Unit files for auto-restarting services on startup |
+| Packages | `pigpio` for the ramp servos, `python3-opencv` and `v4l-utils` for the USB camera |
+| Old server | Removes `stem-robot-dashboard`, `stem-robot-hotspot`, the old Nginx site, the kiosk and `~/STEMResearchAcademy` |
+| `pigpiod.service` | DMA-timed servo pulses on GPIO12 and GPIO18, listening on this Pi only |
+| GPIO18 | Parks MotionModule's IMU-bus overlay under `[none]` in `config.txt`, so GPIO18 stays free for ramp servo 2 |
+| Hotspot name | `3TSahur-Swarm` / `roboswarm1` in `/etc/motionmodule/network.json` |
+| Robot project | `robot/3TSahur` → `~/MotionModule/robots/3TSahur`, set as the active robot |
+| MotionModule | Installs from `main`, runs its tests, sets the hostname `3tsahur` and reboots |
+
+## Updating
+
+| What changed | How to update |
+| --- | --- |
+| MotionModule (dashboard, Driver Station, runtime) | **Update** card on the dashboard. The 3TSahur folder, pins and hotspot name are kept. |
+| 3TSahur robot code, from your laptop | Dashboard → **Code** → choose the `3TSahur` folder → **Deploy and run** |
+| 3TSahur robot code, from GitHub | `curl -fsSL …/curl-install.sh \| bash -s -- --robot-only` over SSH |
+| Everything | Rerun the install command |
+
+## Options
+
+| Option | Meaning |
+| --- | --- |
+| `--robot-only` | Replace only `~/MotionModule/robots/3TSahur` from GitHub and restart the dashboard |
+| `--no-reboot` | Skip MotionModule's final reboot |
+| `--motionmodule-version REF` | Install a MotionModule branch, tag or commit other than `main` |
+
+Pass options after `bash -s --`, for example `… | bash -s -- --no-reboot`. From a checkout, run
+`bash installer/install.sh` and the robot folder beside it is used instead of downloading one.
 
 ---
 

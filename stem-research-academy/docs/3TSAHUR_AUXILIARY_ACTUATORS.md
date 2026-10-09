@@ -4,7 +4,7 @@
 
 <img alt="Timing: pigpio" src="https://img.shields.io/badge/timing-pigpio-00979d?style=flat-square"> <img alt="Positions: 0 and 120 degrees" src="https://img.shields.io/badge/positions-0%C2%B0%20%2F%20120%C2%B0-f39c12?style=flat-square">
 
-[Project overview](../README.md) · [Wiring](WIRING.md) · [Setup](SETUP.md) · [Actuator code](../robot_server/actuators.py)
+[Project overview](../README.md) · [Wiring](WIRING.md) · [Setup](SETUP.md) · [Ramp code](../robot/3TSahur/ramp.py)
 
 ---
 
@@ -37,35 +37,35 @@ Servo 2 on physical pin 12 is mirrored in software: logical 0° uses its 120°
 electrical position, while logical 120° uses its 0° electrical position. Servo
 1 retains normal direction.
 
-Use **Open ramp** / **Close ramp** in the dashboard or press `R`. There is no
-intermediate position and no camera movement mode.
+Use **Toggle ramp**, **Open ramp** or **Close ramp** under Mechanism Controls in the
+MotionModule Driver Station, press `R`, or press `Y` on a game controller. Controls work
+while the Driver Station is enabled. There is no intermediate position and no camera
+movement mode.
 
 ## 03 / Runtime and Configuration
 
-Persistent settings in `/etc/stem-research-academy/config.env`:
+The settings are constants at the top of [`ramp.py`](../robot/3TSahur/ramp.py):
 
-```text
-RAMP_SERVO_0_GPIO_BCM=12
-RAMP_SERVO_1_GPIO_BCM=18
-RAMP_SERVO_0_REVERSED=0
-RAMP_SERVO_1_REVERSED=1
-RAMP_SERVO_MIN_PULSE_US=1000
-RAMP_SERVO_MAX_PULSE_US=2000
+```python
+SERVO_GPIOS = {0: 12, 1: 18}
+REVERSED = {1}
+MINIMUM_PULSE_US = 1000
+MAXIMUM_PULSE_US = 2000
 ```
+
+Edit them in the robot folder and deploy it from the dashboard's **Code** page.
 
 | Servo state | Normal servo pulse | Reversed servo pulse |
 | --- | ---: | ---: |
 | Closed | 1000 µs | 1667 µs |
 | Open | 1667 µs | 1000 µs |
 
-The installer starts `pigpiod` before the dashboard. `pigpio` continuously
-holds the selected pulse, while the server serializes commands and suppresses
-duplicate writes.
-
-| API | Request |
-| --- | --- |
-| `GET /api/status` | Read actuator state and availability |
-| `POST /api/actuators/ramp` | `{"state":"closed"}` or `{"state":"open"}` |
+The installer starts `pigpiod` before MotionModule. `pigpio` continuously
+holds the selected pulse, MotionModule serializes commands, and `ramp.py`
+suppresses duplicate writes. The ramp keeps holding through STOP and E-stop,
+which stop the wheels. The Driver Station's Raspberry Pi Inputs panel shows the
+ramp state, or the reason the servos are unavailable (for example `pigpiod` not
+running).
 
 ## 04 / Buck-Converter Checks
 

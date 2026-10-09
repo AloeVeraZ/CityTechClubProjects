@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
-# One-command bootstrap for a trusted Raspberry Pi OS installation.
-# It downloads the versioned installer, which then performs the validated,
-# atomic application installation. Do not run this as root.
+# One-command bootstrap: installs 3TSahur on MotionModule.
+#
+#   curl -fsSL https://raw.githubusercontent.com/AloeVeraZ/CityTechClubProjects/main/stem-research-academy/installer/curl-install.sh | bash
+#
+# Options pass through to install.sh, e.g. `| bash -s -- --robot-only`.
+# Do not run this as root.
 set -Eeuo pipefail
 
 REPO_URL="${STEM_REPO_URL:-https://github.com/AloeVeraZ/CityTechClubProjects.git}"
@@ -31,8 +34,8 @@ command -v curl >/dev/null 2>&1 || {
     exit 1
 }
 
-echo "Downloading 3TSahur installer from ${REPO_BRANCH}..."
+echo "Downloading the 3TSahur MotionModule installer from ${REPO_BRANCH}..."
 curl --fail --location --retry 3 --retry-delay 2 --silent --show-error \
     "$INSTALLER_URL" -o "$TEMP_INSTALLER"
 STEM_REPO_URL="$REPO_URL" STEM_REPO_BRANCH="$REPO_BRANCH" STEM_SOURCE_SUBDIR="$SOURCE_SUBDIR" \
-    bash "$TEMP_INSTALLER"
+    bash "$TEMP_INSTALLER" "$@" < /dev/null
